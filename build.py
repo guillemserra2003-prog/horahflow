@@ -9,7 +9,7 @@ config = '''window.HF_CONFIG = {
   supabaseUrl: 'https://jmqikuquouqvcmkimrdk.supabase.co',
   supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptcWlrdXF1b3VxdmNta2ltcmRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ0MTgwMDUsImV4cCI6MjEwOTk5NDAwNX0.e7EJlj-4okNexW920ySz34_3eo_g00U9x1ClearDQAs',
   // Datos del titular para los textos legales (el aviso legal aparece cuando nif y address están rellenos)
-  legal: { name: 'Guillem Serra Sentinella', email: 'gserrasentinella@gmail.com', nif: '', address: '' },
+  legal: { name: 'Guillem Serra Sentinella', email: 'gserrasentinella@gmail.com', nif: '53399877H', address: 'Carrer Afores 2, 25591 Peramea (Baix Pallars), Lleida, España' },
   // 3) Pagos: enlaces de pago (Payment Links) de Stripe y portal de cliente.
   stripe: {
     pro: 'https://buy.stripe.com/5kQcMYew50Y47IL4q36EU00',
