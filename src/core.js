@@ -78,7 +78,11 @@ const Auth = {
     });
     const { data } = await sb.auth.getSession();
     if (data.session) await this.fromSession(data.session);
-    if (/type=recovery/.test(location.hash)) history.replaceState(null, '', '#app-ajustes');
+    if (/error_code=/.test(location.hash)) {
+      const expired = /otp_expired/.test(location.hash);
+      history.replaceState(null, '', this.user ? '#app' : '#entrar');
+      setTimeout(() => toast(expired ? 'Ese enlace ya se usó o ha caducado. Si ya confirmaste tu correo, entra con tu contraseña.' : 'No se pudo completar el enlace. Inténtalo de nuevo.', 6000), 400);
+    } else if (/type=recovery/.test(location.hash)) history.replaceState(null, '', '#app-ajustes');
     else if (/access_token=|type=signup|type=magiclink/.test(location.hash)) history.replaceState(null, '', this.user ? '#app-correos' : '#entrar');
   },
   async fromSession(session) {
