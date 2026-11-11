@@ -201,9 +201,12 @@ const Data = {
   async pull() {
     const sb = await getSupabase(); const u = Auth.user;
     const cached = Store.get('hf:cache:' + u.id);
-    const { data, error } = await sb.from('user_data').select('state,updated_at').eq('user_id', u.id).maybeSingle();
+    const { data, error } = await sb.from('user_data').select('state,prefs,updated_at').eq('user_id', u.id).maybeSingle();
     if (error) { console.warn(error); this.state = cached || emptyState(); return; }
+    this._hasRow = !!data;
     this.state = (data && data.state && data.state.emails) ? data.state : (cached || emptyState());
+    // Las preferencias van en su propia columna (se sincronizan sin reenviar todos los recibos)
+    if (data && data.prefs && Object.keys(data.prefs).length) this.state.prefs = Object.assign({}, this.state.prefs, data.prefs);
     this.owner = u.id;
     Store.set('hf:cache:' + u.id, this.state);
   },
@@ -217,17 +220,29 @@ const Data = {
     this.state.prefs = Object.assign({ usage: {}, cancelled: {}, ignored: {}, alertDays: 3 }, this.state.prefs);
     this.recompute(); return this.state;
   },
-  save() {
+  /** kind: 'all' (recibos + preferencias) o 'prefs' (solo preferencias: mucho más ligero) */
+  save(kind = 'all') {
     if (!Auth.user.demo) {
+      if (kind === 'all') this._dirtyAll = true;
       Store.set(this.key(), this.state);
       if (Auth.user.cloud) { clearTimeout(this._t); this._t = setTimeout(() => this.push(), 600); }
     }
     this.recompute();
   },
-  async push() {
+  async push(attempt = 0) {
     const sb = await getSupabase(); if (!sb || !Auth.user?.cloud) return;
-    const { error } = await sb.from('user_data').upsert({ user_id: Auth.user.id, state: this.state }, { onConflict: 'user_id' });
-    if (error) { console.warn(error); toast('No se pudo sincronizar. Lo reintentaremos.'); setTimeout(() => this.push(), 8000); }
+    const full = this._dirtyAll || !this._hasRow;
+    const { prefs, ...rest } = this.state;
+    const { error } = full
+      ? await sb.from('user_data').upsert({ user_id: Auth.user.id, state: rest, prefs }, { onConflict: 'user_id' })
+      : await sb.from('user_data').update({ prefs }).eq('user_id', Auth.user.id);
+    if (error) {
+      console.warn(error);
+      if (attempt === 0) toast('No se pudo guardar en la nube. Lo reintentamos en segundo plano; tus datos siguen en este dispositivo.', 5000);
+      if (attempt < 5) setTimeout(() => this.push(attempt + 1), 4000 * (attempt + 1));
+      return;
+    }
+    if (full) { this._dirtyAll = false; this._hasRow = true; }
   },
   recompute() {
     const histMonths = Auth.plan().history;
@@ -271,6 +286,8 @@ const Data = {
         }
       } catch (err) { console.warn('IA no disponible', err.message); }
     }
+    // Tope de seguridad: se guardan como máximo los 3.000 recibos más recientes
+    if (this.state.emails.length > 3000) this.state.emails = this.state.emails.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 3000);
     this.save(); return added + aiAdded;
   },
   removeSource(id) {

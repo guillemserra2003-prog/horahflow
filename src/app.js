@@ -186,8 +186,8 @@ function subModal(key) {
       <button class="btn btn-ghost btn-sm" id="m-cancel">${P.cancelled[key] ? 'Marcar como activa' : 'Ya la he cancelado'}</button>
       <button class="btn btn-ghost btn-sm" id="m-ignore">No es una suscripción</button>
     </div>`, (bg, close) => {
-    $('#m-cancel', bg).onclick = () => { if (P.cancelled[key]) delete P.cancelled[key]; else P.cancelled[key] = Date.now(); Data.save(); close(); toast(P.cancelled[key] ? `${s.merchant} marcada como cancelada` : `${s.merchant} vuelve a estar activa`); route(); };
-    $('#m-ignore', bg).onclick = () => { P.ignored[key] = true; Data.save(); close(); toast(`${s.merchant} ya no se tendrá en cuenta`); route(); };
+    $('#m-cancel', bg).onclick = () => { if (P.cancelled[key]) delete P.cancelled[key]; else P.cancelled[key] = Date.now(); Data.save('prefs'); close(); toast(P.cancelled[key] ? `${s.merchant} marcada como cancelada` : `${s.merchant} vuelve a estar activa`); route(); };
+    $('#m-ignore', bg).onclick = () => { P.ignored[key] = true; Data.save('prefs'); close(); toast(`${s.merchant} ya no se tendrá en cuenta`); route(); };
   });
 }
 function altHTML(x) {
@@ -260,7 +260,7 @@ async function runAdvice() {
   try {
     const r = await AI.call({ action: 'advice', context: AI.context(Data.analysis) });
     if (!r || !r.advice) throw Object.assign(new Error('empty'), { code: 'ai_error' });
-    Data.state.prefs.aiAdvice = { text: r.advice, at: Date.now() }; Data.save();
+    Data.state.prefs.aiAdvice = { text: r.advice, at: Date.now() }; Data.save('prefs');
   } catch (e) {
     toast(e.code === 'limit' ? 'Has llegado al límite de análisis de hoy en tu plan.' : e.code === 'not_configured' ? 'La IA se está activando. Vuelve a probar en un rato.' : 'No se pudo generar el análisis. Inténtalo de nuevo.', 4500);
   }
@@ -416,7 +416,7 @@ function bindAppView(view) {
   $$('[data-sub]').forEach(r => r.addEventListener('click', e => { if (e.target.closest('.seg')) return; subModal(r.dataset.sub); }));
   $$('[data-usage]').forEach(seg => seg.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
-    const k = seg.dataset.usage, P = Data.state.prefs; P.usage[k] = P.usage[k] === b.dataset.v ? null : b.dataset.v; Data.save();
+    const k = seg.dataset.usage, P = Data.state.prefs; P.usage[k] = P.usage[k] === b.dataset.v ? null : b.dataset.v; Data.save('prefs');
     const y = window.scrollY; route(); window.scrollTo(0, y);
     if (P.usage[k] === 'no') toast('Lo sumamos a tu ahorro potencial');
   }));
@@ -458,7 +458,7 @@ function bindAppView(view) {
   $$('[data-remove]').forEach(b => b.onclick = () => confirmModal('¿Quitar esta fuente?', 'Se borrarán los recibos que vienen de ella. Puedes volver a conectarla cuando quieras.', 'Quitar', () => { Data.removeSource(b.dataset.remove); toast('Fuente eliminada'); route(); }));
   $$('[data-resync]').forEach(b => b.onclick = connectGmail);
   $('#s-prof')?.addEventListener('submit', e => { e.preventDefault(); Auth.update({ name: $('#s-name').value.trim() || Auth.user.name }); toast('Perfil guardado'); route(); });
-  $('#s-days')?.addEventListener('change', e => { Data.state.prefs.alertDays = +e.target.value; Data.save(); toast('Avisos actualizados'); });
+  $('#s-days')?.addEventListener('change', e => { Data.state.prefs.alertDays = +e.target.value; Data.save('prefs'); toast('Avisos actualizados'); });
   $('#s-down')?.addEventListener('click', () => { Auth.update({ plan: 'free', planTest: false }); toast('Has vuelto al plan Gratis'); route(); });
   $('#s-wipe')?.addEventListener('click', () => confirmModal('¿Borrar todos tus recibos?', 'Se eliminarán todos los recibos y fuentes guardados en este navegador. Tu cuenta seguirá activa.', 'Borrar', () => { Data.wipe(); toast('Datos borrados'); route(); }));
   $('#s-del')?.addEventListener('click', () => confirmModal('¿Eliminar tu cuenta?', 'Se borrarán tu cuenta y todos tus datos. Si tienes una suscripción, cancélala antes desde «Gestionar suscripción». No se puede deshacer.', 'Eliminar cuenta', async () => { try { await Auth.remove(); location.hash = 'inicio'; toast('Cuenta eliminada'); } catch (e) { toast('No se pudo eliminar: ' + e.message, 4000); } }));
