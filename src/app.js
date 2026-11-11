@@ -437,6 +437,7 @@ function route() {
   }
   if (Auth.user && Auth.user.demo && !h.startsWith('app')) Auth.exitDemo();
   if (h === 'pago-ok') return paymentReturn();
+  if (h === 'confirmado') return renderConfirmed();
   if (h === 'blog') return renderBlog();
   if (h.startsWith('blog-')) return renderPost(h.slice(5));
   if (h === 'entrar' || h === 'registro') { if (Auth.user && !Auth.user.demo) { location.hash = 'app'; return; } return renderAuth(h); }
@@ -448,6 +449,22 @@ function route() {
 document.addEventListener('click', onBuyClick);
 root.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center"><div class="progress"><i style="width:40%"></i></div></div>';
 Auth.init().catch(e => console.warn(e)).finally(() => { window.addEventListener('hashchange', route); route(); });
+
+function renderConfirmed() {
+  const st = Auth.confirmState || (Auth.user ? 'ok' : 'ok-nosession');
+  const ok = st !== 'used';
+  root.innerHTML = `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--soft)">
+    <div class="card fade-in" style="max-width:440px;width:100%;text-align:center;padding:40px 28px">
+      <img src="${LOGO}" alt="HorahFlow" style="height:28px;width:auto;margin:0 auto 28px">
+      <span class="dot green" style="width:64px;height:64px;border-radius:50%;margin:0 auto 18px">${svg('<path d="M20 6 9 17l-5-5"/>', 30)}</span>
+      <h1 style="font-size:28px;letter-spacing:-.03em;margin-bottom:8px">${ok ? '¡Cuenta confirmada!' : 'Tu cuenta ya estaba confirmada'}</h1>
+      <p class="hint" style="font-size:16px;margin-bottom:26px">${st === 'ok' ? `Todo listo${Auth.user ? ', ' + esc(Auth.user.name.split(' ')[0]) : ''}. Ya puedes descubrir a dónde se va tu dinero.`
+        : st === 'ok-nosession' ? 'Todo listo. Entra con tu correo y contraseña para empezar.'
+        : 'Este enlace ya se había usado. Entra con tu correo y contraseña.'}</p>
+      <a class="btn btn-dark btn-block" href="#${Auth.user ? 'app-correos' : 'entrar'}">${Auth.user ? 'Ir a HorahFlow' : 'Entrar en HorahFlow'} ${I.arrow}</a>
+    </div></div>`;
+  window.scrollTo(0, 0);
+}
 
 async function paymentReturn() {
   if (!Auth.user) { location.hash = 'entrar'; return; }

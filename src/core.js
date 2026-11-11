@@ -50,7 +50,9 @@ async function getSupabase() {
   if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) return null;
   if (supa) return supa;
   await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js');
-  supa = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' } });
+  const proxied = /(^|\.)horahflow\.com$|\.vercel\.app$/.test(location.hostname);
+  const apiUrl = proxied ? location.origin + '/sb' : CFG.supabaseUrl;
+  supa = window.supabase.createClient(apiUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' } });
   return supa;
 }
 function loadScript(src) {
@@ -61,7 +63,8 @@ function loadScript(src) {
   });
 }
 const cloud = () => !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
-const ERR_ES = m => /invalid login/i.test(m) ? 'Correo o contraseña incorrectos.' : /not confirmed/i.test(m) ? 'Aún no has confirmado tu correo. Revisa tu bandeja de entrada (y spam).'
+const ERR_ES = m => /load failed|failed to fetch|networkerror|network request failed/i.test(m) ? 'No hemos podido conectar con HorahFlow. Revisa tu conexión a internet e inténtalo de nuevo.'
+  : /invalid login/i.test(m) ? 'Correo o contraseña incorrectos.' : /not confirmed/i.test(m) ? 'Aún no has confirmado tu correo. Revisa tu bandeja de entrada (y spam).'
   : /already registered|already exists/i.test(m) ? 'Ya existe una cuenta con ese correo. Entra con tu contraseña.' : /email rate limit|over_email_send/i.test(m) ? 'Ahora mismo no podemos enviar el correo de confirmación. Inténtalo de nuevo en unos minutos; si sigue fallando, escríbenos a hola@horahflow.com.'
   : /rate limit|security purposes/i.test(m) ? 'Demasiados intentos seguidos. Espera un poco y vuelve a probar.'
   : /password/i.test(m) && /least|short|weak/i.test(m) ? 'La contraseña es demasiado débil (mínimo 8 caracteres).' : m;
@@ -78,7 +81,17 @@ const Auth = {
       if (ev === 'SIGNED_OUT') { this.user = null; Data.state = null; }
     });
     const { data } = await sb.auth.getSession();
-    if (data.session) await this.fromSession(data.session);
+    if (data.session) {
+      try { await this.fromSession(data.session); }
+      catch (e) { console.warn(e); this.netError = true; }
+    }
+    const fromConfirm = /[?&]confirmado=1/.test(location.search);
+    if (fromConfirm) {
+      const expired = /error_code=/.test(location.hash);
+      history.replaceState(null, '', location.pathname + '#confirmado');
+      this.confirmState = this.user ? 'ok' : (expired ? 'used' : 'ok-nosession');
+      return;
+    }
     if (/error_code=/.test(location.hash)) {
       const expired = /otp_expired/.test(location.hash);
       history.replaceState(null, '', this.user ? '#app' : '#entrar');
@@ -108,7 +121,7 @@ const Auth = {
     if (pass.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres.');
     const sb = await getSupabase();
     if (sb) {
-      const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { name: name.trim() }, emailRedirectTo: siteBase() + '#app-correos' } });
+      const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { name: name.trim() }, emailRedirectTo: location.origin + '/?confirmado=1' } });
       if (error) throw new Error(ERR_ES(error.message));
       if (data.user && data.user.identities && data.user.identities.length === 0) throw new Error(ERR_ES('already registered'));
       if (!data.session) return { needsConfirm: true, email };

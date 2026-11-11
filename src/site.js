@@ -373,13 +373,13 @@ function renderAuth(mode) {
       const want = sessionGet('hf:wantPlan');
       location.hash = reg ? 'app-correos' : 'app';
       if (want) setTimeout(() => checkout(want), 300);
-    } catch (err) { $('#f-err').textContent = err.message; btn.disabled = false; }
+    } catch (err) { $('#f-err').textContent = ERR_ES(err.message || String(err)); btn.disabled = false; }
   };
   $('#f-forgot')?.addEventListener('click', async () => {
     const email = $('#f-email').value.trim();
     if (!email) { $('#f-err').textContent = 'Escribe tu correo y vuelve a pulsar.'; return; }
     try { await Auth.resetPassword(email); $('#f-err').style.color = 'var(--green)'; $('#f-err').textContent = 'Te hemos enviado un enlace para cambiar la contraseña.'; }
-    catch (e) { $('#f-err').textContent = e.message; }
+    catch (e) { $('#f-err').textContent = ERR_ES(e.message || String(e)); }
   });
   (reg ? $('#f-name') : $('#f-email')).focus();
 }
