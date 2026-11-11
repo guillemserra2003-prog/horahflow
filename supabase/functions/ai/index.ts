@@ -35,11 +35,14 @@ async function claude(system: string, user: string, maxTokens = 900): Promise<st
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+    // Sin razonamiento previo: respuestas rápidas y sin gastar el límite de tokens antes de contestar
+    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, thinking: { type: "disabled" }, system, messages: [{ role: "user", content: user }] }),
   });
   if (!r.ok) { console.error("anthropic", r.status, await r.text()); throw new Error("AI_ERROR"); }
   const d = await r.json();
-  return (d.content || []).filter((c: any) => c.type === "text").map((c: any) => c.text).join("").trim();
+  const text = (d.content || []).filter((c: any) => c.type === "text").map((c: any) => c.text).join("").trim();
+  if (!text) { console.error("respuesta vacía", d.stop_reason, JSON.stringify(d.usage)); throw new Error("AI_ERROR"); }
+  return text;
 }
 
 const STYLE = `Eres Flow, el asistente de HorahFlow, una app española que ayuda a la gente a ver en qué se le va el dinero a partir de los recibos de su correo.
@@ -76,7 +79,7 @@ Deno.serve(async (req) => {
     if (action === "ask") {
       const q = String(body.question || "").slice(0, 500);
       const ctx = JSON.stringify(body.context ?? {}).slice(0, 12000);
-      const answer = await claude(STYLE + "\nResponde en 1–4 frases como máximo.", `Datos del usuario (JSON):\n${ctx}\n\nPregunta: ${q}`, 500);
+      const answer = await claude(STYLE + "\nResponde en 1–4 frases como máximo.", `Datos del usuario (JSON):\n${ctx}\n\nPregunta: ${q}`, 1000);
       return json(req, { answer });
     }
     if (action === "advice") {
@@ -85,7 +88,7 @@ Deno.serve(async (req) => {
 Escribe un análisis personalizado breve con este formato exacto:
 Una primera frase de diagnóstico general.
 Después entre 3 y 5 líneas que empiecen por "- ", cada una con una acción concreta, el servicio afectado y el ahorro estimado al año.
-Termina con una frase motivadora corta y realista. Máximo 160 palabras.`, `Datos del usuario (JSON):\n${ctx}`, 700);
+Termina con una frase motivadora corta y realista. Máximo 160 palabras.`, `Datos del usuario (JSON):\n${ctx}`, 1200);
       return json(req, { advice: text });
     }
     // parse
@@ -96,7 +99,7 @@ Termina con una frase motivadora corta y realista. Máximo 160 palabras.`, `Dato
     const out = await claude(`Extraes datos de recibos de correo electrónico. Devuelve SOLO un array JSON válido, sin texto adicional.
 Para cada elemento devuelve {"i":número,"is_charge":true|false,"merchant":"nombre comercial corto","amount":número total cobrado,"currency":"EUR"|"USD"|"GBP","recurring":true|false,"cycle":"weekly"|"monthly"|"quarterly"|"yearly"|null,"category":"streaming"|"musica"|"software"|"nube"|"telecom"|"hogar"|"deporte"|"comida"|"transporte"|"compras"|"formacion"|"social"|"otros"}.
 is_charge=false si es publicidad, un aviso sin cobro, un reembolso o no hay importe cobrado. amount es el TOTAL pagado, no subtotales ni impuestos.`,
-      JSON.stringify(items), 2500);
+      JSON.stringify(items), 4000);
     let results: any[] = [];
     try { results = JSON.parse(out.replace(/^```(?:json)?|```$/g, "").trim()); } catch { results = []; }
     results = results.filter((r) => r && typeof r.i === "number" && r.is_charge && typeof r.amount === "number" && r.amount > 0 && r.amount < 20000)

@@ -2140,7 +2140,7 @@ function savingsHTML(a) {
 }
 
 function aiAdviceHTML(loading) {
-  const adv = Data.state.prefs.aiAdvice;
+  const adv = Data.state.prefs.aiAdvice && Data.state.prefs.aiAdvice.text ? Data.state.prefs.aiAdvice : null;
   const head = `<h3><span style="display:flex;gap:8px;align-items:center">${I.spark} Tu análisis personalizado</span>${adv ? `<small>${fmtDate(adv.at)}</small>` : ''}</h3>`;
   if (!AI.available()) return head + `<p class="hint" style="font-size:15px">${Auth.user.demo ? 'Crea tu cuenta gratis para que la IA analice tus gastos y te diga por dónde empezar a ahorrar.' : 'Disponible con cuenta en horahflow.com.'}</p>`;
   if (loading) return head + `<p class="hint">Analizando tus gastos…</p><div class="progress" style="width:100%;margin-top:10px"><i style="width:60%"></i></div>`;
@@ -2151,6 +2151,7 @@ async function runAdvice() {
   const card = $('#ai-card'); card.innerHTML = aiAdviceHTML(true);
   try {
     const r = await AI.call({ action: 'advice', context: AI.context(Data.analysis) });
+    if (!r || !r.advice) throw Object.assign(new Error('empty'), { code: 'ai_error' });
     Data.state.prefs.aiAdvice = { text: r.advice, at: Date.now() }; Data.save();
   } catch (e) {
     toast(e.code === 'limit' ? 'Has llegado al límite de análisis de hoy en tu plan.' : e.code === 'not_configured' ? 'La IA se está activando. Vuelve a probar en un rato.' : 'No se pudo generar el análisis. Inténtalo de nuevo.', 4500);
@@ -2321,7 +2322,7 @@ function bindAppView(view) {
       chatLog.push({ r: 'u', t: esc(q) });
       if (AI.available()) {
         const thinking = { r: 'a', t: '<span class="hint">Pensando…</span>' }; chatLog.push(thinking); paint();
-        try { const r = await AI.call({ action: 'ask', question: q, context: AI.context(Data.analysis) }); thinking.t = mdLite(r.answer || ''); }
+        try { const r = await AI.call({ action: 'ask', question: q, context: AI.context(Data.analysis) }); if (!r || !r.answer) throw Object.assign(new Error('empty'), { code: 'ai_error' }); thinking.t = mdLite(r.answer); }
         catch (e) { thinking.t = (e.code === 'limit' ? '<span class="hint">Has usado todas las preguntas a la IA de hoy en tu plan. Te respondo con lo básico:</span><br>' : '') + flowAnswer(q); }
       } else chatLog.push({ r: 'a', t: flowAnswer(q) });
       chatLog = chatLog.slice(-10); paint(); busy = false;
