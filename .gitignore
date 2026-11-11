@@ -2,3 +2,5 @@ shots/
 node_modules/
 __pycache__/
 .DS_Store
+dist/
+test/__pycache__/

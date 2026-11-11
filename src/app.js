@@ -469,7 +469,7 @@ function bindAppView(view) {
 const root = document.getElementById('root');
 function route() {
   const h = (location.hash || '#inicio').slice(1);
-  document.title = 'HorahFlow — Descubre a dónde se va tu dinero';
+  document.title = 'HorahFlow · Controla tus suscripciones y gastos desde tu correo';
   if (h.startsWith('app')) {
     if (!Auth.user) { location.hash = 'entrar'; return; }
     if (h === 'app-correos' && Auth.user.demo) { /* permitido: muestra opciones */ }
@@ -478,8 +478,10 @@ function route() {
   if (Auth.user && Auth.user.demo && !h.startsWith('app')) Auth.exitDemo();
   if (h === 'pago-ok') return paymentReturn();
   if (h === 'confirmado') return renderConfirmed();
-  if (h === 'blog') return renderBlog();
-  if (h.startsWith('blog-')) return renderPost(h.slice(5));
+  // El blog y los textos legales son páginas reales (mejor para Google); los enlaces antiguos con # redirigen
+  if (h === 'blog') { location.replace('/blog/'); return; }
+  if (h.startsWith('blog-')) { location.replace('/blog/' + h.slice(5) + '/'); return; }
+  if (['privacidad', 'cookies', 'terminos', 'aviso-legal'].includes(h) && /^https?:/.test(location.protocol)) { location.replace('/' + (h === 'terminos' ? 'condiciones' : h) + '/'); return; }
   if (h === 'entrar' || h === 'registro') { if (Auth.user && !Auth.user.demo) { location.hash = 'app'; return; } return renderAuth(h); }
   if (['privacidad', 'terminos', 'cookies', 'aviso-legal'].includes(h)) return renderLegal(h);
   const scroll = { demo: 'demo-sec', precios: 'precios-sec', 'como-funciona': 'como-funciona-sec' }[h];

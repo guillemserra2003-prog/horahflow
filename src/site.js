@@ -9,7 +9,7 @@ function navHTML() {
   return `<header class="nav" id="nav"><div class="wrap">
     <a href="#inicio" class="logo"><img src="${LOGO}" alt="HorahFlow"></a>
     <nav class="links">
-      <a href="#como-funciona">Cómo funciona</a><a href="#demo">Demo</a><a href="#precios">Precios</a><a href="#blog">Blog</a>
+      <a href="#como-funciona">Cómo funciona</a><a href="#demo">Demo</a><a href="#precios">Precios</a><a href="/blog/">Blog</a>
     </nav>
     <div class="right">
       ${logged ? `<a class="btn btn-dark btn-sm" href="#app">Ir a mi panel</a>` :
@@ -22,8 +22,8 @@ function footerHTML() {
   return `<footer class="foot"><div class="wrap">
     <div><img src="${LOGO}" alt="HorahFlow" style="height:26px;margin-bottom:14px"><p style="max-width:300px">Encuentra las fugas de dinero que no ves. Suscripciones, cobros recurrentes y gasto hormiga, en un solo panel.</p></div>
     <div><h4>Producto</h4><a href="#como-funciona">Cómo funciona</a><a href="#demo">Demo</a><a href="#precios">Precios</a><a href="#registro">Crear cuenta</a></div>
-    <div><h4>Recursos</h4><a href="#blog">Blog</a>${POSTS.slice(0, 2).map(p => `<a href="#blog-${p.slug}">${esc(p.short)}</a>`).join('')}</div>
-    <div><h4>Legal</h4><a href="#privacidad">Privacidad</a><a href="#cookies">Cookies</a><a href="#terminos">Condiciones</a>${legalComplete() ? '<a href="#aviso-legal">Aviso legal</a>' : ''}<a href="mailto:hola@horahflow.com">hola@horahflow.com</a></div>
+    <div><h4>Recursos</h4><a href="/blog/">Blog</a>${(window.HF_POSTS || []).slice(0, 2).map(p => `<a href="/blog/${p.slug}/">${esc(p.short || p.title)}</a>`).join('')}</div>
+    <div><h4>Legal</h4><a href="/privacidad/">Privacidad</a><a href="/cookies/">Cookies</a><a href="/condiciones/">Condiciones</a>${legalComplete() ? '<a href="/aviso-legal/">Aviso legal</a>' : ''}<a href="mailto:hola@horahflow.com">hola@horahflow.com</a></div>
     <div class="legal"><span>© ${new Date().getFullYear()} HorahFlow · horahflow.com</span><span>Hecho en España</span></div>
   </div></footer>`;
 }
@@ -142,6 +142,11 @@ function renderLanding(scrollTo) {
     <div class="faq">${FAQ.map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join('')}</div>
   </div></section>
 
+  ${(window.HF_POSTS || []).length ? `<section class="block"><div class="wrap">
+    <div class="sec-head" style="display:flex;justify-content:space-between;align-items:flex-end;max-width:none;gap:20px;flex-wrap:wrap"><div><span class="kicker">Blog</span><h2 class="title">Ideas para que tu dinero no se escape.</h2></div><a class="link" href="/blog/">Ver todos los artículos</a></div>
+    <div class="blog-grid">${window.HF_POSTS.slice(0, 3).map(p => `<a class="post-card" href="/blog/${p.slug}/"><img class="post-img" src="${esc(p.image)}" alt="${esc(p.imageAlt)}" loading="lazy" width="1200" height="630">
+      <div class="body"><span class="cat">${esc(p.tag)}</span><h3>${esc(p.title)}</h3><p>${esc(p.description)}</p><span class="date">${esc(p.dateText)} · ${p.min} min</span></div></a>`).join('')}</div>
+  </div></section>` : ''}
   <section style="padding-top:96px"><div class="wrap"><div class="cta-band">
     <div><h2>Lo que no ves, también lo pagas.</h2><p>Conecta tu correo y descubre tus fugas en menos de un minuto.</p></div>
     <a class="btn btn-green" href="#registro">Crear cuenta gratis ${I.arrow}</a>
@@ -153,14 +158,7 @@ function renderLanding(scrollTo) {
   else window.scrollTo(0, 0);
 }
 
-const FAQ = [
-  ['¿Necesito dar la contraseña de mi correo?', 'No. Con Gmail usas el inicio de sesión oficial de Google y nos das un permiso de solo lectura que puedes retirar en cualquier momento desde tu cuenta de Google. Si prefieres no conectar nada, puedes subir tus recibos como archivo (.eml o .mbox).'],
-  ['¿Qué pasa si pago algo que no me llega por correo?', 'HorahFlow ve lo que deja recibo en tu correo, que es casi todo lo que pagas online y la mayoría de suscripciones. Domiciliaciones que solo aparecen en el banco (alquiler, seguros antiguos) pueden no salir. Puedes subir esos recibos a mano.'],
-  ['¿Funciona con Outlook, Hotmail o Yahoo?', 'Hoy conectamos Gmail directamente. Para otros correos puedes exportar tus recibos y subirlos. La conexión directa con Outlook está en camino.'],
-  ['¿Puedo cancelar suscripciones desde HorahFlow?', 'Te damos el enlace directo a la página de baja de cada servicio y alternativas gratuitas. La baja la confirmas tú en el servicio, así nadie más toca tus cuentas.'],
-  ['¿Para qué sirve el plan Pro?', 'Para quien tiene varios correos (personal, trabajo, el de las compras…) y quiere avisos antes de cada cobro, más historial y exportar sus datos.'],
-  ['¿Sirve para empresas o autónomos?', 'Sí. El plan Empresas junta los buzones de un equipo, detecta licencias de software duplicadas entre personas y genera un informe mensual de gastos recurrentes.']
-];
+
 
 function plansHTML() {
   const p = billingYear ? { pro: '2,99', biz: '14,25' } : { pro: '3,99', biz: '18,99' };
@@ -263,80 +261,7 @@ function leakHTML(l) {
 }
 
 /* ---------- Blog ---------- */
-const POSTS = [
-  { slug: 'fuga-silenciosa', short: 'La fuga silenciosa', cat: 'Suscripciones', date: '2026-11-04', read: 5, color: 'linear-gradient(135deg,#3D3A4F,#16151F)', mark: '€/mes',
-    title: 'La fuga silenciosa: por qué no sabes cuánto pagas en suscripciones',
-    excerpt: 'Cada suscripción parece pequeña. El problema no es el precio de una, es que nadie suma todas.',
-    body: `<p>Abre tu banco e intenta responder sin mirar: ¿cuántas suscripciones pagas ahora mismo? ¿Qué día se cobra cada una? ¿Cuánto suman al año? Casi nadie lo sabe a la primera, y no es un problema de disciplina. Es un problema de diseño.</p>
-<h2>Están diseñadas para no notarse</h2>
-<p>Las suscripciones se cobran solas, en días distintos, con importes pequeños y redondeados hacia abajo: 9,99, 4,99, 2,99. Cada una por separado no duele. Además, muchas empiezan con una prueba gratuita que se convierte en pago justo el día que ya no te acuerdas de ella.</p>
-<blockquote>Una suscripción de 9,99 € no parece un gasto. Diez de ellas son 1.200 € al año.</blockquote>
-<h2>Lo que de verdad cuesta</h2>
-<p>El coste real no está en una sola cuota, sino en tres cosas que se acumulan sin que las veas:</p>
-<ul><li><b>Las que ya no usas.</b> Te diste de alta para una serie, un proyecto o un viaje, y siguen cobrándose meses después.</li>
-<li><b>Las que suben de precio.</b> Los servicios actualizan tarifas con un correo que nadie lee. Pagas un euro más cada mes y no lo notas.</li>
-<li><b>Las que se solapan.</b> Tres plataformas de vídeo, dos nubes de fotos, dos apps de música. Pagas por tener opciones que no usas a la vez.</li></ul>
-<h2>Cómo verlo todo de una vez</h2>
-<p>La buena noticia es que cada cobro online deja rastro: un recibo en tu correo. Ahí está el comercio, el importe, la fecha y muchas veces la frecuencia. Si los juntas, aparece la foto completa.</p>
-<p>Eso es exactamente lo que hace HorahFlow: busca esos recibos, agrupa los cobros por servicio, calcula cuándo será el siguiente y te señala los que suben, se duplican o se solapan. No tienes que apuntar nada.</p>
-<p>Haz la prueba: dedica cinco minutos a mirar tus suscripciones. Lo más probable es que encuentres al menos una que ya no necesitas.</p>` },
-  { slug: 'correo-no-banco', short: 'Por qué el correo y no el banco', cat: 'Privacidad', date: '2026-10-28', read: 4, color: 'linear-gradient(135deg,#4A6B60,#5CC57A)', mark: '@',
-    title: 'Por qué HorahFlow lee tu correo y no tu banco',
-    excerpt: 'Conectar el banco parece la opción obvia. Te explicamos por qué decidimos lo contrario.',
-    body: `<p>La primera idea de HorahFlow fue conectarse al banco. Es lo que hacen muchas apps de finanzas: das acceso a tu cuenta y la app lee los movimientos. Lo descartamos, y queremos contarte por qué.</p>
-<h2>El banco lo tiene todo, y ese es el problema</h2>
-<p>Para leer tus movimientos, una app necesita un acceso a tu cuenta a través de un intermediario financiero. Ese acceso ve tu saldo, tus nóminas, tus transferencias y todo tu historial. Aunque sea seguro sobre el papel, es mucha confianza para responder una pregunta sencilla: ¿en qué suscripciones se me va el dinero?</p>
-<h2>El correo tiene justo lo que hace falta</h2>
-<p>Cada servicio te envía un recibo cuando te cobra. Ese recibo dice quién, cuánto y cuándo. Es la información exacta que necesitamos, y nada más.</p>
-<ul><li><b>Solo lectura.</b> El permiso que pedimos a Google no permite enviar, borrar ni cambiar nada.</li>
-<li><b>Solo recibos.</b> Buscamos facturas, renovaciones y pedidos. El resto de tus correos se ignora.</li>
-<li><b>En tu navegador.</b> El análisis se hace en tu dispositivo. Tus correos no se guardan en nuestros servidores.</li>
-<li><b>Revocable.</b> Puedes retirar el permiso desde tu cuenta de Google cuando quieras.</li></ul>
-<blockquote>No necesitamos ver tu saldo para decirte que pagas Netflix dos veces.</blockquote>
-<h2>¿Y lo que no llega por correo?</h2>
-<p>Es la parte honesta: algunas domiciliaciones antiguas, como un seguro o el alquiler, puede que no te envíen recibo. Para esos casos puedes subir el recibo a mano. Pero las suscripciones digitales, que son las que más se olvidan, casi siempre dejan rastro en tu bandeja.</p>` },
-  { slug: 'alternativas-gratis', short: 'Alternativas gratuitas', cat: 'Ahorro', date: '2026-10-15', read: 6, color: 'linear-gradient(135deg,#16151F,#4A6B60)', mark: '0 €',
-    title: 'Alternativas gratuitas a suscripciones que pagas por inercia',
-    excerpt: 'No se trata de renunciar a todo, sino de pagar solo por lo que de verdad usas.',
-    body: `<p>Ahorrar en suscripciones no significa quedarse sin nada. Muchas veces existe una versión gratuita, pública o compartida que cubre lo que necesitas. Estas son las que más vemos en los análisis de HorahFlow.</p>
-<h2>Libros y audiolibros</h2>
-<p><b>eBiblio</b> es el servicio de préstamo digital de las bibliotecas públicas en España. Con tu carnet de biblioteca puedes leer ebooks y escuchar audiolibros gratis. Antes de pagar una suscripción de lectura, merece la pena probarlo.</p>
-<h2>Cine y series</h2>
-<p><b>RTVE Play</b> tiene un catálogo gratuito de series, cine y documentales. Muchas bibliotecas ofrecen también <b>eFilm</b>, cine en streaming con el carnet. Y si tienes varias plataformas, la estrategia que más ahorra es rotarlas: una activa cada mes.</p>
-<h2>Diseño, foto y vídeo</h2>
-<ul><li><b>Photopea</b>: un editor tipo Photoshop que funciona gratis en el navegador.</li>
-<li><b>GIMP e Inkscape</b>: software libre para fotografía y gráficos vectoriales.</li>
-<li><b>DaVinci Resolve</b>: edición de vídeo profesional con versión gratuita.</li>
-<li><b>Canva</b> gratuito: cubre la mayoría de usos personales.</li></ul>
-<h2>Ofimática y nube</h2>
-<p><b>LibreOffice</b> y <b>Google Docs</b> sustituyen a la suite de pago para la mayoría de personas. En almacenamiento, antes de ampliar tu plan, limpia adjuntos y fotos duplicadas: a menudo es suficiente.</p>
-<blockquote>La mejor alternativa a veces no es otra app, sino compartir un plan familiar.</blockquote>
-<h2>Compartir también es ahorrar</h2>
-<p>Música, vídeo y almacenamiento tienen planes familiares que, repartidos, cuestan una fracción del individual. HorahFlow te marca qué servicios tienen esa opción y cuánto ahorrarías.</p>` }
-];
 
-function renderBlog() {
-  root.innerHTML = navHTML() + `<main><section class="block" style="padding-top:64px"><div class="wrap">
-    <div class="sec-head"><span class="kicker">Blog</span><h2 class="title">Ideas para que tu dinero no se escape.</h2><p class="sub">Suscripciones, privacidad y ahorro sin hojas de cálculo.</p></div>
-    <div class="blog-grid">${POSTS.map(p => `<a class="post-card" href="#blog-${p.slug}">
-      <div class="post-cover" style="background:${p.color}">${esc(p.mark)}</div>
-      <div class="body"><span class="cat">${p.cat}</span><h3>${esc(p.title)}</h3><p>${esc(p.excerpt)}</p><span class="date">${new Date(p.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · ${p.read} min</span></div></a>`).join('')}</div>
-  </div></section></main>` + footerHTML();
-  bindNav(); window.scrollTo(0, 0);
-}
-function renderPost(slug) {
-  const p = POSTS.find(x => x.slug === slug); if (!p) return renderBlog();
-  const others = POSTS.filter(x => x !== p);
-  root.innerHTML = navHTML() + `<main><article class="article">
-    <a class="back" href="#blog">← Blog</a>
-    <h1>${esc(p.title)}</h1><div class="meta">${p.cat} · ${new Date(p.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · ${p.read} min de lectura</div>
-    <div class="content">${p.body}</div>
-    <div class="cta-band" style="margin-top:48px;padding:36px"><div><h2 style="font-size:26px">¿Cuánto se te escapa a ti?</h2><p>Conecta tu correo y lo sabrás en un minuto.</p></div><a class="btn btn-green" href="#registro">Empezar gratis</a></div>
-    <h3 style="margin:56px 0 16px">Sigue leyendo</h3>
-    <div style="display:grid;gap:12px">${others.map(o => `<a href="#blog-${o.slug}" class="card" style="display:block"><b>${esc(o.title)}</b><div class="hint">${esc(o.excerpt)}</div></a>`).join('')}</div>
-  </article></main>` + footerHTML();
-  bindNav(); window.scrollTo(0, 0);
-}
 
 /* ---------- Acceso ---------- */
 function renderAuth(mode) {
@@ -356,7 +281,7 @@ function renderAuth(mode) {
       <div class="err" id="f-err"></div>
       <button class="btn btn-dark btn-block" type="submit" id="f-btn">${reg ? 'Crear cuenta' : 'Entrar'}</button>
       ${!reg ? '<p style="margin-top:12px;font-size:14px"><button type="button" class="link" id="f-forgot">¿Has olvidado tu contraseña?</button></p>' : ''}
-      ${reg ? `<p class="hint" style="margin-top:12px">Al crear la cuenta aceptas las <a class="link" href="#terminos">condiciones</a> y la <a class="link" href="#privacidad">política de privacidad</a>.</p>` : ''}
+      ${reg ? `<p class="hint" style="margin-top:12px">Al crear la cuenta aceptas las <a class="link" href="/condiciones/">condiciones</a> y la <a class="link" href="/privacidad/">política de privacidad</a>.</p>` : ''}
       <div class="divider">o</div>
       <button type="button" class="btn btn-ghost btn-block" id="f-demo">Probar con datos de ejemplo</button>
       <p style="margin-top:22px;font-size:15px;text-align:center">${reg ? '¿Ya tienes cuenta? <a class="link" href="#entrar">Entra</a>' : '¿Aún no tienes cuenta? <a class="link" href="#registro">Créala gratis</a>'}</p>

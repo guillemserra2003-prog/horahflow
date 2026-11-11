@@ -23,6 +23,7 @@ const LEGAL = {
 <li><b>Datos de tus recibos:</b> cuando conectas tu correo, subes archivos o pegas texto, el análisis se hace en tu navegador. De cada recibo guardamos solo un fragmento con el comercio, el importe, la fecha y la frecuencia. <b>Nunca guardamos tus correos completos ni los que no son recibos.</b></li>
 <li><b>Tus preferencias en la app:</b> qué suscripciones usas, cuáles has cancelado, avisos, etc.</li>
 <li><b>Datos de pago:</b> si contratas un plan, el pago lo procesa Stripe. HorahFlow no ve ni guarda los datos de tu tarjeta; solo recibimos el estado de tu suscripción.</li>
+<li><b>Estadísticas anónimas de visitas</b> (sin cookies ni identificadores personales), con Vercel Web Analytics.</li>
 <li><b>Datos técnicos mínimos:</b> registros de acceso y seguridad (por ejemplo, dirección IP y hora de inicio de sesión) que generan nuestros proveedores para proteger el servicio.</li>
 </ul>
 <p>No pedimos ni tratamos datos bancarios, ni contraseñas de tu correo, ni datos especialmente protegidos.</p>
@@ -91,6 +92,8 @@ const LEGAL = {
 <li><b>Guardar una copia local de tus datos</b> para que la app cargue rápido y funcione aunque falle la conexión un momento. Es técnica y necesaria.</li>
 <li><b>Recordar tus preferencias de uso</b> dentro de la app. Es técnica y necesaria.</li>
 </ul>
+<h2>Estadísticas de visitas sin cookies</h2>
+<p>Para saber cuántas personas visitan la web y qué páginas leen usamos Vercel Web Analytics, que <b>no usa cookies</b>, no guarda tu dirección IP y no permite identificarte ni seguirte entre webs. Solo vemos datos agregados (por ejemplo, «120 visitas al blog hoy»).</p>
 <p>Esta información se queda en tu dispositivo y se borra al cerrar sesión, al eliminar tu cuenta o al limpiar los datos de navegación.</p>
 
 <h2>Servicios de terceros</h2>
