@@ -23,7 +23,7 @@ function footerHTML() {
     <div><img src="${LOGO}" alt="HorahFlow" style="height:26px;margin-bottom:14px"><p style="max-width:300px">Encuentra las fugas de dinero que no ves. Suscripciones, cobros recurrentes y gasto hormiga, en un solo panel.</p></div>
     <div><h4>Producto</h4><a href="#como-funciona">Cómo funciona</a><a href="#demo">Demo</a><a href="#precios">Precios</a><a href="#registro">Crear cuenta</a></div>
     <div><h4>Recursos</h4><a href="#blog">Blog</a>${POSTS.slice(0, 2).map(p => `<a href="#blog-${p.slug}">${esc(p.short)}</a>`).join('')}</div>
-    <div><h4>Legal</h4><a href="#privacidad">Privacidad</a><a href="#terminos">Términos</a><a href="mailto:gserrasentinella@gmail.com">gserrasentinella@gmail.com</a></div>
+    <div><h4>Legal</h4><a href="#privacidad">Privacidad</a><a href="#terminos">Términos</a><a href="mailto:hola@horahflow.com">hola@horahflow.com</a></div>
     <div class="legal"><span>© ${new Date().getFullYear()} HorahFlow · horahflow.com</span><span>Hecho en España</span></div>
   </div></footer>`;
 }
@@ -398,9 +398,9 @@ function renderLegal(which) {
       <h2>Qué datos tratamos</h2><ul><li>Tu nombre, correo y contraseña cifrada para gestionar tu cuenta.</li><li>De tu correo, solo los mensajes que parecen recibos, facturas o renovaciones: remitente, asunto, fecha y texto del recibo.</li></ul>
       <h2>Dónde se procesan</h2><p>El análisis de tus correos se realiza en tu navegador. De cada recibo detectado guardamos solo un fragmento (comercio, importe, fecha y frecuencia) en tu cuenta, alojada en servidores de Supabase en la Unión Europea (Frankfurt), para que puedas verlo desde cualquier dispositivo. Nunca guardamos tus correos completos ni los que no son recibos. El permiso de Google es de solo lectura y se revoca al terminar cada sincronización.</p>
       <h2>Pagos</h2><p>Los pagos los procesa Stripe. HorahFlow no ve ni guarda los datos de tu tarjeta.</p>
-      <h2>Responsable</h2><p>Guillem Serra Sentinella · gserrasentinella@gmail.com</p>
+      <h2>Responsable</h2><p>Guillem Serra Sentinella · hola@horahflow.com</p>
       <h2>Uso de datos de Google</h2><p>El uso que HorahFlow hace de la información recibida de las API de Google cumple la Política de Datos de Usuario de los Servicios API de Google, incluidos los requisitos de uso limitado. No usamos estos datos para publicidad ni los vendemos o cedemos a terceros.</p>
-      <h2>Tus derechos</h2><p>Puedes borrar tus datos o eliminar tu cuenta desde Ajustes en cualquier momento y retirar el acceso a Gmail desde tu cuenta de Google. Para ejercer tus derechos de acceso, rectificación o supresión, escribe a gserrasentinella@gmail.com.</p>` : `
+      <h2>Tus derechos</h2><p>Puedes borrar tus datos o eliminar tu cuenta desde Ajustes en cualquier momento y retirar el acceso a Gmail desde tu cuenta de Google. Para ejercer tus derechos de acceso, rectificación o supresión, escribe a hola@horahflow.com.</p>` : `
       <p>Al usar HorahFlow aceptas estas condiciones.</p>
       <h2>El servicio</h2><p>HorahFlow ofrece una estimación de tus gastos a partir de los recibos de tu correo. Es una herramienta informativa y no constituye asesoramiento financiero. Los importes pueden no recoger cobros que no generan recibo por correo.</p>
       <h2>Planes y pagos</h2><p>El plan Gratis no tiene coste. Los planes de pago se renuevan según el periodo elegido y puedes cancelarlos en cualquier momento desde tu panel; la cancelación es efectiva al final del periodo pagado.</p>

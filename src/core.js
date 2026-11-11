@@ -62,7 +62,8 @@ function loadScript(src) {
 }
 const cloud = () => !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
 const ERR_ES = m => /invalid login/i.test(m) ? 'Correo o contraseña incorrectos.' : /not confirmed/i.test(m) ? 'Aún no has confirmado tu correo. Revisa tu bandeja de entrada (y spam).'
-  : /already registered|already exists/i.test(m) ? 'Ya existe una cuenta con ese correo. Entra con tu contraseña.' : /rate limit|security purposes/i.test(m) ? 'Demasiados intentos. Espera un minuto y vuelve a probar.'
+  : /already registered|already exists/i.test(m) ? 'Ya existe una cuenta con ese correo. Entra con tu contraseña.' : /email rate limit|over_email_send/i.test(m) ? 'Ahora mismo no podemos enviar el correo de confirmación. Inténtalo de nuevo en unos minutos; si sigue fallando, escríbenos a hola@horahflow.com.'
+  : /rate limit|security purposes/i.test(m) ? 'Demasiados intentos seguidos. Espera un poco y vuelve a probar.'
   : /password/i.test(m) && /least|short|weak/i.test(m) ? 'La contraseña es demasiado débil (mínimo 8 caracteres).' : m;
 const siteBase = () => location.origin + location.pathname;
 
