@@ -114,6 +114,9 @@ function ringHTML(score) {
 }
 
 /* ---------- Flow: asistente ---------- */
+function mdLite(t) {
+  return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n- /g, '<br>• ').replace(/^- /, '• ').replace(/\n{2,}/g, '<br><br>').replace(/\n/g, '<br>');
+}
 function flowAnswer(q) {
   const a = Data.analysis, t = a.totals, s = q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   const list = arr => arr.map(x => `<b>${esc(x.merchant)}</b> ${fmt(x.amount)}`).join(', ');
@@ -235,12 +238,32 @@ function savingsHTML(a) {
     <div><div class="l">Ahorro potencial</div><div class="v num" style="font-size:44px">${fmt0(a.totals.yearlyPotential)} <span style="font-size:18px;color:#B9B6C9">al año</span></div><div class="s">${fmt(a.totals.potential)} al mes si cierras todas las brechas</div></div>
     <a class="btn btn-green" href="#app-suscripciones">Revisar suscripciones</a>
   </div>
+  <div class="card" id="ai-card" style="margin-bottom:16px">${aiAdviceHTML()}</div>
   <div class="grid-2">
     <div class="card"><h3>Todas las brechas <small>${a.leaks.length}</small></h3>${a.leaks.map(leakHTML).join('') || '<p class="hint">Sin brechas detectadas.</p>'}</div>
     <div class="card" style="align-self:start"><h3>Consejos para ti</h3>${a.tips.map(t => `<div class="tip"><span class="dot green">${I.leaf}</span><div><b>${esc(t.t)}</b><p>${esc(t.d)}</p></div></div>`).join('')}</div>
   </div>
   <h2 style="font-size:20px;letter-spacing:-.02em;margin:28px 0 14px">Alternativas a lo que pagas</h2>
   <div class="alts-grid">${withAlts.map(s => `<div class="alt-card"><div class="head">${logoSq(s.merchant)}<div><b>${esc(s.merchant)}</b><div class="hint">${E.CATS[s.cat].label}</div></div><div class="p num">${fmt(s.monthly)}<small>al mes</small></div></div>${s.alts.map(altHTML).join('')}</div>`).join('')}</div>`;
+}
+
+function aiAdviceHTML(loading) {
+  const adv = Data.state.prefs.aiAdvice;
+  const head = `<h3><span style="display:flex;gap:8px;align-items:center">${I.spark} Tu análisis personalizado</span>${adv ? `<small>${fmtDate(adv.at)}</small>` : ''}</h3>`;
+  if (!AI.available()) return head + `<p class="hint" style="font-size:15px">${Auth.user.demo ? 'Crea tu cuenta gratis para que la IA analice tus gastos y te diga por dónde empezar a ahorrar.' : 'Disponible con cuenta en horahflow.com.'}</p>`;
+  if (loading) return head + `<p class="hint">Analizando tus gastos…</p><div class="progress" style="width:100%;margin-top:10px"><i style="width:60%"></i></div>`;
+  if (adv) return head + `<div style="font-size:15px;line-height:1.7">${mdLite(adv.text)}</div><button class="btn btn-ghost btn-sm" id="ai-run" style="margin-top:14px">Actualizar análisis</button>`;
+  return head + `<p class="hint" style="font-size:15px;margin-bottom:14px">La IA revisa tus suscripciones y gastos y te dice qué cambiar primero y cuánto ahorrarías.</p><button class="btn btn-dark btn-sm" id="ai-run">${I.spark} Generar mi análisis</button>`;
+}
+async function runAdvice() {
+  const card = $('#ai-card'); card.innerHTML = aiAdviceHTML(true);
+  try {
+    const r = await AI.call({ action: 'advice', context: AI.context(Data.analysis) });
+    Data.state.prefs.aiAdvice = { text: r.advice, at: Date.now() }; Data.save();
+  } catch (e) {
+    toast(e.code === 'limit' ? 'Has llegado al límite de análisis de hoy en tu plan.' : e.code === 'not_configured' ? 'La IA se está activando. Vuelve a probar en un rato.' : 'No se pudo generar el análisis. Inténtalo de nuevo.', 4500);
+  }
+  card.innerHTML = aiAdviceHTML(); $('#ai-run')?.addEventListener('click', runAdvice);
 }
 
 /* ---------- Gastos ---------- */
@@ -322,7 +345,9 @@ async function connectGmail() {
     const r = await Gmail.connect((d, t, txt) => pm.set(d, t, txt));
     pm.close();
     if (!canAddMailbox(r.account)) return;
-    const added = Data.addEmails({ type: 'gmail', label: 'Gmail', account: r.account }, r.emails);
+    const pm2 = progressModal('Analizando tus recibos');
+    const added = await Data.addEmails({ type: 'gmail', label: 'Gmail', account: r.account }, r.emails, (d, t, txt) => pm2.set(d, t, txt));
+    pm2.close();
     toast(`${r.account}: ${added} recibos nuevos`); location.hash = 'app';
   } catch (e) { pm.close(); toast(e.message || 'No se pudo conectar con Gmail', 4000); }
 }
@@ -335,7 +360,7 @@ async function handleFiles(files) {
   try {
     pm.set(0, 0, 'Analizando…');
     const emails = await readFiles(files);
-    const added = Data.addEmails({ type: 'archivo', label: files.length === 1 ? files[0].name : `${files.length} archivos`, account }, emails);
+    const added = await Data.addEmails({ type: 'archivo', label: files.length === 1 ? files[0].name : `${files.length} archivos`, account }, emails, (d, t, txt) => pm.set(d, t, txt));
     pm.close();
     toast(added ? `${added} recibos encontrados en ${emails.length} correos` : `No hemos encontrado recibos en ${emails.length} correos`, 3500);
     if (added) location.hash = 'app'; else route();
@@ -347,10 +372,11 @@ function pasteModal() {
   modal(`<h2>Pegar recibos</h2><p class="hint" style="margin:6px 0 14px">Pega uno o varios correos. Separa cada uno con una línea <b>---</b>. Si incluyes las líneas «De:», «Asunto:» y «Fecha:» el análisis será más preciso.</p>
     <textarea class="input" id="p-txt" placeholder="De: Netflix <info@netflix.com>&#10;Asunto: Tu recibo&#10;Fecha: 05/11/2026&#10;Total: 13,99 €&#10;---&#10;De: Spotify…"></textarea>
     <button class="btn btn-dark btn-block" id="p-go" style="margin-top:14px">Analizar</button>`, (bg, close) => {
-    $('#p-go', bg).onclick = () => {
+    $('#p-go', bg).onclick = async () => {
       const txt = $('#p-txt', bg).value.trim(); if (!txt) return;
       const account = 'Recibos pegados';
-      const added = Data.addEmails({ type: 'pegado', label: 'Texto pegado', account }, E.parsePasted(txt));
+      $('#p-go', bg).disabled = true; $('#p-go', bg).textContent = 'Analizando…';
+      const added = await Data.addEmails({ type: 'pegado', label: 'Texto pegado', account }, E.parsePasted(txt));
       close(); toast(added ? `${added} recibos añadidos` : 'No hemos encontrado importes en el texto', 3500); route();
     };
   });
@@ -385,7 +411,7 @@ function confirmModal(title, text, label, fn) {
 
 /* ---------- Eventos ---------- */
 function bindAppView(view) {
-  $('#load-demo')?.addEventListener('click', () => { Data.addEmails({ type: 'demo', label: 'Bandeja de ejemplo', account: 'demo@horahflow.com' }, E.demoInbox()); toast('Datos de ejemplo cargados'); location.hash = 'app'; route(); });
+  $('#load-demo')?.addEventListener('click', async () => { await Data.addEmails({ type: 'demo', label: 'Bandeja de ejemplo', account: 'demo@horahflow.com' }, E.demoInbox()); toast('Datos de ejemplo cargados'); location.hash = 'app'; route(); });
   $$('[data-sub]').forEach(r => r.addEventListener('click', e => { if (e.target.closest('.seg')) return; subModal(r.dataset.sub); }));
   $$('[data-usage]').forEach(seg => seg.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
@@ -395,7 +421,19 @@ function bindAppView(view) {
   }));
   const ask = $('#ask');
   if (ask) {
-    const go = q => { if (!q.trim()) return; chatLog.push({ r: 'u', t: esc(q) }, { r: 'a', t: flowAnswer(q) }); chatLog = chatLog.slice(-10); const c = $('#chat'); c.innerHTML = chatLog.map(m => `<div class="msg ${m.r}">${m.t}</div>`).join(''); c.scrollTop = c.scrollHeight; $('#ask-q').value = ''; };
+    const paint = () => { const c = $('#chat'); if (!c) return; c.innerHTML = chatLog.map(m => `<div class="msg ${m.r}">${m.t}</div>`).join(''); c.scrollTop = c.scrollHeight; };
+    let busy = false;
+    const go = async q => {
+      if (!q.trim() || busy) return;
+      busy = true; $('#ask-q').value = '';
+      chatLog.push({ r: 'u', t: esc(q) });
+      if (AI.available()) {
+        const thinking = { r: 'a', t: '<span class="hint">Pensando…</span>' }; chatLog.push(thinking); paint();
+        try { const r = await AI.call({ action: 'ask', question: q, context: AI.context(Data.analysis) }); thinking.t = mdLite(r.answer || ''); }
+        catch (e) { thinking.t = (e.code === 'limit' ? '<span class="hint">Has usado todas las preguntas a la IA de hoy en tu plan. Te respondo con lo básico:</span><br>' : '') + flowAnswer(q); }
+      } else chatLog.push({ r: 'a', t: flowAnswer(q) });
+      chatLog = chatLog.slice(-10); paint(); busy = false;
+    };
     ask.onsubmit = e => { e.preventDefault(); go($('#ask-q').value); };
     $$('.suggest button').forEach(b => b.onclick = () => go(b.dataset.q));
   }
@@ -405,6 +443,7 @@ function bindAppView(view) {
   $('#cal-prev')?.addEventListener('click', () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1); route(); });
   $('#cal-next')?.addEventListener('click', () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1); route(); });
   $('#export')?.addEventListener('click', exportCSV);
+  $('#ai-run')?.addEventListener('click', runAdvice);
   $('#c-gmail')?.addEventListener('click', connectGmail);
   $('#c-paste')?.addEventListener('click', pasteModal);
   $('#c-file')?.addEventListener('change', e => handleFiles([...e.target.files]));

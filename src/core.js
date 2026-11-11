@@ -236,22 +236,42 @@ const Data = {
     this.analysis = E.analyze(emails, this.state.prefs);
     this.state.sources.forEach(s => s.count = this.state.emails.filter(e => e.sourceId === s.id || (s.type === 'demo' && e.source === 'demo')).length);
   },
-  addEmails(source, emails) {
+  async addEmails(source, emails, onProgress) {
     const existing = this.state.sources.find(s => s.type === source.type && s.account && s.account === source.account);
     const src = existing || Object.assign({ id: rid(), added: Date.now() }, source);
     if (!existing) this.state.sources.push(src);
     src.updated = Date.now();
     const seen = new Set(this.state.emails.map(e => (e.id || '') + '|' + e.subject + '|' + e.date));
-    let added = 0;
+    let added = 0, aiAdded = 0;
+    const doubtful = [];
     for (const e of emails) {
       const m = { id: e.id, from: e.from, subject: e.subject, date: e.date, body: receiptSnippet(e.body), source: src.type, sourceId: src.id, account: source.account || '' };
       const k = (m.id || '') + '|' + m.subject + '|' + m.date;
       if (seen.has(k)) continue; seen.add(k);
       // Solo se guardan correos que parecen gastos: nunca el buzón completo
-      if (!E.toCharge(Object.assign({}, m, { body: e.body }))) continue;
-      this.state.emails.push(m); added++;
+      if (E.toCharge(Object.assign({}, m, { body: e.body }))) { this.state.emails.push(m); added++; }
+      else if (E.maybeReceipt(e)) doubtful.push({ e, m });
     }
-    this.save(); return added;
+    // Los recibos que las reglas no saben leer se los pasamos a la IA (solo el fragmento del recibo)
+    if (doubtful.length && Auth.user && Auth.user.cloud) {
+      const batch = doubtful.sort((a, b) => new Date(b.e.date) - new Date(a.e.date)).slice(0, 40);
+      onProgress && onProgress(0, 0, `Leyendo con IA ${batch.length} recibos poco habituales…`);
+      try {
+        const res = await AI.call({ action: 'parse', items: batch.map(x => ({ from: x.e.from, subject: x.e.subject, date: x.e.date, text: receiptSnippet(x.e.body) })) });
+        const CY = { weekly: 'semanal', monthly: 'mensual', quarterly: 'trimestral', yearly: 'anual' };
+        for (const r of (res.results || [])) {
+          const x = batch[r.i]; if (!x) continue;
+          const amt = String(r.amount.toFixed(2)).replace('.', ',') + ' ' + (r.currency === 'EUR' ? '€' : r.currency);
+          const m = Object.assign({}, x.m, {
+            from: `${r.merchant} <${(x.e.from.match(/<([^>]+)>/) || [, ''])[1]}>`,
+            body: `${r.merchant}. Recibo. Total: ${amt}.${r.recurring ? ' Suscripción ' + (CY[r.cycle] || 'mensual') + '.' : ''}`,
+            cat: r.category, ai: true
+          });
+          if (E.toCharge(m)) { this.state.emails.push(m); aiAdded++; }
+        }
+      } catch (err) { console.warn('IA no disponible', err.message); }
+    }
+    this.save(); return added + aiAdded;
   },
   removeSource(id) {
     const s = this.state.sources.find(x => x.id === id);
@@ -270,6 +290,40 @@ function newPasswordModal() {
     $('#np-go', bg).onclick = async () => { try { await Auth.setPassword($('#np', bg).value); close(); toast('Contraseña actualizada'); Auth.recovery = false; } catch (e) { $('#np-e', bg).textContent = e.message; } };
   });
 }
+
+/* ---------- IA (Claude, en el servidor) ---------- */
+const AI = {
+  available() { return !!(Auth.user && Auth.user.cloud); },
+  async call(payload) {
+    const sb = await getSupabase();
+    if (!sb || !this.available()) throw Object.assign(new Error('local'), { code: 'local' });
+    const { data, error } = await sb.functions.invoke('ai', { body: payload });
+    if (error) {
+      let code = 'ai_error';
+      try { const j = await error.context.json(); code = j.error || code; } catch {}
+      throw Object.assign(new Error(code), { code });
+    }
+    return data;
+  },
+  /** Resumen compacto de los gastos (sin correos ni textos de recibos) */
+  context(a) {
+    const r2 = n => Math.round(n * 100) / 100, d = x => new Date(x).toISOString().slice(0, 10);
+    const recentOne = {};
+    const since = Date.now() - 90 * 864e5;
+    a.oneoffs.filter(c => +c.date >= since).forEach(c => { const o = recentOne[c.merchant] = recentOne[c.merchant] || { comercio: c.merchant, categoria: E.CATS[c.cat].label, total_3m: 0, cargos: 0 }; o.total_3m = r2(o.total_3m + c.amount); o.cargos++; });
+    return {
+      hoy: d(Date.now()),
+      totales: { suscripciones_mes: a.totals.monthlyRec, suscripciones_año: a.totals.yearlyRec, gasto_variable_mes: a.totals.oneMonthly, total_mes: a.totals.monthlyAll, ahorro_posible_mes: a.totals.potential, nota_salud: a.totals.score },
+      suscripciones: a.subs.map(s => ({ servicio: s.merchant, importe: s.amount, ciclo: s.cycle, al_mes: s.monthly, categoria: E.CATS[s.cat].label, estado: s.status, proximo_cobro: s.status === 'activa' ? d(s.next) : null,
+        desde: d(s.first), veces_cobrado: s.count, subida_precio: s.priceUp ? { de: s.priceUp.from, a: s.priceUp.to } : null, era_prueba: s.trial || undefined, uso_declarado: s.usage || undefined,
+        alternativas: (s.alts || []).map(x => x.n).slice(0, 3) })),
+      gasto_variable_ultimos_3_meses: Object.values(recentOne).sort((x, y) => y.total_3m - x.total_3m).slice(0, 15),
+      por_categoria_mes: a.categories.map(c => ({ categoria: c.label, al_mes: c.value })),
+      brechas: a.leaks.map(l => ({ tipo: l.type, titulo: l.title, detalle: l.detail, ahorro_mes: l.saving || 0 })),
+      ultimos_meses: a.months.map(m => ({ mes: m.label + ' ' + m.y, total: m.total, recurrente: m.rec, variable: m.one, en_curso: !!m.partial }))
+    };
+  }
+};
 
 /* ---------- Gmail (OAuth en el navegador, solo lectura) ---------- */
 const Gmail = {

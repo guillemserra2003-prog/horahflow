@@ -639,7 +639,7 @@ window.HF_LOGO_FULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAtAAAAFYCAY
     }
     const amt = extractAmount(text);
     if (!amt) return null;
-    const cat = svc ? svc.cat : guessCat(text);
+    const cat = (email.cat && CATS[email.cat]) ? email.cat : (svc ? svc.cat : guessCat(text));
     const recurringHint = (svc && svc.rec) || RX_RECUR.test(text);
     let cycleHint = null;
     if (/anual|annual|yearly|al año|per year|\/año|\/year/i.test(text)) cycleHint = 'yearly';
@@ -653,6 +653,15 @@ window.HF_LOGO_FULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAtAAAAFYCAY
       recurringHint, cycleHint, trial: RX_TRIAL.test(text),
       subject, source: email.source || 'correo', account: email.account || ''
     };
+  }
+
+  /** ¿Parece un recibo aunque las reglas no sepan leerlo? (candidato para la IA) */
+  function maybeReceipt(email) {
+    const text = `${email.subject || ''} . ${(email.body || '').replace(/\s+/g, ' ')}`;
+    if (RX_REFUND.test(email.subject || '')) return false;
+    if (!RX_RECEIPT.test(text)) return false;
+    if (RX_MARKETING.test(text) && !/recibo|factura|receipt|invoice|cargo|charged/i.test(text)) return false;
+    return !toCharge(email);
   }
 
   function addCycle(d, cycle, n = 1) {
@@ -1007,7 +1016,7 @@ window.HF_LOGO_FULL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAtAAAAFYCAY
     return E.filter(e => new Date(e.date) <= now);
   }
 
-  global.HFEngine = { analyze, toCharge, parseEml, parseMbox, parsePasted, htmlToText, demoInbox, extractAmount, CATS, CYCLE, CATALOG, fmt, fmtDate };
+  global.HFEngine = { analyze, toCharge, maybeReceipt, parseEml, parseMbox, parsePasted, htmlToText, demoInbox, extractAmount, CATS, CYCLE, CATALOG, fmt, fmtDate };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -1250,22 +1259,42 @@ const Data = {
     this.analysis = E.analyze(emails, this.state.prefs);
     this.state.sources.forEach(s => s.count = this.state.emails.filter(e => e.sourceId === s.id || (s.type === 'demo' && e.source === 'demo')).length);
   },
-  addEmails(source, emails) {
+  async addEmails(source, emails, onProgress) {
     const existing = this.state.sources.find(s => s.type === source.type && s.account && s.account === source.account);
     const src = existing || Object.assign({ id: rid(), added: Date.now() }, source);
     if (!existing) this.state.sources.push(src);
     src.updated = Date.now();
     const seen = new Set(this.state.emails.map(e => (e.id || '') + '|' + e.subject + '|' + e.date));
-    let added = 0;
+    let added = 0, aiAdded = 0;
+    const doubtful = [];
     for (const e of emails) {
       const m = { id: e.id, from: e.from, subject: e.subject, date: e.date, body: receiptSnippet(e.body), source: src.type, sourceId: src.id, account: source.account || '' };
       const k = (m.id || '') + '|' + m.subject + '|' + m.date;
       if (seen.has(k)) continue; seen.add(k);
       // Solo se guardan correos que parecen gastos: nunca el buzón completo
-      if (!E.toCharge(Object.assign({}, m, { body: e.body }))) continue;
-      this.state.emails.push(m); added++;
+      if (E.toCharge(Object.assign({}, m, { body: e.body }))) { this.state.emails.push(m); added++; }
+      else if (E.maybeReceipt(e)) doubtful.push({ e, m });
     }
-    this.save(); return added;
+    // Los recibos que las reglas no saben leer se los pasamos a la IA (solo el fragmento del recibo)
+    if (doubtful.length && Auth.user && Auth.user.cloud) {
+      const batch = doubtful.sort((a, b) => new Date(b.e.date) - new Date(a.e.date)).slice(0, 40);
+      onProgress && onProgress(0, 0, `Leyendo con IA ${batch.length} recibos poco habituales…`);
+      try {
+        const res = await AI.call({ action: 'parse', items: batch.map(x => ({ from: x.e.from, subject: x.e.subject, date: x.e.date, text: receiptSnippet(x.e.body) })) });
+        const CY = { weekly: 'semanal', monthly: 'mensual', quarterly: 'trimestral', yearly: 'anual' };
+        for (const r of (res.results || [])) {
+          const x = batch[r.i]; if (!x) continue;
+          const amt = String(r.amount.toFixed(2)).replace('.', ',') + ' ' + (r.currency === 'EUR' ? '€' : r.currency);
+          const m = Object.assign({}, x.m, {
+            from: `${r.merchant} <${(x.e.from.match(/<([^>]+)>/) || [, ''])[1]}>`,
+            body: `${r.merchant}. Recibo. Total: ${amt}.${r.recurring ? ' Suscripción ' + (CY[r.cycle] || 'mensual') + '.' : ''}`,
+            cat: r.category, ai: true
+          });
+          if (E.toCharge(m)) { this.state.emails.push(m); aiAdded++; }
+        }
+      } catch (err) { console.warn('IA no disponible', err.message); }
+    }
+    this.save(); return added + aiAdded;
   },
   removeSource(id) {
     const s = this.state.sources.find(x => x.id === id);
@@ -1284,6 +1313,40 @@ function newPasswordModal() {
     $('#np-go', bg).onclick = async () => { try { await Auth.setPassword($('#np', bg).value); close(); toast('Contraseña actualizada'); Auth.recovery = false; } catch (e) { $('#np-e', bg).textContent = e.message; } };
   });
 }
+
+/* ---------- IA (Claude, en el servidor) ---------- */
+const AI = {
+  available() { return !!(Auth.user && Auth.user.cloud); },
+  async call(payload) {
+    const sb = await getSupabase();
+    if (!sb || !this.available()) throw Object.assign(new Error('local'), { code: 'local' });
+    const { data, error } = await sb.functions.invoke('ai', { body: payload });
+    if (error) {
+      let code = 'ai_error';
+      try { const j = await error.context.json(); code = j.error || code; } catch {}
+      throw Object.assign(new Error(code), { code });
+    }
+    return data;
+  },
+  /** Resumen compacto de los gastos (sin correos ni textos de recibos) */
+  context(a) {
+    const r2 = n => Math.round(n * 100) / 100, d = x => new Date(x).toISOString().slice(0, 10);
+    const recentOne = {};
+    const since = Date.now() - 90 * 864e5;
+    a.oneoffs.filter(c => +c.date >= since).forEach(c => { const o = recentOne[c.merchant] = recentOne[c.merchant] || { comercio: c.merchant, categoria: E.CATS[c.cat].label, total_3m: 0, cargos: 0 }; o.total_3m = r2(o.total_3m + c.amount); o.cargos++; });
+    return {
+      hoy: d(Date.now()),
+      totales: { suscripciones_mes: a.totals.monthlyRec, suscripciones_año: a.totals.yearlyRec, gasto_variable_mes: a.totals.oneMonthly, total_mes: a.totals.monthlyAll, ahorro_posible_mes: a.totals.potential, nota_salud: a.totals.score },
+      suscripciones: a.subs.map(s => ({ servicio: s.merchant, importe: s.amount, ciclo: s.cycle, al_mes: s.monthly, categoria: E.CATS[s.cat].label, estado: s.status, proximo_cobro: s.status === 'activa' ? d(s.next) : null,
+        desde: d(s.first), veces_cobrado: s.count, subida_precio: s.priceUp ? { de: s.priceUp.from, a: s.priceUp.to } : null, era_prueba: s.trial || undefined, uso_declarado: s.usage || undefined,
+        alternativas: (s.alts || []).map(x => x.n).slice(0, 3) })),
+      gasto_variable_ultimos_3_meses: Object.values(recentOne).sort((x, y) => y.total_3m - x.total_3m).slice(0, 15),
+      por_categoria_mes: a.categories.map(c => ({ categoria: c.label, al_mes: c.value })),
+      brechas: a.leaks.map(l => ({ tipo: l.type, titulo: l.title, detalle: l.detail, ahorro_mes: l.saving || 0 })),
+      ultimos_meses: a.months.map(m => ({ mes: m.label + ' ' + m.y, total: m.total, recurrente: m.rec, variable: m.one, en_curso: !!m.partial }))
+    };
+  }
+};
 
 /* ---------- Gmail (OAuth en el navegador, solo lectura) ---------- */
 const Gmail = {
@@ -1814,6 +1877,7 @@ function renderLegal(which) {
       <p>HorahFlow analiza recibos y facturas de tu correo para mostrarte tus gastos recurrentes. Esta página explica qué datos usamos y cómo.</p>
       <h2>Qué datos tratamos</h2><ul><li>Tu nombre, correo y contraseña cifrada para gestionar tu cuenta.</li><li>De tu correo, solo los mensajes que parecen recibos, facturas o renovaciones: remitente, asunto, fecha y texto del recibo.</li></ul>
       <h2>Dónde se procesan</h2><p>El análisis de tus correos se realiza en tu navegador. De cada recibo detectado guardamos solo un fragmento (comercio, importe, fecha y frecuencia) en tu cuenta, alojada en servidores de Supabase en la Unión Europea (Frankfurt), para que puedas verlo desde cualquier dispositivo. Nunca guardamos tus correos completos ni los que no son recibos. El permiso de Google es de solo lectura y se revoca al terminar cada sincronización.</p>
+      <h2>Inteligencia artificial</h2><p>Para responder a tus preguntas, generar tu análisis personalizado y leer recibos poco habituales usamos la IA de Anthropic (Claude) desde nuestro servidor. Solo le enviamos un resumen de tus gastos o el fragmento del recibo, nunca tus correos completos. Anthropic actúa como encargado del tratamiento y no utiliza estos datos para entrenar sus modelos.</p>
       <h2>Pagos</h2><p>Los pagos los procesa Stripe. HorahFlow no ve ni guarda los datos de tu tarjeta.</p>
       <h2>Responsable</h2><p>Guillem Serra Sentinella · hola@horahflow.com</p>
       <h2>Uso de datos de Google</h2><p>El uso que HorahFlow hace de la información recibida de las API de Google cumple la Política de Datos de Usuario de los Servicios API de Google, incluidos los requisitos de uso limitado. No usamos estos datos para publicidad ni los vendemos o cedemos a terceros.</p>
@@ -1942,6 +2006,9 @@ function ringHTML(score) {
 }
 
 /* ---------- Flow: asistente ---------- */
+function mdLite(t) {
+  return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n- /g, '<br>• ').replace(/^- /, '• ').replace(/\n{2,}/g, '<br><br>').replace(/\n/g, '<br>');
+}
 function flowAnswer(q) {
   const a = Data.analysis, t = a.totals, s = q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   const list = arr => arr.map(x => `<b>${esc(x.merchant)}</b> ${fmt(x.amount)}`).join(', ');
@@ -2063,12 +2130,32 @@ function savingsHTML(a) {
     <div><div class="l">Ahorro potencial</div><div class="v num" style="font-size:44px">${fmt0(a.totals.yearlyPotential)} <span style="font-size:18px;color:#B9B6C9">al año</span></div><div class="s">${fmt(a.totals.potential)} al mes si cierras todas las brechas</div></div>
     <a class="btn btn-green" href="#app-suscripciones">Revisar suscripciones</a>
   </div>
+  <div class="card" id="ai-card" style="margin-bottom:16px">${aiAdviceHTML()}</div>
   <div class="grid-2">
     <div class="card"><h3>Todas las brechas <small>${a.leaks.length}</small></h3>${a.leaks.map(leakHTML).join('') || '<p class="hint">Sin brechas detectadas.</p>'}</div>
     <div class="card" style="align-self:start"><h3>Consejos para ti</h3>${a.tips.map(t => `<div class="tip"><span class="dot green">${I.leaf}</span><div><b>${esc(t.t)}</b><p>${esc(t.d)}</p></div></div>`).join('')}</div>
   </div>
   <h2 style="font-size:20px;letter-spacing:-.02em;margin:28px 0 14px">Alternativas a lo que pagas</h2>
   <div class="alts-grid">${withAlts.map(s => `<div class="alt-card"><div class="head">${logoSq(s.merchant)}<div><b>${esc(s.merchant)}</b><div class="hint">${E.CATS[s.cat].label}</div></div><div class="p num">${fmt(s.monthly)}<small>al mes</small></div></div>${s.alts.map(altHTML).join('')}</div>`).join('')}</div>`;
+}
+
+function aiAdviceHTML(loading) {
+  const adv = Data.state.prefs.aiAdvice;
+  const head = `<h3><span style="display:flex;gap:8px;align-items:center">${I.spark} Tu análisis personalizado</span>${adv ? `<small>${fmtDate(adv.at)}</small>` : ''}</h3>`;
+  if (!AI.available()) return head + `<p class="hint" style="font-size:15px">${Auth.user.demo ? 'Crea tu cuenta gratis para que la IA analice tus gastos y te diga por dónde empezar a ahorrar.' : 'Disponible con cuenta en horahflow.com.'}</p>`;
+  if (loading) return head + `<p class="hint">Analizando tus gastos…</p><div class="progress" style="width:100%;margin-top:10px"><i style="width:60%"></i></div>`;
+  if (adv) return head + `<div style="font-size:15px;line-height:1.7">${mdLite(adv.text)}</div><button class="btn btn-ghost btn-sm" id="ai-run" style="margin-top:14px">Actualizar análisis</button>`;
+  return head + `<p class="hint" style="font-size:15px;margin-bottom:14px">La IA revisa tus suscripciones y gastos y te dice qué cambiar primero y cuánto ahorrarías.</p><button class="btn btn-dark btn-sm" id="ai-run">${I.spark} Generar mi análisis</button>`;
+}
+async function runAdvice() {
+  const card = $('#ai-card'); card.innerHTML = aiAdviceHTML(true);
+  try {
+    const r = await AI.call({ action: 'advice', context: AI.context(Data.analysis) });
+    Data.state.prefs.aiAdvice = { text: r.advice, at: Date.now() }; Data.save();
+  } catch (e) {
+    toast(e.code === 'limit' ? 'Has llegado al límite de análisis de hoy en tu plan.' : e.code === 'not_configured' ? 'La IA se está activando. Vuelve a probar en un rato.' : 'No se pudo generar el análisis. Inténtalo de nuevo.', 4500);
+  }
+  card.innerHTML = aiAdviceHTML(); $('#ai-run')?.addEventListener('click', runAdvice);
 }
 
 /* ---------- Gastos ---------- */
@@ -2150,7 +2237,9 @@ async function connectGmail() {
     const r = await Gmail.connect((d, t, txt) => pm.set(d, t, txt));
     pm.close();
     if (!canAddMailbox(r.account)) return;
-    const added = Data.addEmails({ type: 'gmail', label: 'Gmail', account: r.account }, r.emails);
+    const pm2 = progressModal('Analizando tus recibos');
+    const added = await Data.addEmails({ type: 'gmail', label: 'Gmail', account: r.account }, r.emails, (d, t, txt) => pm2.set(d, t, txt));
+    pm2.close();
     toast(`${r.account}: ${added} recibos nuevos`); location.hash = 'app';
   } catch (e) { pm.close(); toast(e.message || 'No se pudo conectar con Gmail', 4000); }
 }
@@ -2163,7 +2252,7 @@ async function handleFiles(files) {
   try {
     pm.set(0, 0, 'Analizando…');
     const emails = await readFiles(files);
-    const added = Data.addEmails({ type: 'archivo', label: files.length === 1 ? files[0].name : `${files.length} archivos`, account }, emails);
+    const added = await Data.addEmails({ type: 'archivo', label: files.length === 1 ? files[0].name : `${files.length} archivos`, account }, emails, (d, t, txt) => pm.set(d, t, txt));
     pm.close();
     toast(added ? `${added} recibos encontrados en ${emails.length} correos` : `No hemos encontrado recibos en ${emails.length} correos`, 3500);
     if (added) location.hash = 'app'; else route();
@@ -2175,10 +2264,11 @@ function pasteModal() {
   modal(`<h2>Pegar recibos</h2><p class="hint" style="margin:6px 0 14px">Pega uno o varios correos. Separa cada uno con una línea <b>---</b>. Si incluyes las líneas «De:», «Asunto:» y «Fecha:» el análisis será más preciso.</p>
     <textarea class="input" id="p-txt" placeholder="De: Netflix <info@netflix.com>&#10;Asunto: Tu recibo&#10;Fecha: 05/11/2026&#10;Total: 13,99 €&#10;---&#10;De: Spotify…"></textarea>
     <button class="btn btn-dark btn-block" id="p-go" style="margin-top:14px">Analizar</button>`, (bg, close) => {
-    $('#p-go', bg).onclick = () => {
+    $('#p-go', bg).onclick = async () => {
       const txt = $('#p-txt', bg).value.trim(); if (!txt) return;
       const account = 'Recibos pegados';
-      const added = Data.addEmails({ type: 'pegado', label: 'Texto pegado', account }, E.parsePasted(txt));
+      $('#p-go', bg).disabled = true; $('#p-go', bg).textContent = 'Analizando…';
+      const added = await Data.addEmails({ type: 'pegado', label: 'Texto pegado', account }, E.parsePasted(txt));
       close(); toast(added ? `${added} recibos añadidos` : 'No hemos encontrado importes en el texto', 3500); route();
     };
   });
@@ -2213,7 +2303,7 @@ function confirmModal(title, text, label, fn) {
 
 /* ---------- Eventos ---------- */
 function bindAppView(view) {
-  $('#load-demo')?.addEventListener('click', () => { Data.addEmails({ type: 'demo', label: 'Bandeja de ejemplo', account: 'demo@horahflow.com' }, E.demoInbox()); toast('Datos de ejemplo cargados'); location.hash = 'app'; route(); });
+  $('#load-demo')?.addEventListener('click', async () => { await Data.addEmails({ type: 'demo', label: 'Bandeja de ejemplo', account: 'demo@horahflow.com' }, E.demoInbox()); toast('Datos de ejemplo cargados'); location.hash = 'app'; route(); });
   $$('[data-sub]').forEach(r => r.addEventListener('click', e => { if (e.target.closest('.seg')) return; subModal(r.dataset.sub); }));
   $$('[data-usage]').forEach(seg => seg.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
@@ -2223,7 +2313,19 @@ function bindAppView(view) {
   }));
   const ask = $('#ask');
   if (ask) {
-    const go = q => { if (!q.trim()) return; chatLog.push({ r: 'u', t: esc(q) }, { r: 'a', t: flowAnswer(q) }); chatLog = chatLog.slice(-10); const c = $('#chat'); c.innerHTML = chatLog.map(m => `<div class="msg ${m.r}">${m.t}</div>`).join(''); c.scrollTop = c.scrollHeight; $('#ask-q').value = ''; };
+    const paint = () => { const c = $('#chat'); if (!c) return; c.innerHTML = chatLog.map(m => `<div class="msg ${m.r}">${m.t}</div>`).join(''); c.scrollTop = c.scrollHeight; };
+    let busy = false;
+    const go = async q => {
+      if (!q.trim() || busy) return;
+      busy = true; $('#ask-q').value = '';
+      chatLog.push({ r: 'u', t: esc(q) });
+      if (AI.available()) {
+        const thinking = { r: 'a', t: '<span class="hint">Pensando…</span>' }; chatLog.push(thinking); paint();
+        try { const r = await AI.call({ action: 'ask', question: q, context: AI.context(Data.analysis) }); thinking.t = mdLite(r.answer || ''); }
+        catch (e) { thinking.t = (e.code === 'limit' ? '<span class="hint">Has usado todas las preguntas a la IA de hoy en tu plan. Te respondo con lo básico:</span><br>' : '') + flowAnswer(q); }
+      } else chatLog.push({ r: 'a', t: flowAnswer(q) });
+      chatLog = chatLog.slice(-10); paint(); busy = false;
+    };
     ask.onsubmit = e => { e.preventDefault(); go($('#ask-q').value); };
     $$('.suggest button').forEach(b => b.onclick = () => go(b.dataset.q));
   }
@@ -2233,6 +2335,7 @@ function bindAppView(view) {
   $('#cal-prev')?.addEventListener('click', () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1); route(); });
   $('#cal-next')?.addEventListener('click', () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1); route(); });
   $('#export')?.addEventListener('click', exportCSV);
+  $('#ai-run')?.addEventListener('click', runAdvice);
   $('#c-gmail')?.addEventListener('click', connectGmail);
   $('#c-paste')?.addEventListener('click', pasteModal);
   $('#c-file')?.addEventListener('change', e => handleFiles([...e.target.files]));

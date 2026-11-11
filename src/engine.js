@@ -227,7 +227,7 @@
     }
     const amt = extractAmount(text);
     if (!amt) return null;
-    const cat = svc ? svc.cat : guessCat(text);
+    const cat = (email.cat && CATS[email.cat]) ? email.cat : (svc ? svc.cat : guessCat(text));
     const recurringHint = (svc && svc.rec) || RX_RECUR.test(text);
     let cycleHint = null;
     if (/anual|annual|yearly|al año|per year|\/año|\/year/i.test(text)) cycleHint = 'yearly';
@@ -241,6 +241,15 @@
       recurringHint, cycleHint, trial: RX_TRIAL.test(text),
       subject, source: email.source || 'correo', account: email.account || ''
     };
+  }
+
+  /** ¿Parece un recibo aunque las reglas no sepan leerlo? (candidato para la IA) */
+  function maybeReceipt(email) {
+    const text = `${email.subject || ''} . ${(email.body || '').replace(/\s+/g, ' ')}`;
+    if (RX_REFUND.test(email.subject || '')) return false;
+    if (!RX_RECEIPT.test(text)) return false;
+    if (RX_MARKETING.test(text) && !/recibo|factura|receipt|invoice|cargo|charged/i.test(text)) return false;
+    return !toCharge(email);
   }
 
   function addCycle(d, cycle, n = 1) {
@@ -595,5 +604,5 @@
     return E.filter(e => new Date(e.date) <= now);
   }
 
-  global.HFEngine = { analyze, toCharge, parseEml, parseMbox, parsePasted, htmlToText, demoInbox, extractAmount, CATS, CYCLE, CATALOG, fmt, fmtDate };
+  global.HFEngine = { analyze, toCharge, maybeReceipt, parseEml, parseMbox, parsePasted, htmlToText, demoInbox, extractAmount, CATS, CYCLE, CATALOG, fmt, fmtDate };
 })(typeof window !== 'undefined' ? window : globalThis);
