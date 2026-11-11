@@ -177,6 +177,9 @@ const card = p => `<a class="post-card" href="/blog/${p.slug}/">${imgTag(p.image
 /* ---------- construir ---------- */
 fs.rmSync(DIST, { recursive: true, force: true });
 copyDir(path.join(ROOT, "public"), DIST);
+// El motor también se publica suelto: lo usan las funciones del servidor (avisos y reenvíos), que comprueban su huella SHA-256
+fs.mkdirSync(path.join(DIST, "server"), { recursive: true });
+fs.copyFileSync(path.join(ROOT, "src", "engine.js"), path.join(DIST, "server", "engine.js"));
 write(path.join(DIST, "assets/site.css"), STYLES);
 
 // 1) Portada + app
