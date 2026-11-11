@@ -94,7 +94,7 @@ h2.title{font-size:clamp(30px,3.6vw,44px);letter-spacing:-.03em;line-height:1.1;
 .feature p{color:var(--muted);font-size:15px}
 
 /* Demo */
-.demo{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:stretch}
+.demo{display:grid;grid-template-columns:minmax(340px,5fr) 7fr;gap:24px;align-items:stretch}
 .inbox{border:1px solid var(--line);border-radius:var(--r);background:#fff;overflow:hidden;display:flex;flex-direction:column}
 .inbox-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-weight:700}
 .inbox-list{max-height:430px;overflow:auto}
@@ -291,10 +291,10 @@ textarea.input{height:auto;min-height:150px;padding:12px 14px;resize:vertical;fo
 .alt-card .head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .alt-card .head .p{margin-left:auto;text-align:right;font-weight:800}
 .alt-card .head .p small{display:block;color:var(--faint);font-weight:600;font-size:12px}
-.alt{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:14px;align-items:flex-start}
-.alt b{display:block}
-.alt p{color:var(--muted)}
-.alt .free{margin-left:auto;font-size:12px;font-weight:800;color:var(--green);background:var(--green-soft);padding:3px 8px;border-radius:99px;white-space:nowrap}
+.alt-row{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:14px;align-items:flex-start}
+.alt-row b{display:block}
+.alt-row p{color:var(--muted)}
+.alt-row .free{margin-left:auto;font-size:12px;font-weight:800;color:var(--green);background:var(--green-soft);padding:3px 8px;border-radius:99px;white-space:nowrap}
 .alts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
 .tip{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
 .tip:last-child{border:0}

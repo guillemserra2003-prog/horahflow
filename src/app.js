@@ -263,7 +263,7 @@ function subModal(key) {
   });
 }
 function altHTML(x) {
-  return `<div class="alt"><div><b>${x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener" style="border-bottom:1px solid var(--line-2)">${esc(x.n)}</a>` : esc(x.n)}</b><p>${esc(x.d)}</p></div>${x.u ? '<span class="free">Gratis</span>' : ''}</div>`;
+  return `<div class="alt-row"><div><b>${x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener" style="border-bottom:1px solid var(--line-2)">${esc(x.n)}</a>` : esc(x.n)}</b><p>${esc(x.d)}</p></div>${x.u ? '<span class="free">Gratis</span>' : ''}</div>`;
 }
 
 /* ---------- Calendario ---------- */
