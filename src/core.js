@@ -161,7 +161,7 @@ const Auth = {
   exitDemo() { this.user = this.prev || null; this.prev = null; },
   logout() {
     const wasCloud = this.user?.cloud;
-    Store.del('hf:session'); this.user = null; Data.state = null;
+    Store.del('hf:session'); this.user = null; Data.state = null; Inbound.stop();
     if (wasCloud) getSupabase().then(sb => sb && sb.auth.signOut()).catch(() => {});
   },
   async update(patch) {
@@ -296,7 +296,7 @@ const Data = {
     this.state.emails = this.state.emails.filter(e => e.sourceId !== id && !(s && s.type === 'demo' && e.source === 'demo'));
     this.save();
   },
-  mailboxCount() { return new Set(this.state.sources.filter(s => s.type === 'gmail').map(s => s.account)).size; },
+  mailboxCount() { return Inbound.addresses.length; },
   wipe() { this.state = emptyState(); this.save(); }
 };
 
@@ -340,6 +340,84 @@ const AI = {
       ultimos_meses: a.months.map(m => ({ mes: m.label + ' ' + m.y, total: m.total, recurrente: m.rec, variable: m.one, en_curso: !!m.partial }))
     };
   }
+};
+
+/* ---------- Reenvío de recibos: direcciones privadas <token>@recibos.horahflow.com ---------- */
+const INBOUND_DOMAIN = 'recibos.horahflow.com';
+const Inbound = {
+  addresses: [], loaded: false, _busy: false, _timer: null, lastSync: 0,
+  email(a) { return a.token + '@' + INBOUND_DOMAIN; },
+  available() { return !!(Auth.user && Auth.user.cloud); },
+  async load() {
+    if (!this.available()) { this.addresses = []; this.loaded = true; return this.addresses; }
+    const sb = await getSupabase();
+    const { data, error } = await sb.from('inbound_addresses').select('*').order('created_at');
+    if (error) throw new Error(ERR_ES(error.message));
+    this.addresses = data || []; this.loaded = true; return this.addresses;
+  },
+  async create(label) {
+    const sb = await getSupabase();
+    const { data, error } = await sb.rpc('create_inbound_address', { p_label: label || 'Mi correo' });
+    if (error) {
+      if (/mailbox_limit/.test(error.message)) throw Object.assign(new Error('Has llegado al límite de direcciones de tu plan.'), { code: 'limit' });
+      throw new Error(ERR_ES(error.message));
+    }
+    await this.load(); return data;
+  },
+  async rename(id, label) {
+    const sb = await getSupabase();
+    const { error } = await sb.from('inbound_addresses').update({ label: String(label).trim().slice(0, 40) || 'Mi correo' }).eq('id', id);
+    if (error) throw new Error(ERR_ES(error.message));
+    await this.load();
+  },
+  async remove(id) {
+    const sb = await getSupabase();
+    const { error } = await sb.from('inbound_addresses').delete().eq('id', id);
+    if (error) throw new Error(ERR_ES(error.message));
+    await this.load();
+  },
+  /** Las N direcciones más antiguas son las que funcionan con el plan actual (igual que en el servidor) */
+  active(a) { return this.addresses.slice(0, Auth.plan().mailboxes).some(x => x.id === a.id); },
+  /** Trae los recibos reenviados pendientes, los añade a tus datos y los borra del servidor */
+  async sync() {
+    if (!this.available() || this._busy || Auth.user.demo) return 0;
+    this._busy = true;
+    try {
+      const sb = await getSupabase();
+      const { data: rows, error } = await sb.from('inbound_emails').select('id,address_id,resend_id,from_addr,subject,received_at,body').order('received_at').limit(500);
+      if (error) throw error;
+      this.lastSync = Date.now();
+      if (!rows || !rows.length) return 0;
+      if (!this.loaded) await this.load();
+      let added = 0;
+      const groups = {};
+      rows.forEach(r => (groups[r.address_id] = groups[r.address_id] || []).push(r));
+      for (const [aid, list] of Object.entries(groups)) {
+        const a = this.addresses.find(x => x.id === aid);
+        const account = a ? this.email(a) : 'reenvío';
+        added += await Data.addEmails({ type: 'reenvio', label: 'Reenvío · ' + (a ? a.label : 'correo'), account },
+          list.map(r => ({ id: r.resend_id, from: r.from_addr, subject: r.subject, date: r.received_at, body: r.body })));
+      }
+      // Solo se borran del servidor cuando ya están guardados en tu cuenta
+      clearTimeout(Data._t); await Data.push();
+      if (Data._dirtyAll) return added;
+      const ids = rows.map(r => r.id);
+      for (let i = 0; i < ids.length; i += 100) await sb.from('inbound_emails').delete().in('id', ids.slice(i, i + 100));
+      return added;
+    } catch (e) { console.warn('Reenvío:', e.message || e); return 0; }
+    finally { this._busy = false; }
+  },
+  /** Comprueba cada 2 minutos mientras la app está abierta */
+  watch(onNew) {
+    clearInterval(this._timer);
+    if (!this.available()) return;
+    const tick = async () => { if (document.hidden) return; const n = await this.sync(); if (n && onNew) onNew(n); };
+    this._timer = setInterval(tick, 120000);
+    this._tick = tick;
+    if (!this._vis) { this._vis = true; document.addEventListener('visibilitychange', () => { if (this._tick && !document.hidden && Date.now() - this.lastSync > 60000) this._tick(); }); }
+    tick();
+  },
+  stop() { clearInterval(this._timer); this._tick = null; this._for = null; this.addresses = []; this.loaded = false; }
 };
 
 /* ---------- Gmail (OAuth en el navegador, solo lectura) ---------- */

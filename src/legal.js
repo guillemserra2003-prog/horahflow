@@ -20,7 +20,7 @@ const LEGAL = {
 <h2>2. Qué datos tratamos</h2>
 <ul>
 <li><b>Datos de tu cuenta:</b> nombre, correo electrónico y contraseña (guardada cifrada; nadie puede leerla, tampoco nosotros).</li>
-<li><b>Datos de tus recibos:</b> cuando conectas tu correo, subes archivos o pegas texto, el análisis se hace en tu navegador. De cada recibo guardamos solo un fragmento con el comercio, el importe, la fecha y la frecuencia. <b>Nunca guardamos tus correos completos ni los que no son recibos.</b></li>
+<li><b>Datos de tus recibos:</b> cuando subes archivos o pegas texto, el análisis se hace en tu navegador. Si usas el <b>reenvío automático</b>, los correos que reenvías a tu dirección privada de HorahFlow llegan a nuestro servidor: los que no parecen un cobro se descartan al momento sin guardarse, y los recibos esperan como máximo 60 días hasta que la app los importa, momento en que se borran del servidor. De cada recibo guardamos en tu cuenta solo un fragmento con el comercio, el importe, la fecha y la frecuencia. <b>Nunca guardamos tus correos completos ni los que no son recibos.</b></li>
 <li><b>Tus preferencias en la app:</b> qué suscripciones usas, cuáles has cancelado, avisos, etc.</li>
 <li><b>Datos de pago:</b> si contratas un plan, el pago lo procesa Stripe. HorahFlow no ve ni guarda los datos de tu tarjeta; solo recibimos el estado de tu suscripción.</li>
 <li><b>Estadísticas anónimas de visitas</b> (sin cookies ni identificadores personales), con Vercel Web Analytics.</li>
@@ -31,10 +31,11 @@ const LEGAL = {
 <h2>3. Para qué los usamos y con qué base legal</h2>
 <ul>
 <li><b>Prestarte el servicio</b> (crear tu cuenta, analizar tus recibos, mostrarte tus gastos, alertas y consejos): ejecución del contrato que aceptas al registrarte (art. 6.1.b RGPD).</li>
-<li><b>Leer tu Gmail</b> si decides conectarlo: tu consentimiento expreso, que das en la pantalla de Google y puedes retirar cuando quieras.</li>
+<li><b>Recibir los recibos que reenvías</b> a tu dirección privada: ejecución del contrato. Tú decides qué se reenvía y puedes quitar el reenvío o eliminar la dirección cuando quieras.</li>
 <li><b>Gestionar pagos y facturación:</b> ejecución del contrato y cumplimiento de obligaciones legales fiscales (art. 6.1.c RGPD).</li>
 <li><b>Seguridad y prevención del fraude:</b> interés legítimo en mantener el servicio seguro (art. 6.1.f RGPD).</li>
 <li><b>Correos de servicio</b> (confirmar tu cuenta, cambiar la contraseña, avisos importantes sobre tu cuenta o tu plan): ejecución del contrato. No te enviaremos publicidad sin tu permiso.</li>
+<li><b>Avisos por correo de los planes de pago</b> (próximos cobros, fugas detectadas y resumen mensual): ejecución del contrato. Puedes desactivarlos en Ajustes.</li>
 </ul>
 <p>No vendemos tus datos, no los usamos para publicidad y no tomamos decisiones automatizadas con efectos jurídicos sobre ti.</p>
 
@@ -42,7 +43,7 @@ const LEGAL = {
 <p>Para responder a tus preguntas en Flow, generar tu análisis personalizado y leer recibos poco habituales usamos la IA de Anthropic (Claude) desde nuestro servidor. Solo le enviamos un resumen de tus gastos o el fragmento del recibo, nunca tus correos completos ni tus datos de acceso. Anthropic actúa como encargado del tratamiento y no utiliza estos datos para entrenar sus modelos. Las respuestas de la IA son orientativas y pueden contener errores.</p>
 
 <h2>5. Uso de datos de Google</h2>
-<p>El uso y la transferencia a cualquier otra aplicación de la información recibida de las API de Google por parte de HorahFlow cumplen la <a class="link" href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Política de Datos de Usuario de los Servicios API de Google</a>, incluidos los requisitos de uso limitado. El permiso es de solo lectura, se usa únicamente para encontrar tus recibos y se revoca al terminar cada sincronización.</p>
+<p>Hoy HorahFlow no se conecta directamente a tu cuenta de Google. Cuando ofrezcamos la conexión con Gmail, el uso y la transferencia de la información recibida de las API de Google cumplirán la <a class="link" href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Política de Datos de Usuario de los Servicios API de Google</a>, incluidos los requisitos de uso limitado, con permiso de solo lectura y únicamente para encontrar tus recibos.</p>
 
 <h2>6. Quién más trata tus datos (encargados del tratamiento)</h2>
 <p>Para funcionar usamos proveedores que tratan datos por cuenta nuestra, con contrato y garantías:</p>
@@ -50,15 +51,15 @@ const LEGAL = {
 <li><b>Supabase</b>: base de datos y cuentas de usuario. Servidores en la Unión Europea (Frankfurt, Alemania).</li>
 <li><b>Vercel</b>: alojamiento de la web.</li>
 <li><b>Stripe</b>: pagos y facturación.</li>
-<li><b>Resend</b>: envío de correos del servicio (servidores en Irlanda).</li>
+<li><b>Resend</b>: envío de los correos del servicio y recepción de los recibos que reenvías a tu dirección de HorahFlow.</li>
 <li><b>Anthropic</b>: inteligencia artificial (ver apartado 4).</li>
-<li><b>Google</b>: solo si conectas tu Gmail.</li>
 </ul>
 <p>Algunos de estos proveedores tienen sede en Estados Unidos. Cuando hay transferencias internacionales, se realizan con las garantías previstas en el RGPD: el Marco de Privacidad de Datos UE-EE. UU. o cláusulas contractuales tipo aprobadas por la Comisión Europea.</p>
 
 <h2>7. Cuánto tiempo los conservamos</h2>
 <ul>
 <li>Mientras tengas tu cuenta activa.</li>
+<li>Los recibos reenviados pendientes de importar: hasta que la app los importa, y como máximo 60 días.</li>
 <li>Si borras tus recibos o eliminas tu cuenta desde Ajustes, los borramos de inmediato de la aplicación. Las copias de seguridad técnicas se eliminan solas en un máximo de 7 días.</li>
 <li>Los datos de facturación se conservan el tiempo que exige la ley (normalmente 6 años, art. 30 del Código de Comercio).</li>
 </ul>
@@ -100,7 +101,6 @@ const LEGAL = {
 <ul>
 <li><b>Pago con Stripe:</b> cuando pulsas «Pasar a Pro» vas a una página de Stripe (stripe.com), que usa sus propias cookies necesarias para procesar el pago de forma segura y prevenir el fraude. Consulta la <a class="link" href="https://stripe.com/es/legal/cookies-policy" target="_blank" rel="noopener">política de cookies de Stripe</a>.</li>
 <li><b>Tipografía:</b> la fuente de la web se carga desde Google Fonts, lo que implica que tu navegador comunica tu dirección IP a Google al descargarla. Google no instala cookies por este servicio.</li>
-<li><b>Inicio de sesión con Google:</b> solo si conectas tu Gmail, Google puede usar sus propias cookies en su ventana de acceso.</li>
 </ul>
 
 <h2>Cómo borrar estos datos</h2>
@@ -120,12 +120,13 @@ const LEGAL = {
 
 <h2>2. Qué es HorahFlow</h2>
 <p>Una herramienta que analiza los recibos de tu correo para mostrarte tus suscripciones, tus cobros recurrentes y tus gastos, y darte ideas para ahorrar. Es <b>informativa</b>: no es un banco, no mueve dinero, no cancela servicios en tu nombre y <b>no constituye asesoramiento financiero</b>. Los importes son estimaciones a partir de los recibos que encontramos y pueden no recoger cobros que no te llegan por correo.</p>
+<p>Los <b>avisos por correo</b> de los planes de pago se calculan a partir de tus recibos: son una ayuda, pueden llegar con retraso o no anticipar un cobro cuya fecha cambia, y no sustituyen a revisar tus cuentas.</p>
 
 <h2>3. Tu cuenta</h2>
 <ul>
 <li>Debes ser mayor de 18 años y dar un correo válido que te pertenezca.</li>
 <li>Eres responsable de mantener tu contraseña en secreto.</li>
-<li>Solo puedes conectar buzones de correo que sean tuyos o que estés autorizado a gestionar.</li>
+<li>Solo puedes reenviar o subir correos de buzones que sean tuyos o que estés autorizado a gestionar.</li>
 <li>Puedes eliminar tu cuenta cuando quieras desde Ajustes.</li>
 </ul>
 

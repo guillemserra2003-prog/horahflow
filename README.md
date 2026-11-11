@@ -46,11 +46,26 @@ Texto con **negrita**, *cursiva* y [un enlace](/blog/otro-articulo/).
 
 ## Cuentas, pagos e IA
 
-- **Supabase** (proyecto `horahflow`, Frankfurt): tablas `profiles`, `user_data`, `stripe_customers`, `stripe_events`, `ai_usage`, todas con RLS. El plan solo lo cambia el servidor (`stripe-webhook`).
-- **Stripe**: enlaces de pago y portal de cliente en `site.config.json`.
+- **Supabase** (proyecto `horahflow`, Frankfurt): tablas `profiles`, `user_data`, `stripe_customers`, `stripe_events`, `ai_usage`, `inbound_addresses`, `inbound_emails`, `alert_log`, todas con RLS. El plan solo lo cambia el servidor (`stripe-webhook`).
+- **Stripe**: enlaces de pago y portal de cliente en `site.config.json`. El portal permite cambiar entre Pro y Empresas (mensual/anual) y cancelar a final de periodo.
 - **IA**: función `ai` con límites diarios por plan. Clave `ANTHROPIC_API_KEY` en los secretos de Supabase.
-- **Correo**: envío con Resend desde hola@horahflow.com; recepción con ImprovMX.
-- **Gmail con un clic** (pendiente): necesita `googleClientId`. El permiso `gmail.readonly` es restringido: en modo prueba solo 100 usuarios añadidos a mano; para abrirlo a todos Google exige verificación y auditoría de seguridad anual.
+- **Correo saliente**: Resend desde hola@ y avisos@horahflow.com. **Correo entrante de hola@**: ImprovMX.
+
+## Reenvío de recibos y avisos
+
+- Cada usuario crea direcciones `<token>@recibos.horahflow.com` (Gratis 1, Pro 5, Empresas 25; lo controla `create_inbound_address` en la base de datos).
+- El subdominio `recibos.horahflow.com` recibe con **Resend Inbound** → webhook `email.received` → función `inbound`. Secretos: `RESEND_API_KEY` y `RESEND_WEBHOOK_SECRET`.
+- `inbound` comprueba la firma, descarga el correo, desempaqueta los reenvíos manuales, guarda el código de confirmación de Gmail y descarta lo que no es un cobro. Los recibos esperan en `inbound_emails` hasta que la app los importa (y se borran a los 60 días).
+- **Avisos**: `pg_cron` llama cada día a las 7:15 UTC a la función `daily` (clave `CRON_KEY` en `private.config`). Envía a Pro/Empresas los cobros de los próximos días, las fugas nuevas y, el día 1, el resumen del mes. `alert_log` evita repetir avisos.
+- Prueba sin enviar nada: `select net.http_post(url:='https://jmqikuquouqvcmkimrdk.supabase.co/functions/v1/daily', headers:=jsonb_build_object('Content-Type','application/json','x-cron-key',(select value from private.config where key='CRON_KEY')), body:='{"user":"<id>","dry":true}'::jsonb);`
+
+### Si cambias `src/engine.js`
+
+Las funciones `inbound` y `daily` descargan el motor de `https://horahflow.com/server/engine.js` y solo lo ejecutan si su SHA-256 coincide con `ENGINE_SHA256` de `supabase/functions/*/engine-loader.ts`. El build falla si no coinciden: actualiza la huella en los dos archivos, haz push y vuelve a desplegar `inbound` y `daily`.
+
+## Gmail con un clic (pendiente)
+
+Necesita `googleClientId`. El permiso `gmail.readonly` es restringido: en modo prueba solo 100 usuarios añadidos a mano; para abrirlo a todos Google exige verificación y auditoría de seguridad anual. Mientras tanto, el reenvío cubre Gmail y cualquier otro correo.
 
 ## Probar en local
 

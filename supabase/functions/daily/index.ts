@@ -146,9 +146,9 @@ async function processUser(E: any, apiKey: string, p: any, now: Date, opts: { dr
 Deno.serve(async (req) => {
   const key = await secret("CRON_KEY");
   if (!key || req.headers.get("x-cron-key") !== key) return json({ error: "no autorizado" }, 401);
-  const apiKey = await secret("RESEND_API_KEY");
-  if (!apiKey) return json({ error: "Falta RESEND_API_KEY" }, 503);
   const opts = await req.json().catch(() => ({}));
+  const apiKey = (await secret("RESEND_API_KEY")) || "";
+  if (!apiKey && !opts.dry) return json({ error: "Falta RESEND_API_KEY" }, 503);
   const E = await loadEngine();
   const now = opts.now ? new Date(opts.now) : new Date();
 

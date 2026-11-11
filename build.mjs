@@ -180,6 +180,16 @@ copyDir(path.join(ROOT, "public"), DIST);
 // El motor también se publica suelto: lo usan las funciones del servidor (avisos y reenvíos), que comprueban su huella SHA-256
 fs.mkdirSync(path.join(DIST, "server"), { recursive: true });
 fs.copyFileSync(path.join(ROOT, "src", "engine.js"), path.join(DIST, "server", "engine.js"));
+{
+  // Seguridad: las funciones del servidor solo aceptan el motor con esta huella. Si cambias src/engine.js,
+  // actualiza ENGINE_SHA256 en supabase/functions/*/engine-loader.ts y vuelve a desplegar "inbound" y "daily".
+  const crypto = await import("node:crypto");
+  const sha = crypto.createHash("sha256").update(fs.readFileSync(path.join(ROOT, "src", "engine.js"))).digest("hex");
+  for (const fn of ["inbound", "daily"]) {
+    const loader = fs.readFileSync(path.join(ROOT, "supabase", "functions", fn, "engine-loader.ts"), "utf8");
+    if (!loader.includes(sha)) throw new Error(`El motor ha cambiado (sha ${sha}) y la función "${fn}" no lo aceptará. Actualiza ENGINE_SHA256 y redespliega (ver README.md).`);
+  }
+}
 write(path.join(DIST, "assets/site.css"), STYLES);
 
 // 1) Portada + app

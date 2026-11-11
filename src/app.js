@@ -16,7 +16,7 @@ function appShell(active, content) {
       <nav>${TABS.map(([h, l, i]) => `<a href="#${h}" class="${h === active ? 'on' : ''}">${i}<span>${l}</span>${h === 'app' && leakCount ? `<span class="badge">${leakCount}</span>` : ''}</a>`).join('')}</nav>
       <div class="bottom">
         ${u.demo ? `<div class="plan-box" style="background:var(--green-soft);border-color:transparent"><b>Estás en la demo</b><p class="hint" style="margin:4px 0 10px">Datos de ejemplo. Crea tu cuenta para analizar tu correo.</p><a class="btn btn-dark btn-sm btn-block" href="#registro">Crear cuenta</a></div>` :
-        plan.id === 'free' ? `<div class="plan-box"><b>Plan Gratis</b><p class="hint" style="margin:4px 0 10px">Conecta hasta 5 correos y recibe avisos antes de cada cobro.</p><button class="btn btn-dark btn-sm btn-block" data-buy="pro">Pasar a Pro</button></div>` :
+        plan.id === 'free' ? `<div class="plan-box"><b>Plan Gratis</b><p class="hint" style="margin:4px 0 10px">Hasta 5 correos y avisos por email antes de cada cobro.</p><button class="btn btn-dark btn-sm btn-block" data-buy="pro">Pasar a Pro</button></div>` :
         `<div class="plan-box"><b>Plan ${plan.name}</b>${u.planTest ? '<p class="hint">Modo prueba</p>' : ''}</div>`}
         <div class="me"><span class="av">${esc(u.name.charAt(0).toUpperCase())}</span><div class="who"><b>${esc(u.name)}</b><span>${esc(u.email)}</span></div>
           <button title="Salir" aria-label="Salir" id="logout" style="margin-left:auto;color:var(--faint)">${I.out}</button></div>
@@ -40,9 +40,17 @@ function renderApp(view) {
   }[view] || overviewHTML)(a);
   root.innerHTML = appShell(view, html);
   $('#logout').onclick = () => { Auth.logout(); location.hash = 'inicio'; };
+  if (Inbound.available() && !Auth.user.demo && Inbound._for !== Auth.user.id) {
+    Inbound._for = Auth.user.id;
+    Inbound.load().then(() => { if (location.hash === '#app-correos') route(); }).catch(() => {});
+    Inbound.watch(n => {
+      toast(`${n} ${n === 1 ? 'recibo nuevo importado' : 'recibos nuevos importados'} de tu correo`);
+      if (/^#app/.test(location.hash) && !(document.activeElement && document.activeElement.matches('input,textarea,select')) && !document.querySelector('.modal-bg,.tour')) { const y = scrollY; route(); scrollTo(0, y); }
+    });
+  }
   bindAppView(view);
   window.scrollTo(0, 0);
-  if (!Data.state.prefs.tourDone && !Tour.open) setTimeout(() => Tour.start(), 350);
+  if (!Data.state.prefs.tourDone && !Tour.open) setTimeout(() => { if (!Tour.open && Data.state && !Data.state.prefs.tourDone) Tour.start(); }, 350);
 }
 
 /* ---------- Tutorial de bienvenida (primera vez que entras) ---------- */
@@ -55,8 +63,8 @@ const Tour = {
     { h: 'app-calendario', t: 'Calendario', p: 'Qué día te cobra cada servicio. Así decides a tiempo si lo cancelas antes de la próxima renovación.' },
     { h: 'app-ahorro', t: 'Ahorro', p: 'Cuánto puedes ahorrar y cómo: alternativas gratis o más baratas y un plan de ahorro hecho por IA a partir de tus gastos.' },
     { h: 'app-gastos', t: 'Gastos', p: 'Cada cobro detectado en tus recibos, con buscador y filtros. En los planes de pago puedes exportarlo a CSV.' },
-    { h: 'app-correos', t: 'Correos', p: 'Aquí conectas tus recibos: sube el archivo exportado de tu correo o pégalos. Es el primer paso para que todo lo demás se llene.' },
-    { h: 'app-ajustes', t: 'Ajustes', p: 'Tu perfil, tu plan, los avisos antes de cada cobro y el control total de tus datos: puedes borrarlos cuando quieras.' },
+    { h: 'app-correos', t: 'Correos', p: 'Aquí creas tu dirección privada de reenvío: configúrala una vez en tu correo y tus recibos llegan solos. También puedes subir archivos o pegar recibos.' },
+    { h: 'app-ajustes', t: 'Ajustes', p: 'Tu perfil, tu plan, los avisos por correo y el control total de tus datos: puedes borrarlos cuando quieras.' },
     { sel: '#ask', t: 'Pregúntale a Flow', p: 'En el Resumen tienes a Flow, tu asistente: pregúntale en lenguaje normal, por ejemplo «¿cuánto gasto en streaming?».' },
     { t: '¡Listo!', p: 'Empieza conectando tu correo. En unos segundos verás a dónde se va tu dinero.', last: true }
   ],
@@ -67,7 +75,7 @@ const Tour = {
     return $(`${mob ? '.mobile-tabs' : '.side-nav nav'} a[href="#${st.h}"]`);
   },
   start() {
-    if (!Auth.user || !$('.app')) return;
+    if (this.open || !Auth.user || !$('.app')) return;
     this.open = true; this.i = 0;
     this.el = document.createElement('div'); this.el.className = 'tour'; this.el.setAttribute('role', 'dialog'); this.el.setAttribute('aria-modal', 'true'); this.el.setAttribute('aria-label', 'Tutorial de HorahFlow');
     this.el.innerHTML = '<div class="tour-hole"></div><div class="tour-card" tabindex="-1"></div>';
@@ -367,33 +375,71 @@ function exportCSV() {
 }
 
 /* ---------- Correos / fuentes ---------- */
+const GMAIL_QUERY = 'subject:(recibo OR factura OR receipt OR invoice OR suscripción OR subscription OR renovación OR renewal OR "tu pedido" OR "your order" OR "confirmación de pago" OR "payment")';
+let fwdTab = 'gmail';
+function fwdGuide(addr) {
+  const A = addr ? `<b class="mono">${esc(addr)}</b>` : 'tu dirección de HorahFlow';
+  const G = {
+    gmail: `<ol class="steps-list">
+      <li>Abre <b>Gmail en el ordenador</b> → ${I.gear} <b>Ver todos los ajustes</b> → pestaña <b>Reenvío y correo POP/IMAP</b> → <b>Añadir una dirección de reenvío</b> y pega ${A}.</li>
+      <li>Gmail nos manda un código de confirmación. <b>Aparecerá aquí arriba en unos segundos</b>: cópialo en Gmail o pulsa el enlace para confirmar.</li>
+      <li>No actives «reenviar una copia del correo entrante» (eso mandaría todo). En su lugar, pega esta búsqueda en la barra de Gmail, pulsa ${I.list} <b>Crear filtro</b>, marca <b>Reenviarlo a</b> y elige tu dirección de HorahFlow:
+        <div class="copyline"><code id="gq">${esc(GMAIL_QUERY)}</code><button class="btn btn-ghost btn-sm" data-copy="${esc(GMAIL_QUERY)}">${I.copy} Copiar</button></div></li>
+      <li>Listo: desde ahora cada recibo nuevo llega solo. Para los antiguos, reenvíalos a mano o sube un archivo.</li></ol>`,
+    outlook: `<ol class="steps-list">
+      <li>En <b>outlook.com</b> abre ${I.gear} <b>Configuración</b> → <b>Correo</b> → <b>Reglas</b> → <b>Agregar nueva regla</b>.</li>
+      <li>Condición: <b>El asunto incluye</b> → añade <i>recibo</i>, <i>factura</i>, <i>receipt</i>, <i>invoice</i>, <i>suscripción</i> y <i>pedido</i>.</li>
+      <li>Acción: <b>Reenviar a</b> → pega ${A}. Guarda la regla.</li>
+      <li>Si tu empresa bloquea el reenvío automático, puedes reenviar los recibos a mano.</li></ol>`,
+    icloud: `<ol class="steps-list">
+      <li>En <b>icloud.com/mail</b> abre ${I.gear} <b>Ajustes</b> → <b>Reglas</b> → <b>Añadir una regla</b>.</li>
+      <li>Si el mensaje: <b>tiene un asunto que contiene</b> «recibo» → <b>Reenviar a</b> ${A}.</li>
+      <li>Repite la regla con «factura» y «receipt» para cubrir más recibos.</li></ol>`,
+    manual: `<ol class="steps-list">
+      <li>Desde cualquier correo (también desde el móvil), <b>reenvía</b> el recibo a ${A}.</li>
+      <li>HorahFlow reconoce el remitente, el asunto y la fecha originales del recibo reenviado.</li>
+      <li>Puedes reenviar varios a la vez. Los correos que no son un cobro se descartan solos.</li></ol>`
+  };
+  return `<div class="tabs-mini" id="fwd-tabs">${[['gmail', 'Gmail'], ['outlook', 'Outlook / Hotmail'], ['icloud', 'iCloud'], ['manual', 'A mano']].map(([k, l]) => `<button class="${fwdTab === k ? 'on' : ''}" data-fwd="${k}">${l}</button>`).join('')}</div>${G[fwdTab]}`;
+}
+function addressRow(a) {
+  const email = Inbound.email(a), on = Inbound.active(a);
+  const status = !on ? '<span class="chip amber">Pausada: supera el límite de tu plan</span>'
+    : a.last_received_at ? `<span class="chip green">${a.received_count} recibidos · último ${fmtDate(a.last_received_at)}</span>` : '<span class="chip">Esperando el primer recibo</span>';
+  const verify = a.verify_at && (!a.last_received_at || new Date(a.verify_at) > new Date(a.last_received_at)) && (Date.now() - new Date(a.verify_at)) < 7 * 864e5
+    ? `<div class="verify">${I.check}<div><b>Gmail te pide confirmar el reenvío</b><span>${a.verify_code ? `Código: <b class="mono">${esc(a.verify_code)}</b> ` : ''}${a.verify_link ? `· <a class="link" href="${esc(a.verify_link)}" target="_blank" rel="noopener">Confirmar con un clic</a>` : ''}</span></div>${a.verify_code ? `<button class="btn btn-ghost btn-sm" data-copy="${esc(a.verify_code)}">Copiar código</button>` : ''}</div>` : '';
+  return `<div class="addr${on ? '' : ' off'}"><div class="addr-top"><div class="addr-main"><b>${esc(a.label)}</b><div class="copyline"><code>${esc(email)}</code><button class="btn btn-dark btn-sm" data-copy="${esc(email)}">${I.copy} Copiar</button></div></div>
+    <div class="addr-side">${status}<div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" data-rename="${a.id}">Renombrar</button><button class="btn btn-ghost btn-sm" data-deladdr="${a.id}" aria-label="Eliminar dirección">${I.x}</button></div></div></div>${verify}</div>`;
+}
 function sourcesHTML() {
-  const plan = Auth.plan(), used = Data.mailboxCount();
-  const st = Data.state;
-  return topbar('Correos conectados', `${used} de ${plan.mailboxes} ${plan.mailboxes === 1 ? 'cuenta de Gmail' : 'cuentas de Gmail'} en tu plan ${plan.name} · archivos y texto pegado sin límite`) + `
+  const plan = Auth.plan(), st = Data.state, cloud = Inbound.available() && !Auth.user.demo;
+  const addrs = Inbound.addresses, used = addrs.length, canAdd = used < plan.mailboxes;
+  const fwd = !cloud
+    ? `<p class="hint" style="font-size:15px">${Auth.user.demo ? 'Crea tu cuenta gratis para tener tu dirección privada de reenvío.' : 'El reenvío automático necesita una cuenta en la nube.'}</p>${Auth.user.demo ? '<a class="btn btn-dark btn-sm" href="#registro">Crear cuenta gratis</a>' : ''}`
+    : !Inbound.loaded ? '<p class="hint">Cargando tus direcciones…</p>'
+    : `${addrs.length ? addrs.map(addressRow).join('') : '<p class="hint" style="font-size:15px;margin-bottom:12px">Aún no tienes ninguna dirección. Crea la primera: tarda un segundo.</p>'}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px">${canAdd ? `<button class="btn btn-${addrs.length ? 'ghost' : 'dark'} btn-sm" id="addr-new">+ ${addrs.length ? 'Otra dirección' : 'Crear mi dirección'}</button>` : `<span class="hint">Tu plan ${plan.name} incluye ${plan.mailboxes} ${plan.mailboxes === 1 ? 'dirección' : 'direcciones'}.</span>${plan.id !== 'business' ? `<button class="btn btn-dark btn-sm" data-buy="${plan.id === 'free' ? 'pro' : 'business'}">${plan.id === 'free' ? 'Pro: hasta 5 correos' : 'Empresas: hasta 25'}</button>` : ''}`}
+      ${addrs.length ? '<button class="btn btn-ghost btn-sm" id="addr-sync">Comprobar ahora</button>' : ''}</div>
+      <div class="fwd-guide">${fwdGuide(addrs[0] ? Inbound.email(addrs[0]) : '')}</div>`;
+  return topbar('Correos', cloud ? `${used} de ${plan.mailboxes} ${plan.mailboxes === 1 ? 'dirección de reenvío' : 'direcciones de reenvío'} en tu plan ${plan.name} · archivos y texto pegado sin límite` : 'Conecta tus recibos') + `
+  <div class="card fwd-card"><div class="fwd-head"><span class="dot green">${I.mail}</span><div><h3 style="margin:0">Reenvío automático <span class="chip green">Recomendado</span></h3>
+    <p class="hint" style="font-size:15px;margin-top:4px">Te damos una dirección privada. Configura tu correo para reenviarle tus recibos y HorahFlow se actualiza solo, sin que tengas que hacer nada más. Funciona con Gmail, Outlook, iCloud, Yahoo y cualquier otro.</p></div></div>
+    ${fwd}</div>
+  <h3 class="sec-mini">Otras formas de añadir recibos</h3>
   <div class="connect-grid">
-    <div class="connect"><span class="dot gray">${I.google}</span><h4>Gmail</h4><p>Inicia sesión con Google y danos permiso de solo lectura. Buscamos recibos de los últimos 2 años.</p><button class="btn btn-dark btn-sm" id="c-gmail">Conectar Gmail</button></div>
-    <div class="connect"><span class="dot gray">${I.upload}</span><h4>Subir archivos</h4><p>Correos .eml o un archivo .mbox (Google Takeout, Outlook, Apple Mail o Thunderbird).</p>
+    <div class="connect"><span class="dot gray">${I.upload}</span><h4>Subir archivos</h4><p>Correos .eml o un archivo .mbox (Google Takeout, Outlook, Apple Mail o Thunderbird). Ideal para traer tu historial de golpe.</p>
       <label class="btn btn-ghost btn-sm" for="c-file" style="cursor:pointer">Elegir archivos</label><input type="file" id="c-file" multiple accept=".eml,.mbox,.txt,message/rfc822" class="hidden"></div>
-    <div class="connect"><span class="dot gray">${I.copy}</span><h4>Pegar recibos</h4><p>Copia el texto de uno o varios correos y pégalo. Útil para Outlook, Yahoo o cualquier otro.</p><button class="btn btn-ghost btn-sm" id="c-paste">Pegar texto</button></div>
+    <div class="connect"><span class="dot gray">${I.copy}</span><h4>Pegar recibos</h4><p>Copia el texto de uno o varios correos y pégalo. Útil para revisar algo rápido.</p><button class="btn btn-ghost btn-sm" id="c-paste">Pegar texto</button></div>
+    <div class="connect soon"><span class="dot gray">${I.google}</span><h4>Gmail con un clic</h4><p>Conexión directa con tu cuenta de Google. Estamos terminando la verificación de seguridad con Google.</p><span class="chip">Próximamente</span></div>
   </div>
   <div class="drop" id="drop">${I.upload}<div style="margin-top:6px">Arrastra aquí tus archivos .eml o .mbox</div></div>
   <div class="card" style="margin-top:16px"><h3>Fuentes <small>${st.emails.length} recibos guardados</small></h3>
-    ${st.sources.length ? st.sources.map(s => `<div class="source"><span class="dot ${s.type === 'gmail' ? 'green' : 'gray'}">${s.type === 'gmail' ? I.google : s.type === 'demo' ? I.spark : s.type === 'archivo' ? I.upload : I.copy}</span>
+    ${st.sources.length ? st.sources.map(s => `<div class="source"><span class="dot ${s.type === 'reenvio' ? 'green' : 'gray'}">${s.type === 'reenvio' ? I.mail : s.type === 'gmail' ? I.google : s.type === 'demo' ? I.spark : s.type === 'archivo' ? I.upload : I.copy}</span>
       <div class="info"><b>${esc(s.label)}</b><span>${esc(s.account || '')} · ${s.count} recibos · actualizado ${fmtDate(s.updated || s.added)}</span></div>
-      ${s.type === 'gmail' ? `<button class="btn btn-ghost btn-sm" data-resync="${s.id}">Sincronizar</button>` : ''}
       <button class="btn btn-ghost btn-sm" data-remove="${s.id}">Quitar</button></div>`).join('') :
-    `<p class="hint">Aún no has conectado ningún correo.${Auth.user.demo ? '' : ' <button class="link" id="load-demo">Cargar datos de ejemplo</button>'}</p>`}
+    `<p class="hint">Aún no hay recibos.${Auth.user.demo ? '' : ' <button class="link" id="load-demo">Cargar datos de ejemplo</button>'}</p>`}
   </div>
-  <div class="card" style="margin-top:16px;display:flex;gap:14px;align-items:flex-start"><span class="dot green">${I.shield}</span><div><b>Tu correo se lee en tu dispositivo</b><p class="hint" style="font-size:14px;margin-top:2px">El análisis se hace en tu navegador. De cada recibo solo guardamos el fragmento con el comercio, el importe y la fecha; el resto del correo nunca sale de tu dispositivo. El permiso de Gmail se usa para la lectura y se revoca al terminar; puedes retirarlo también en <a class="link" href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">tu cuenta de Google</a>.</p></div></div>`;
-}
-
-function canAddMailbox(account) {
-  const plan = Auth.plan();
-  const existing = Data.state.sources.some(s => s.account && s.account === account);
-  if (existing || Data.mailboxCount() < plan.mailboxes) return true;
-  modal(`<h2>Has llegado al límite de tu plan</h2><p class="hint" style="font-size:15px;margin:8px 0 18px">El plan ${plan.name} permite ${plan.mailboxes} ${plan.mailboxes === 1 ? 'correo' : 'correos'}. Con Pro puedes conectar hasta 5 (personal, trabajo, compras…).</p><button class="btn btn-dark btn-block" data-buy="pro" data-close>Pasar a Pro</button>`);
-  return false;
+  <div class="card" style="margin-top:16px;display:flex;gap:14px;align-items:flex-start"><span class="dot green">${I.shield}</span><div><b>Cómo tratamos tus correos</b><p class="hint" style="font-size:14px;margin-top:2px">Nunca te pedimos la contraseña de tu correo ni del banco. Los correos reenviados que no son un cobro se descartan al llegar; los recibos esperan en nuestro servidor de la UE solo hasta que la app los importa (como mucho 60 días). Los archivos que subes se leen en tu navegador. De cada recibo guardamos solo el fragmento con el comercio, el importe y la fecha.</p></div></div>`;
 }
 
 function progressModal(title) {
@@ -402,27 +448,6 @@ function progressModal(title) {
     setP = (done, total, txt) => { $('#pm-t', bg).textContent = txt + (total ? ` ${done}/${total}` : ''); $('#pm-b', bg).style.width = (total ? done / total * 100 : 15) + '%'; };
   });
   return { set: (...x) => setP(...x), close };
-}
-
-async function connectGmail() {
-  if (Auth.user.demo) { modal(`<h2>Crea tu cuenta para conectar Gmail</h2><p class="hint" style="font-size:15px;margin:8px 0 18px">En la demo usamos datos de ejemplo. Con tu cuenta gratuita analizamos tu propio correo.</p><a class="btn btn-dark btn-block" href="#registro" data-close>Crear cuenta gratis</a>`); return; }
-  if (!CFG.googleClientId) {
-    modal(`<h2>Conexión con Gmail pendiente de activar</h2>
-      <p class="hint" style="font-size:15px;margin:8px 0 14px">Esta instalación aún no tiene configurado el acceso a Google. Mientras tanto puedes analizar tu Gmail igual de bien exportando tus recibos:</p>
-      <ol style="margin:0 0 18px 20px;font-size:15px;line-height:1.8"><li>Entra en <a class="link" href="https://takeout.google.com/" target="_blank" rel="noopener">Google Takeout</a> y marca solo «Correo».</li><li>Elige «Todos los datos de correo» o solo una etiqueta (por ejemplo, Recibos).</li><li>Descarga el archivo <b>.mbox</b> y súbelo aquí.</li></ol>
-      <label class="btn btn-dark btn-block" for="c-file" data-close style="cursor:pointer">Subir archivo .mbox</label>`);
-    return;
-  }
-  const pm = progressModal('Conectando con Gmail');
-  try {
-    const r = await Gmail.connect((d, t, txt) => pm.set(d, t, txt));
-    pm.close();
-    if (!canAddMailbox(r.account)) return;
-    const pm2 = progressModal('Analizando tus recibos');
-    const added = await Data.addEmails({ type: 'gmail', label: 'Gmail', account: r.account }, r.emails, (d, t, txt) => pm2.set(d, t, txt));
-    pm2.close();
-    toast(`${r.account}: ${added} recibos nuevos`); location.hash = 'app';
-  } catch (e) { pm.close(); toast(e.message || 'No se pudo conectar con Gmail', 4000); }
 }
 
 async function handleFiles(files) {
@@ -468,12 +493,15 @@ function settingsHTML() {
     <div style="display:flex;gap:8px;flex-wrap:wrap">${plan.id === 'free' ? '<button class="btn btn-dark btn-sm" data-buy="pro">Pasar a Pro</button><button class="btn btn-ghost btn-sm" data-buy="business">Plan Empresas</button>' : ''}
     ${u.cloud && (u.customer || plan.id !== 'free') && CFG.stripe.portal ? `<a class="btn btn-ghost btn-sm" href="${esc(CFG.stripe.portal + '?prefilled_email=' + encodeURIComponent(u.email))}" target="_blank" rel="noopener">Gestionar suscripción y facturas</a>` : ''}
     ${!u.cloud && plan.id !== 'free' && !u.demo ? '<button class="btn btn-ghost btn-sm" id="s-down">Volver a Gratis</button>' : ''}</div></div>
-  <div class="card"><h3>Avisos de cobro ${plan.alerts ? '' : '<span class="chip">Pro</span>'}</h3>
-    <p class="hint" style="font-size:15px;margin-bottom:12px">Te marcamos en el panel cada cobro que llega en los próximos días para que decidas a tiempo.</p>
-    <label style="display:flex;gap:10px;align-items:center;font-weight:600">Avisar <select class="input" id="s-days" style="width:auto;height:38px" ${plan.alerts ? '' : 'disabled'}>${[1, 3, 5, 7].map(d => `<option ${P.alertDays === d ? 'selected' : ''} value="${d}">${d} ${d === 1 ? 'día' : 'días'}</option>`).join('')}</select> antes de cada cobro</label></div>
+  <div class="card"><h3>Avisos por correo ${plan.alerts ? '' : '<span class="chip">Pro</span>'}</h3>
+    ${plan.alerts && !u.demo ? `<p class="hint" style="font-size:15px;margin-bottom:14px">Te escribimos a <b>${esc(u.email)}</b> por la mañana, solo cuando hay algo que ver.</p>
+    <label class="switch-row"><input type="checkbox" id="s-alerts" ${P.emailAlerts !== false ? 'checked' : ''}><span><b>Antes de cada cobro y cuando detectemos una fuga</b><small>Duplicados, subidas de precio y pruebas que pasan a pago.</small></span></label>
+    <label class="switch-row"><span style="flex:1"><b>Avisarme</b><small>Antelación del aviso de cada cobro.</small></span><select class="input" id="s-days" style="width:auto;height:38px">${[1, 2, 3, 5, 7].map(d => `<option ${P.alertDays === d ? 'selected' : ''} value="${d}">${d} ${d === 1 ? 'día' : 'días'} antes</option>`).join('')}</select></label>
+    <label class="switch-row"><input type="checkbox" id="s-digest" ${P.monthlyDigest !== false ? 'checked' : ''}><span><b>Resumen mensual</b><small>El día 1 de cada mes: lo que pagas, lo más caro y lo que puedes ahorrar.</small></span></label>`
+    : `<p class="hint" style="font-size:15px;margin-bottom:14px">Con Pro te avisamos por correo unos días antes de cada cobro, cuando una suscripción sube de precio o te cobran dos veces, y te mandamos un resumen cada mes.</p>${u.demo ? '<a class="btn btn-dark btn-sm" href="#registro">Crear cuenta</a>' : '<button class="btn btn-dark btn-sm" data-buy="pro">Pasar a Pro</button>'}`}</div>
   <div class="card"><h3>Tutorial</h3><p class="hint" style="font-size:15px;margin-bottom:12px">Repasa en un minuto qué hace cada apartado de HorahFlow.</p><button class="btn btn-ghost btn-sm" id="s-tour">Ver tutorial de nuevo</button></div>
   <div class="card"><h3>Privacidad y datos</h3>
-    <p class="hint" style="font-size:15px;margin-bottom:14px">${u.cloud ? `Guardamos ${Data.state.emails.length} fragmentos de recibos (comercio, importe y fecha) cifrados en tu cuenta, para verlos desde cualquier dispositivo. Nunca guardamos tus correos completos.` : `Tus recibos se guardan solo en este navegador (${Data.state.emails.length} recibos).`} ${Store.persistent || u.cloud ? '' : '<b>Este navegador no permite guardar datos: se perderán al cerrar la página.</b>'}</p>
+    <p class="hint" style="font-size:15px;margin-bottom:14px">${u.cloud ? `Guardamos ${Data.state.emails.length} fragmentos de recibos (comercio, importe y fecha) en tu cuenta, para verlos desde cualquier dispositivo. Nunca guardamos tus correos completos.` : `Tus recibos se guardan solo en este navegador (${Data.state.emails.length} recibos).`} ${Store.persistent || u.cloud ? '' : '<b>Este navegador no permite guardar datos: se perderán al cerrar la página.</b>'}</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" id="s-wipe">Borrar todos mis recibos</button>${u.demo ? '' : '<button class="btn btn-ghost btn-sm" id="s-del" style="color:var(--red)">Eliminar mi cuenta</button>'}<button class="btn btn-ghost btn-sm" id="s-out">${I.out} Cerrar sesión</button></div></div>
   </div>`;
 }
@@ -518,7 +546,21 @@ function bindAppView(view) {
   $('#cal-next')?.addEventListener('click', () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1); route(); });
   $('#export')?.addEventListener('click', exportCSV);
   $('#ai-run')?.addEventListener('click', runAdvice);
-  $('#c-gmail')?.addEventListener('click', connectGmail);
+  $$('[data-copy]').forEach(b => b.onclick = async e => { e.preventDefault(); try { await navigator.clipboard.writeText(b.dataset.copy); toast('Copiado'); } catch { prompt('Copia este texto:', b.dataset.copy); } });
+  $$('[data-fwd]').forEach(b => b.onclick = () => { fwdTab = b.dataset.fwd; const g = $('.fwd-guide'); if (g) { g.innerHTML = fwdGuide(Inbound.addresses[0] ? Inbound.email(Inbound.addresses[0]) : ''); bindAppView('guide'); } });
+  $('#addr-new')?.addEventListener('click', e => {
+    const first = !Inbound.addresses.length;
+    modal(`<h2>${first ? 'Tu dirección de reenvío' : 'Nueva dirección'}</h2><p class="hint" style="font-size:15px;margin:6px 0 14px">Ponle un nombre para reconocer de qué correo vienen los recibos.</p>
+      <form id="an-f"><div class="field"><label for="an-l">Nombre</label><input class="input" id="an-l" maxlength="40" value="${first ? 'Mi correo' : ''}" placeholder="Gmail personal, trabajo…" required></div><button class="btn btn-dark btn-block" id="an-b">Crear dirección</button><p class="err" id="an-e"></p></form>`,
+      (bg, close) => { $('#an-l', bg).focus(); $('#an-f', bg).onsubmit = async ev => { ev.preventDefault(); const btn = $('#an-b', bg); btn.disabled = true;
+        try { await Inbound.create($('#an-l', bg).value); close(); toast('Dirección creada. Cópiala y configura el reenvío.'); route(); }
+        catch (err) { $('#an-e', bg).textContent = err.message; btn.disabled = false; } }; });
+  });
+  $('#addr-sync')?.addEventListener('click', async e => { const b = e.currentTarget; b.disabled = true; b.textContent = 'Comprobando…'; await Inbound.load().catch(() => {}); const n = await Inbound.sync(); toast(n ? `${n} recibos nuevos importados` : 'No hay recibos nuevos todavía'); route(); });
+  $$('[data-rename]').forEach(b => b.onclick = () => { const a = Inbound.addresses.find(x => x.id === b.dataset.rename); if (!a) return;
+    modal(`<h2>Renombrar</h2><form id="rn-f"><div class="field"><label for="rn-l">Nombre</label><input class="input" id="rn-l" maxlength="40" value="${esc(a.label)}" required></div><button class="btn btn-dark btn-block">Guardar</button></form>`,
+      (bg, close) => { $('#rn-f', bg).onsubmit = async ev => { ev.preventDefault(); try { await Inbound.rename(a.id, $('#rn-l', bg).value); close(); route(); } catch (err) { toast(err.message, 4000); } }; }); });
+  $$('[data-deladdr]').forEach(b => b.onclick = () => confirmModal('¿Eliminar esta dirección?', 'Dejará de recibir recibos al momento. Quita también la regla de reenvío de tu correo. Los recibos que ya importaste se quedan en tu cuenta.', 'Eliminar', async () => { try { await Inbound.remove(b.dataset.deladdr); toast('Dirección eliminada'); route(); } catch (err) { toast(err.message, 4000); } }));
   $('#c-paste')?.addEventListener('click', pasteModal);
   $('#c-file')?.addEventListener('change', e => handleFiles([...e.target.files]));
   const drop = $('#drop');
@@ -529,9 +571,10 @@ function bindAppView(view) {
     drop.addEventListener('drop', e => handleFiles([...e.dataTransfer.files]));
   }
   $$('[data-remove]').forEach(b => b.onclick = () => confirmModal('¿Quitar esta fuente?', 'Se borrarán los recibos que vienen de ella. Puedes volver a conectarla cuando quieras.', 'Quitar', () => { Data.removeSource(b.dataset.remove); toast('Fuente eliminada'); route(); }));
-  $$('[data-resync]').forEach(b => b.onclick = connectGmail);
   $('#s-prof')?.addEventListener('submit', e => { e.preventDefault(); Auth.update({ name: $('#s-name').value.trim() || Auth.user.name }); toast('Perfil guardado'); route(); });
   $('#s-days')?.addEventListener('change', e => { Data.state.prefs.alertDays = +e.target.value; Data.save('prefs'); toast('Avisos actualizados'); });
+  $('#s-alerts')?.addEventListener('change', e => { Data.state.prefs.emailAlerts = e.target.checked; Data.save('prefs'); toast(e.target.checked ? 'Avisos por correo activados' : 'Avisos por correo desactivados'); });
+  $('#s-digest')?.addEventListener('change', e => { Data.state.prefs.monthlyDigest = e.target.checked; Data.save('prefs'); toast(e.target.checked ? 'Resumen mensual activado' : 'Resumen mensual desactivado'); });
   $('#s-down')?.addEventListener('click', () => { Auth.update({ plan: 'free', planTest: false }); toast('Has vuelto al plan Gratis'); route(); });
   $('#s-wipe')?.addEventListener('click', () => confirmModal('¿Borrar todos tus recibos?', 'Se eliminarán todos los recibos y fuentes guardados en este navegador. Tu cuenta seguirá activa.', 'Borrar', () => { Data.wipe(); toast('Datos borrados'); route(); }));
   $('#s-del')?.addEventListener('click', () => confirmModal('¿Eliminar tu cuenta?', 'Se borrarán tu cuenta y todos tus datos. Si tienes una suscripción, cancélala antes desde «Gestionar suscripción». No se puede deshacer.', 'Eliminar cuenta', async () => { try { await Auth.remove(); location.hash = 'inicio'; toast('Cuenta eliminada'); } catch (e) { toast('No se pudo eliminar: ' + e.message, 4000); } }));

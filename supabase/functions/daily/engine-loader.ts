@@ -1,5 +1,5 @@
 // Carga el motor de análisis publicado en la web y comprueba su huella SHA-256.
-// Si el archivo de la web cambia, hay que actualizar ENGINE_SHA256 y volver a desplegar (ver MANUAL.md).
+// Si el archivo de la web cambia, hay que actualizar ENGINE_SHA256 y volver a desplegar (ver README.md).
 export const ENGINE_URL = "https://horahflow.com/server/engine.js";
 export const ENGINE_SHA256 = "bf10fb7cea86b577b1959d7b66ec26295b4276c269a3561559da12b3160586c8";
 // deno-lint-ignore no-explicit-any

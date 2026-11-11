@@ -23,7 +23,7 @@ async def main():
         pg = await b.new_page(viewport={'width':1300,'height':900}); errs=[]
         pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.route('**/supabase.min.js', lambda r: r.fulfill(status=200, content_type='application/javascript', body=MOCK))
-        await pg.goto('file:///home/claude/horahflow/dist/index.html#app-correos'); await pg.wait_for_timeout(900)
+        await pg.goto('file:///home/claude/horahflow/dist/index.html#app-correos'); await pg.wait_for_selector('.tour'); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(900)
         # 1) cargar ejemplo y pegar un recibo raro
         await pg.click('#load-demo'); await pg.wait_for_timeout(600)
         await pg.evaluate("location.hash='app-correos'"); await pg.wait_for_timeout(400)

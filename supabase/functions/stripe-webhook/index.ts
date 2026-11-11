@@ -31,11 +31,13 @@ function timingSafe(a: string, b: string) {
 function planFromSubscription(sub: any): "free" | "pro" | "business" {
   const active = ["active", "trialing", "past_due"].includes(sub.status);
   if (!active) return "free";
-  const keys: string[] = (sub.items?.data || []).map((i: any) => i.price?.lookup_key || i.price?.metadata?.plan || "");
+  // Manda el precio actual de la suscripción (cambia si el cliente cambia de plan en el portal);
+  // los metadatos de la suscripción solo se usan si el precio no dice nada.
+  const keys: string[] = (sub.items?.data || []).map((i: any) => i.price?.lookup_key || i.price?.metadata?.plan || "").filter(Boolean);
+  if (keys.some((k) => k.includes("business"))) return "business";
+  if (keys.some((k) => k.includes("pro"))) return "pro";
   const meta = sub.metadata?.plan || "";
-  if (keys.some((k) => k.includes("business")) || meta === "business") return "business";
-  if (keys.some((k) => k.includes("pro")) || meta === "pro") return "pro";
-  return "pro";
+  return meta === "business" ? "business" : "pro";
 }
 
 async function applyCustomer(customerId: string) {

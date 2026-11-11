@@ -119,7 +119,7 @@ function renderLanding(scrollTo) {
   </div></section>
 
   <div class="strip"><div class="wrap">
-    <span>Detecta <b>+45 servicios</b> conocidos</span><span>Lee recibos en <b>español e inglés</b></span><span>Convierte <b>USD y GBP</b> a euros</span><span>Tus correos se leen <b>en tu navegador</b></span>
+    <span>Detecta <b>+45 servicios</b> conocidos</span><span>Lee recibos en <b>español e inglés</b></span><span>Convierte <b>USD y GBP</b> a euros</span><span><b>Nunca</b> pedimos la contraseña de tu correo</span>
   </div></div>
 
   <section class="block" id="como-funciona-sec"><div class="wrap">
@@ -128,7 +128,7 @@ function renderLanding(scrollTo) {
     <div class="thread" id="thread">
       <div class="thread-track"><i class="thread-fill"></i><span class="thread-spark"></span></div>
       ${[
-        ['Conecta tu correo', 'Sube el archivo exportado de tu correo o pega tus recibos; muy pronto, Gmail con un clic. Nunca te pedimos la contraseña del banco.', '<span>.mbox</span><span>.eml</span><span>texto pegado</span>'],
+        ['Conecta tu correo', 'Te damos una dirección privada: tu correo le reenvía los recibos solo. También puedes subir un archivo o pegarlos. Nunca te pedimos contraseñas.', '<span>Gmail</span><span>Outlook</span><span>iCloud</span><span>.mbox</span>'],
         ['Leemos solo los recibos', 'Separamos facturas y renovaciones de la publicidad. De cada cobro sacamos importe, fecha, frecuencia y categoría.', '<span>155 correos</span><span class="ok">153 cobros</span>'],
         ['Cierra las fugas', 'Ves cuánto pagas, cuándo te lo cobran y qué puedes cancelar, compartir o cambiar por algo gratis.', '<span class="save">−169,47 €/mes</span>']
       ].map(([h, p, tags], i) => `<div class="tstep" data-i="${i}"><span class="tnode">${i + 1}</span><h3>${h}</h3><p>${p}</p><div class="ttags">${tags}</div></div>`).join('')}
@@ -183,12 +183,12 @@ function renderLanding(scrollTo) {
 
   <section class="block alt"><div class="wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center" id="priv-grid">
     <div><span class="kicker">Privacidad primero</span><h2 class="title">¿Por qué el correo y no el banco?</h2>
-      <p class="sub" style="margin-bottom:22px">Conectar tu banco exige compartir credenciales con terceros y da acceso a todo tu dinero. Tu correo ya tiene los recibos, y con permiso de solo lectura no se puede mover ni un euro.</p>
+      <p class="sub" style="margin-bottom:22px">Conectar tu banco exige compartir credenciales con terceros y da acceso a todo tu dinero. Tu correo ya tiene los recibos: basta con reenviarlos, y desde ahí no se puede mover ni un euro.</p>
       <div style="display:grid;gap:14px">
-        ${[['Solo lectura', 'No podemos enviar, borrar ni modificar ningún correo.'],
-           ['Solo recibos', 'Buscamos facturas y renovaciones. El resto de tu correo se ignora.'],
-           ['Procesado en tu navegador', 'El análisis se hace en tu dispositivo. De cada recibo solo guardamos comercio, importe y fecha.'],
-           ['Bórralo cuando quieras', 'Un botón elimina todos tus datos y desconecta tu correo.']]
+        ${[['Sin contraseñas', 'Tú decides qué se reenvía. No tenemos acceso a tu buzón ni podemos enviar, borrar o mover nada.'],
+           ['Solo recibos', 'Lo que no es un cobro se descarta al llegar. El resto de tu correo nunca lo vemos.'],
+           ['Lo mínimo', 'De cada recibo solo guardamos comercio, importe, fecha y un fragmento. Servidores en la UE.'],
+           ['Bórralo cuando quieras', 'Un botón elimina tu cuenta y todos tus datos.']]
           .map(([b, p]) => `<div style="display:flex;gap:12px"><span class="dot green" style="width:26px;height:26px;border-radius:8px">${I.check}</span><div><b>${b}</b><div class="hint" style="font-size:15px">${p}</div></div></div>`).join('')}
       </div></div>
     <div class="card" style="padding:28px">
@@ -237,15 +237,15 @@ function plansHTML() {
   return `
   <div class="plan"><h3>Gratis</h3><p class="desc">Para descubrir tus fugas por primera vez.</p>
     <div class="price">0 €</div><div class="per">para siempre</div>
-    <ul>${li(['1 correo conectado', 'Detección de suscripciones y gasto hormiga', 'Calendario de cobros', 'Alternativas gratuitas', '12 meses de historial'])}</ul>
+    <ul>${li(['1 correo con reenvío automático', 'Subir archivos y pegar recibos sin límite', 'Suscripciones, fugas y calendario de cobros', 'Alternativas gratuitas', 'Flow: 15 preguntas al día', '12 meses de historial'])}</ul>
     <a class="btn btn-ghost btn-block" href="#registro">Empezar gratis</a></div>
-  <div class="plan pop"><span class="tag">Más elegido</span><h3>Pro</h3><p class="desc">Para controlar todos tus correos y no volver a pagar sin enterarte.</p>
+  <div class="plan pop"><span class="tag">Más elegido</span><h3>Pro</h3><p class="desc">Para que HorahFlow vigile por ti y te avise antes de pagar.</p>
     <div class="price num">${p.pro} €</div><div class="per">${per}</div>
-    <ul>${li(['Hasta 5 correos', 'Aviso antes de cada cobro', 'Alerta de subidas de precio y pruebas', '24 meses de historial', 'Exportar a CSV / Excel', 'Asistente Flow sin límites'])}</ul>
-    <button class="btn btn-dark btn-block" data-buy="pro">Probar Pro</button></div>
-  <div class="plan"><h3>Empresas</h3><p class="desc">Para autónomos y equipos que pagan software en varios sitios.</p>
-    <div class="price num">${p.biz} €</div><div class="per">${per} · hasta 25 buzones</div>
-    <ul>${li(['Buzones del equipo en un panel', 'Licencias duplicadas entre personas', 'Centros de coste por categoría', 'Informe mensual de recurrentes', '36 meses de historial'])}</ul>
+    <ul>${li(['Hasta 5 correos con reenvío automático', '<b>Aviso por email</b> antes de cada cobro', 'Alerta por email de duplicados, subidas y pruebas que pasan a pago', 'Resumen mensual por email', 'Exportar a CSV / Excel', 'Flow: 300 preguntas al día', '24 meses de historial'])}</ul>
+    <button class="btn btn-dark btn-block" data-buy="pro">Pasar a Pro</button></div>
+  <div class="plan"><h3>Empresas</h3><p class="desc">Para autónomos y pymes con muchos correos y gastos de empresa.</p>
+    <div class="price num">${p.biz} €</div><div class="per">${per}</div>
+    <ul>${li(['Todo lo de Pro', 'Hasta 25 correos con reenvío automático (los de tu equipo también)', 'Factura con el NIF de tu empresa', 'Flow: 1.000 preguntas al día', '36 meses de historial'])}</ul>
     <button class="btn btn-ghost btn-block" data-buy="business">Elegir Empresas</button></div>`;
 }
 function bindPricing() {
