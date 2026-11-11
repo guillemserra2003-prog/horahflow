@@ -2,6 +2,30 @@
    HorahFlow · web pública: inicio, demo, precios, blog, acceso
    ========================================================= */
 const LOGO = window.HF_LOGO, LOGO_FULL = window.HF_LOGO_FULL;
+/* Calculadora de la portada: [nombre, importe orientativo al mes, marcado por defecto] */
+const CALC_ITEMS = [
+  ['Plataforma de vídeo', 13.99, true], ['Otra plataforma de vídeo', 9.99, true], ['Música', 11.99, true], ['Almacenamiento en la nube', 2.99, true],
+  ['Gimnasio', 35, false], ['Asistente de IA', 20, false], ['Fútbol o deportes en TV', 30, false], ['Videojuegos online', 9.99, false],
+  ['Audiolibros o lectura', 9.99, false], ['Prensa digital', 9.99, false], ['Software o apps de trabajo', 12, false], ['Comida a domicilio', 60, false]
+];
+function bindCalc() {
+  const box = $('#calc-items'); if (!box) return;
+  const fmtE = n => (Math.round(n)).toLocaleString('es-ES') + ' €';
+  const upd = () => {
+    let m = 0;
+    $$('.calc-item', box).forEach(el => { const on = $('input[type=checkbox]', el).checked; el.classList.toggle('on', on); if (on) m += Math.max(0, parseFloat($('input[type=number]', el).value.replace(',', '.')) || 0); });
+    $('#calc-m').textContent = m.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+    $('#calc-y').textContent = fmtE(m * 12); $('#calc-5').textContent = fmtE(m * 60);
+  };
+  box.addEventListener('input', upd); box.addEventListener('change', upd);
+  $$('.calc-amt input', box).forEach(i => i.addEventListener('click', e => e.preventDefault()));
+  upd();
+}
+function bindVideo() {
+  const v = $('#hf-video'); if (!v || !('IntersectionObserver' in window)) return;
+  // Se reproduce solo cuando está a la vista (sin sonido), y se pausa al salir
+  new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); }), { threshold: 0.5 }).observe(v);
+}
 let billingYear = false;
 
 function navHTML() {
@@ -74,8 +98,9 @@ function renderLanding(scrollTo) {
 
   <section class="block" id="como-funciona-sec"><div class="wrap">
     <div class="sec-head"><span class="kicker">Cómo funciona</span><h2 class="title">Tres pasos. Ninguna hoja de cálculo.</h2><p class="sub">No tienes que apuntar nada. Todo lo que pagas online deja un recibo en tu correo: HorahFlow los encuentra y los ordena por ti.</p></div>
+    <div class="video-card"><video id="hf-video" src="/media/horahflow.mp4" poster="/media/horahflow-poster.jpg" muted playsinline loop preload="metadata" controls aria-label="Vídeo: cómo funciona HorahFlow en 44 segundos"></video></div>
     <div class="steps">
-      <div class="step"><div class="n">01</div><h3>Conecta tu correo</h3><p>Gmail con un clic y permiso de solo lectura, o sube un archivo exportado. Nunca te pedimos la contraseña del banco.</p></div>
+      <div class="step"><div class="n">01</div><h3>Conecta tu correo</h3><p>Sube el archivo exportado de tu correo o pega tus recibos; muy pronto, Gmail con un clic. Nunca te pedimos la contraseña del banco.</p></div>
       <div class="step"><div class="n">02</div><h3>Analizamos tus recibos</h3><p>Filtramos solo facturas, recibos y renovaciones. Detectamos importe, fecha, frecuencia y categoría de cada cobro.</p></div>
       <div class="step"><div class="n">03</div><h3>Cierra las fugas</h3><p>Ves cuánto pagas, cuándo te lo cobran y qué puedes cancelar, compartir o cambiar por una alternativa gratuita.</p></div>
     </div>
@@ -95,7 +120,20 @@ function renderLanding(scrollTo) {
     </div>
   </div></section>
 
-  <section class="block" id="demo-sec"><div class="wrap">
+  <section class="block" id="calculadora"><div class="wrap">
+    <div class="sec-head center"><span class="kicker">Calculadora</span><h2 class="title">¿Cuánto se te escapa al año?</h2><p class="sub">Marca lo que pagas y ajusta el importe. Te sorprenderá.</p></div>
+    <div class="calc">
+      <div class="calc-items" id="calc-items">${CALC_ITEMS.map((c, i) => `<label class="calc-item${c[2] ? ' on' : ''}" data-i="${i}"><input type="checkbox" ${c[2] ? 'checked' : ''}><span class="calc-name">${c[0]}</span><span class="calc-amt"><input type="number" min="0" step="0.01" value="${c[1]}" aria-label="Importe al mes de ${c[0]}"> €/mes</span></label>`).join('')}</div>
+      <div class="calc-out card">
+        <div class="hint" style="font-weight:700">Pagas al mes</div><div class="calc-big num" id="calc-m">0 €</div>
+        <div class="calc-rows"><div><span>Al año</span><b class="num" id="calc-y">0 €</b></div><div><span>En 5 años</span><b class="num" id="calc-5">0 €</b></div></div>
+        <p class="hint" style="font-size:14px;margin:14px 0 18px">Importes orientativos: ajústalos a lo que pagas tú. HorahFlow los calcula solo a partir de tus recibos reales.</p>
+        <a class="btn btn-dark btn-block" href="#registro">Ver mis gastos reales gratis ${I.arrow}</a>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="block alt" id="demo-sec"><div class="wrap">
     <div class="sec-head center"><span class="kicker">Demo en vivo</span><h2 class="title">Pruébalo con una bandeja de ejemplo.</h2><p class="sub">Así analiza HorahFlow un correo real de 6 meses. Pulsa el botón y mira qué encuentra.</p></div>
     <div class="demo">
       <div class="inbox"><div class="inbox-head"><span>Bandeja de entrada</span><span class="hint" id="demo-count"></span></div><div class="inbox-list" id="demo-inbox"></div></div>
@@ -152,7 +190,7 @@ function renderLanding(scrollTo) {
     <a class="btn btn-green" href="#registro">Crear cuenta gratis ${I.arrow}</a>
   </div></div></section>
   </main>` + footerHTML();
-  bindNav(); bindDemo(); bindPricing();
+  bindNav(); bindDemo(); bindPricing(); bindCalc(); bindVideo();
   const pg = $('#priv-grid'); if (pg && window.innerWidth < 900) pg.style.gridTemplateColumns = '1fr';
   if (scrollTo) requestAnimationFrame(() => { const el = $('#' + scrollTo); if (el) window.scrollTo({ top: el.offsetTop - 72, behavior: 'instant' in window ? 'auto' : 'auto' }); });
   else window.scrollTo(0, 0);

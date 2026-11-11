@@ -42,7 +42,79 @@ function renderApp(view) {
   $('#logout').onclick = () => { Auth.logout(); location.hash = 'inicio'; };
   bindAppView(view);
   window.scrollTo(0, 0);
+  if (!Data.state.prefs.tourDone && !Tour.open) setTimeout(() => Tour.start(), 350);
 }
+
+/* ---------- Tutorial de bienvenida (primera vez que entras) ---------- */
+const Tour = {
+  open: false, i: 0,
+  steps: [
+    { t: 'Bienvenido a HorahFlow', p: 'Te enseñamos en 1 minuto qué hace cada apartado. Puedes saltarlo cuando quieras y volver a verlo desde Ajustes.' },
+    { h: 'app', t: 'Resumen', p: 'Tu foto general: cuánto pagas al mes y al año, tu nota de salud financiera y las fugas más importantes que hemos encontrado.' },
+    { h: 'app-suscripciones', t: 'Suscripciones', p: 'Todo lo que se renueva solo. Toca cualquiera para ver su historial de precios, marcarla como cancelada o ver cómo darte de baja.' },
+    { h: 'app-calendario', t: 'Calendario', p: 'Qué día te cobra cada servicio. Así decides a tiempo si lo cancelas antes de la próxima renovación.' },
+    { h: 'app-ahorro', t: 'Ahorro', p: 'Cuánto puedes ahorrar y cómo: alternativas gratis o más baratas y un plan de ahorro hecho por IA a partir de tus gastos.' },
+    { h: 'app-gastos', t: 'Gastos', p: 'Cada cobro detectado en tus recibos, con buscador y filtros. En los planes de pago puedes exportarlo a CSV.' },
+    { h: 'app-correos', t: 'Correos', p: 'Aquí conectas tus recibos: sube el archivo exportado de tu correo o pégalos. Es el primer paso para que todo lo demás se llene.' },
+    { h: 'app-ajustes', t: 'Ajustes', p: 'Tu perfil, tu plan, los avisos antes de cada cobro y el control total de tus datos: puedes borrarlos cuando quieras.' },
+    { sel: '#ask', t: 'Pregúntale a Flow', p: 'En el Resumen tienes a Flow, tu asistente: pregúntale en lenguaje normal, por ejemplo «¿cuánto gasto en streaming?».' },
+    { t: '¡Listo!', p: 'Empieza conectando tu correo. En unos segundos verás a dónde se va tu dinero.', last: true }
+  ],
+  target(st) {
+    if (st.sel) return $(st.sel);
+    if (!st.h) return null;
+    const mob = matchMedia('(max-width: 900px)').matches;
+    return $(`${mob ? '.mobile-tabs' : '.side-nav nav'} a[href="#${st.h}"]`);
+  },
+  start() {
+    if (!Auth.user || !$('.app')) return;
+    this.open = true; this.i = 0;
+    this.el = document.createElement('div'); this.el.className = 'tour'; this.el.setAttribute('role', 'dialog'); this.el.setAttribute('aria-modal', 'true'); this.el.setAttribute('aria-label', 'Tutorial de HorahFlow');
+    this.el.innerHTML = '<div class="tour-hole"></div><div class="tour-card" tabindex="-1"></div>';
+    document.body.appendChild(this.el);
+    this.onKey = e => { if (e.key === 'Escape') this.end(); else if (e.key === 'ArrowRight') this.go(1); else if (e.key === 'ArrowLeft') this.go(-1); };
+    this.onResize = () => this.paint();
+    addEventListener('keydown', this.onKey); addEventListener('resize', this.onResize); addEventListener('scroll', this.onResize, { passive: true });
+    this.el.addEventListener('click', e => {
+      const b = e.target.closest('[data-t]'); if (!b) return;
+      ({ next: () => this.go(1), prev: () => this.go(-1), skip: () => this.end(), mail: () => { this.end(); location.hash = 'app-correos'; } })[b.dataset.t]();
+    });
+    this.paint();
+  },
+  go(d) { const n = this.i + d; if (n < 0) return; if (n >= this.steps.length) return this.end(); this.i = n; this.paint(); },
+  paint() {
+    const st = this.steps[this.i], tg = this.target(st), hole = $('.tour-hole', this.el), card = $('.tour-card', this.el);
+    const n = this.steps.length;
+    card.innerHTML = `<div class="tour-prog"><span style="width:${Math.round((this.i + 1) / n * 100)}%"></span></div>
+      <div class="hint" style="font-size:13px;font-weight:700">${this.i + 1} de ${n}</div>
+      <h3>${st.t}</h3><p>${st.p}</p>
+      <div class="tour-btns">${st.last ? `<button class="btn btn-ghost btn-sm" data-t="skip">Cerrar</button><button class="btn btn-dark btn-sm" data-t="mail">Conectar mi correo ${I.arrow}</button>`
+        : `<button class="link tour-skip" data-t="skip">Saltar tutorial</button><span style="flex:1"></span>${this.i ? '<button class="btn btn-ghost btn-sm" data-t="prev">Atrás</button>' : ''}<button class="btn btn-dark btn-sm" data-t="next">${this.i ? 'Siguiente' : 'Empezar'}</button>`}</div>`;
+    const vis = tg && tg.getClientRects().length;
+    if (vis && st.sel) tg.scrollIntoView({ block: 'center', behavior: 'instant' });
+    const r = vis ? tg.getBoundingClientRect() : null;
+    this.el.classList.toggle('center', !r);
+    if (r) {
+      const pad = 6;
+      Object.assign(hole.style, { left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: r.height + pad * 2 + 'px' });
+      const cw = Math.min(360, innerWidth - 24), ch = card.offsetHeight, gap = 14;
+      let x, y;
+      if (r.right + gap + cw < innerWidth) { x = r.right + gap; y = Math.min(Math.max(12, r.top + r.height / 2 - ch / 2), innerHeight - ch - 12); }
+      else { x = Math.min(Math.max(12, r.left + r.width / 2 - cw / 2), innerWidth - cw - 12); y = r.top - ch - gap > 12 ? r.top - ch - gap : Math.min(r.bottom + gap, innerHeight - ch - 12); }
+      Object.assign(card.style, { left: x + 'px', top: y + 'px', width: cw + 'px' });
+    } else {
+      Object.assign(hole.style, { left: '50%', top: '50%', width: '0px', height: '0px' });
+      Object.assign(card.style, { left: '', top: '', width: '' });
+    }
+    card.focus({ preventScroll: true });
+  },
+  end() {
+    if (!this.open) return;
+    this.open = false; this.el?.remove();
+    removeEventListener('keydown', this.onKey); removeEventListener('resize', this.onResize); removeEventListener('scroll', this.onResize);
+    if (Auth.user && Data.state && !Data.state.prefs.tourDone) { Data.state.prefs.tourDone = Date.now(); Data.save('prefs'); }
+  }
+};
 
 function emptyHTML() {
   return `<div class="empty fade-in"><span class="dot green" style="width:64px;height:64px;border-radius:20px;margin:0 auto">${I.mail}</span>
@@ -399,6 +471,7 @@ function settingsHTML() {
   <div class="card"><h3>Avisos de cobro ${plan.alerts ? '' : '<span class="chip">Pro</span>'}</h3>
     <p class="hint" style="font-size:15px;margin-bottom:12px">Te marcamos en el panel cada cobro que llega en los próximos días para que decidas a tiempo.</p>
     <label style="display:flex;gap:10px;align-items:center;font-weight:600">Avisar <select class="input" id="s-days" style="width:auto;height:38px" ${plan.alerts ? '' : 'disabled'}>${[1, 3, 5, 7].map(d => `<option ${P.alertDays === d ? 'selected' : ''} value="${d}">${d} ${d === 1 ? 'día' : 'días'}</option>`).join('')}</select> antes de cada cobro</label></div>
+  <div class="card"><h3>Tutorial</h3><p class="hint" style="font-size:15px;margin-bottom:12px">Repasa en un minuto qué hace cada apartado de HorahFlow.</p><button class="btn btn-ghost btn-sm" id="s-tour">Ver tutorial de nuevo</button></div>
   <div class="card"><h3>Privacidad y datos</h3>
     <p class="hint" style="font-size:15px;margin-bottom:14px">${u.cloud ? `Guardamos ${Data.state.emails.length} fragmentos de recibos (comercio, importe y fecha) cifrados en tu cuenta, para verlos desde cualquier dispositivo. Nunca guardamos tus correos completos.` : `Tus recibos se guardan solo en este navegador (${Data.state.emails.length} recibos).`} ${Store.persistent || u.cloud ? '' : '<b>Este navegador no permite guardar datos: se perderán al cerrar la página.</b>'}</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" id="s-wipe">Borrar todos mis recibos</button>${u.demo ? '' : '<button class="btn btn-ghost btn-sm" id="s-del" style="color:var(--red)">Eliminar mi cuenta</button>'}<button class="btn btn-ghost btn-sm" id="s-out">${I.out} Cerrar sesión</button></div></div>
@@ -463,6 +536,7 @@ function bindAppView(view) {
   $('#s-wipe')?.addEventListener('click', () => confirmModal('¿Borrar todos tus recibos?', 'Se eliminarán todos los recibos y fuentes guardados en este navegador. Tu cuenta seguirá activa.', 'Borrar', () => { Data.wipe(); toast('Datos borrados'); route(); }));
   $('#s-del')?.addEventListener('click', () => confirmModal('¿Eliminar tu cuenta?', 'Se borrarán tu cuenta y todos tus datos. Si tienes una suscripción, cancélala antes desde «Gestionar suscripción». No se puede deshacer.', 'Eliminar cuenta', async () => { try { await Auth.remove(); location.hash = 'inicio'; toast('Cuenta eliminada'); } catch (e) { toast('No se pudo eliminar: ' + e.message, 4000); } }));
   $('#s-out')?.addEventListener('click', () => { Auth.logout(); location.hash = 'inicio'; });
+  $('#s-tour')?.addEventListener('click', () => Tour.start());
 }
 
 /* ---------- Enrutado ---------- */

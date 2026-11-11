@@ -386,3 +386,32 @@ textarea.input{height:auto;min-height:150px;padding:12px 14px;resize:vertical;fo
 .related{padding:24px 0 0}
 .cta-inline{border:1px solid var(--line);background:var(--soft);border-radius:16px;padding:22px;margin:32px 0;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .cta-inline p{margin:0!important;font-size:16px!important;font-weight:600}
+
+/* Vídeo y calculadora de la portada */
+.video-card{border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 30px 80px rgba(22,21,31,.10);margin:0 auto 40px;max-width:980px;background:#fff}
+.video-card video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#fff}
+.calc{display:grid;grid-template-columns:1.5fr 1fr;gap:24px;align-items:start}
+.calc-items{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.calc-item{display:flex;align-items:center;gap:10px;border:1px solid var(--line-2);border-radius:14px;padding:12px 14px;background:#fff;cursor:pointer;transition:border-color .15s,background .15s;font-size:15px}
+.calc-item.on{border-color:var(--g2);background:var(--green-soft)}
+.calc-item input[type=checkbox]{width:18px;height:18px;accent-color:#2F8F5B;flex:none}
+.calc-name{flex:1;font-weight:600}
+.calc-amt{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:13px;white-space:nowrap}
+.calc-amt input{width:68px;height:32px;border:1px solid var(--line-2);border-radius:8px;padding:0 8px;text-align:right;font-weight:700;background:#fff}
+.calc-out{position:sticky;top:90px;padding:26px}
+.calc-big{font-size:44px;font-weight:800;letter-spacing:-.03em}
+.calc-rows{display:grid;gap:8px;margin-top:10px}
+.calc-rows div{display:flex;justify-content:space-between;font-size:16px;border-top:1px solid var(--line);padding-top:8px}
+@media (max-width:900px){.calc{grid-template-columns:1fr}.calc-items{grid-template-columns:1fr}.calc-out{position:static}}
+
+/* Tutorial de bienvenida */
+.tour{position:fixed;inset:0;z-index:300}
+.tour-hole{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(22,21,31,.58);transition:all .25s ease;pointer-events:none}
+.tour-card{position:fixed;background:#fff;border-radius:18px;padding:20px 20px 16px;box-shadow:0 24px 60px rgba(0,0,0,.25);outline:none;transition:top .25s ease,left .25s ease}
+.tour.center .tour-card{left:50%!important;top:50%!important;transform:translate(-50%,-50%);width:min(420px,calc(100vw - 24px))}
+.tour-card h3{font-size:20px;margin:6px 0 6px;letter-spacing:-.01em}
+.tour-card p{color:var(--muted);font-size:15px;line-height:1.5;margin:0 0 16px}
+.tour-prog{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:12px}
+.tour-prog span{display:block;height:100%;background:var(--g2,#3BAA6E);transition:width .25s}
+.tour-btns{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+.tour-skip{font-size:14px;color:var(--faint);background:none;border:0;cursor:pointer;padding:0}
