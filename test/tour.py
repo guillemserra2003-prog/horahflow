@@ -12,8 +12,8 @@ async def run(p, vw, vh, tag):
     # calculadora
     await pg.evaluate("document.querySelector('#calculadora').scrollIntoView()"); await pg.wait_for_timeout(300)
     m0 = await pg.text_content('#calc-m')
-    await pg.click('.calc-item[data-i="4"] .calc-name')
-    await pg.fill('.calc-item[data-i="0"] input[type=number]','20')
+    await pg.click('.chipc[data-i="4"] .cn')
+    await pg.fill('.chipc[data-i="0"] input','20'); await pg.wait_for_timeout(600)
     m1 = await pg.text_content('#calc-m'); y1 = await pg.text_content('#calc-y')
     print(tag,'calc', m0,'->',m1, y1)
     await pg.screenshot(path=f'shots/{tag}-calc.png')
