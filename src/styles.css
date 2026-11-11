@@ -509,3 +509,56 @@ textarea.input{height:auto;min-height:150px;padding:12px 14px;resize:vertical;fo
   .verify{flex-wrap:wrap}.verify>div{min-width:170px}
   .copyline code{font-size:13px}
 }
+
+/* Portada: capturas del panel */
+.shots{display:grid;grid-template-columns:260px 1fr;gap:28px;align-items:start}
+.shot-tabs{display:grid;gap:8px}
+.shot-tab{position:relative;text-align:left;padding:14px 16px 16px;border-radius:14px;border:1px solid transparent;transition:background .2s,border-color .2s;overflow:hidden}
+.shot-tab b{display:block;font-size:16px}.shot-tab span{display:block;font-size:14px;color:var(--muted)}
+.shot-tab:hover{background:#fff}
+.shot-tab.on{background:#fff;border-color:var(--line);box-shadow:var(--shadow)}
+.shot-bar{position:absolute;left:16px;right:16px;bottom:8px;height:2px;border-radius:2px;background:var(--line);opacity:0}
+.shot-tab.on .shot-bar{opacity:1}
+.shot-bar::after{content:'';position:absolute;inset:0;background:var(--grad);transform-origin:left;transform:scaleX(0)}
+.shots.playing .shot-tab.on .shot-bar::after{animation:shotbar 5s linear forwards}
+.shots:not(.playing) .shot-tab.on .shot-bar::after{transform:scaleX(1)}
+@keyframes shotbar{to{transform:scaleX(1)}}
+.shot-frame{border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#fff;box-shadow:0 30px 80px rgba(22,21,31,.12)}
+.shot-chrome{display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line);background:#FBFBFC}
+.shot-chrome i{width:10px;height:10px;border-radius:50%;background:var(--line-2)}
+.shot-chrome span{margin-left:10px;font-size:12px;color:var(--faint);background:var(--soft-2);border-radius:99px;padding:3px 12px}
+.shot-imgs{position:relative;aspect-ratio:1600/1025}
+.shot-imgs picture{position:absolute;inset:0;opacity:0;transition:opacity .45s ease}
+.shot-imgs picture.on{opacity:1}
+.shot-imgs img{width:100%;height:100%;object-fit:cover;object-position:top left;display:block}
+
+/* Portada: conecta tu correo */
+.connect-sec{display:grid;grid-template-columns:1.1fr 1fr;gap:56px;align-items:center}
+.providers{display:grid;gap:10px}
+.prov{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 16px}
+.prov .dot{width:28px;height:28px;border-radius:9px}
+.prov div{flex:1}.prov b{display:block;font-size:15px}.prov span{font-size:14px;color:var(--muted)}
+.prov em{font-style:normal;font-size:12px;font-weight:800;color:var(--green);background:var(--green-soft);border-radius:99px;padding:3px 9px;white-space:nowrap}
+.flowviz{background:#fff;border:1px solid var(--line);border-radius:22px;padding:26px;box-shadow:0 30px 80px rgba(22,21,31,.08)}
+.fv-node{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:#fff}
+.fv-node b{display:block;font-size:15px}.fv-node small{color:var(--muted);font-size:13px}
+.fv-node div{min-width:0}.fv-node .mono{word-break:break-all}
+.fv-node.dark{background:var(--ink);border-color:var(--ink);color:#fff}.fv-node.dark small{color:#B9B6C9}
+.fv-link{position:relative;height:38px;margin-left:30px;border-left:2px dashed var(--line-2)}
+.fv-pkt{position:absolute;left:-1px;top:0;transform:translate(-50%,0);font-style:normal;font-size:11px;font-weight:800;background:var(--green-soft);color:var(--green);border:1px solid #A9DDB9;border-radius:99px;padding:2px 8px;white-space:nowrap;opacity:0;animation:pkt 3.9s ease-in-out infinite}
+@keyframes pkt{0%{top:-4px;opacity:0}15%{opacity:1}70%{opacity:1}85%,100%{top:22px;opacity:0}}
+@media (prefers-reduced-motion:reduce){.fv-pkt{animation:none;opacity:1;top:8px}}
+
+/* FAQ agrupadas */
+.faq-g{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--green);margin:34px 0 4px}
+.faq-g:first-child{margin-top:0}
+
+@media (max-width:900px){
+  .shots{grid-template-columns:1fr}
+  .shot-tabs{grid-template-columns:repeat(4,minmax(140px,1fr));overflow-x:auto;scrollbar-width:none}
+  .shot-tab span{display:none}
+  .shot-frame{width:100%;max-width:320px;margin:0 auto;border-radius:28px;border:8px solid var(--ink)}
+  .shot-chrome{display:none}
+  .shot-imgs{aspect-ratio:600/1200}
+  .connect-sec{grid-template-columns:1fr;gap:36px}
+}

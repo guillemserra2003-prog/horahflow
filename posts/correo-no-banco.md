@@ -1,6 +1,6 @@
 ---
 title: Por qué HorahFlow lee tu correo y no tu banco
-description: ¿Es seguro conectar tu banco a una app de finanzas? Por qué HorahFlow analiza solo los recibos de tu correo, con permiso de solo lectura.
+description: ¿Es seguro conectar tu banco a una app de finanzas? Por qué HorahFlow analiza solo los recibos de tu correo, sin pedirte ninguna contraseña.
 date: 2026-11-11
 tag: Privacidad
 image: /blog/img/correo-no-banco.webp
@@ -19,10 +19,10 @@ Para leer tus movimientos, una app necesita un acceso a tu cuenta a través de u
 
 Cada servicio te envía un recibo cuando te cobra. Ese recibo dice quién, cuánto y cuándo. Es la información exacta que necesitamos, y nada más.
 
-- **Solo lectura.** El permiso que pedimos a Google no permite enviar, borrar ni cambiar nada.
-- **Solo recibos.** Buscamos facturas, renovaciones y pedidos. El resto de tus correos se ignora.
-- **En tu navegador.** El análisis se hace en tu dispositivo. De cada recibo solo guardamos el comercio, el importe y la fecha; nunca el correo completo.
-- **Revocable.** Puedes retirar el permiso desde tu cuenta de Google cuando quieras.
+- **Sin contraseñas.** Te damos una dirección privada y tu correo le reenvía solo los recibos. No tenemos acceso a tu buzón ni podemos enviar, borrar ni cambiar nada.
+- **Solo recibos.** Lo que no es una factura, una renovación o un pedido se descarta al llegar. El resto de tus correos nunca lo vemos.
+- **Lo mínimo.** De cada recibo solo guardamos el comercio, el importe y la fecha; nunca el correo completo.
+- **Revocable.** Quitas el reenvío de tu correo, o borras tu dirección privada, y se acabó.
 
 > No necesitamos ver tu saldo para decirte que pagas Netflix dos veces.
 

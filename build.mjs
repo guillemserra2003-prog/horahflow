@@ -123,8 +123,8 @@ const HEAD_COMMON = `<meta name="theme-color" content="#ffffff">
 <link rel="alternate" type="application/rss+xml" title="Blog de HorahFlow" href="${SITE}/blog/feed.xml">
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};</script>
 <script defer src="/_vercel/insights/script.js"></script>${CFG.googleVerification ? `\n<meta name="google-site-verification" content="${esc(CFG.googleVerification)}">` : ""}
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">`;
+<link rel="preload" href="/fonts/manrope.woff" as="font" type="font/woff" crossorigin>
+<style>@font-face{font-family:'Manrope';src:url('/fonts/manrope.woff') format('woff');font-weight:200 800;font-style:normal;font-display:swap}</style>`;
 const metaTags = ({ title, description, canonical, ogImage, ogType = "website" }) => `<title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${canonical}">

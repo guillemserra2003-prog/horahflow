@@ -100,7 +100,7 @@ const LEGAL = {
 <h2>Servicios de terceros</h2>
 <ul>
 <li><b>Pago con Stripe:</b> cuando pulsas «Pasar a Pro» vas a una página de Stripe (stripe.com), que usa sus propias cookies necesarias para procesar el pago de forma segura y prevenir el fraude. Consulta la <a class="link" href="https://stripe.com/es/legal/cookies-policy" target="_blank" rel="noopener">política de cookies de Stripe</a>.</li>
-<li><b>Tipografía:</b> la fuente de la web se carga desde Google Fonts, lo que implica que tu navegador comunica tu dirección IP a Google al descargarla. Google no instala cookies por este servicio.</li>
+<li><b>Tipografía:</b> la fuente de la web (Manrope) está alojada en nuestro propio servidor; no se conecta con Google ni con otros terceros para cargarla.</li>
 </ul>
 
 <h2>Cómo borrar estos datos</h2>

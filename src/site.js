@@ -2,6 +2,21 @@
    HorahFlow · web pública: inicio, demo, precios, blog, acceso
    ========================================================= */
 const LOGO = window.HF_LOGO, LOGO_FULL = window.HF_LOGO_FULL;
+const PANEL_SHOTS = [
+  ['resumen', 'Resumen', 'Cuánto pagas y tus fugas'],
+  ['suscripciones', 'Suscripciones', 'Todo lo que se renueva solo'],
+  ['calendario', 'Calendario', 'Qué día te cobra cada uno'],
+  ['ahorro', 'Ahorro', 'Alternativas y plan con IA']
+];
+function bindShots() {
+  const box = $('.shots'); if (!box) return;
+  const tabs = $$('.shot-tab', box), imgs = $$('.shot-imgs picture', box);
+  let i = 0, timer = null, auto = true;
+  const show = n => { i = (n + tabs.length) % tabs.length; tabs.forEach((t, k) => { t.classList.toggle('on', k === i); t.setAttribute('aria-selected', k === i); }); imgs.forEach((im, k) => im.classList.toggle('on', k === i)); };
+  const play = () => { clearInterval(timer); if (auto) timer = setInterval(() => show(i + 1), 5000); box.classList.toggle('playing', auto); };
+  tabs.forEach((t, k) => t.addEventListener('click', () => { auto = false; show(k); play(); }));
+  if ('IntersectionObserver' in window) new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) play(); else clearInterval(timer); }), { threshold: 0.3 }).observe(box);
+}
 /* Calculadora de la portada: [nombre, importe orientativo al mes, marcado por defecto] */
 const CALC_ITEMS = [
   ['Plataforma de vídeo', 13.99, true], ['Otra plataforma de vídeo', 9.99, true], ['Música', 11.99, true], ['Almacenamiento en la nube', 2.99, true],
@@ -102,7 +117,7 @@ function renderLanding(scrollTo) {
         <a class="btn btn-dark" href="#registro">Empezar gratis ${I.arrow}</a>
         <a class="btn btn-ghost" href="#demo">Ver la demo</a>
       </div>
-      <div class="proof"><span>${I.shield} Solo lectura</span><span>${I.zap} Resultados en 1 minuto</span><span>${I.check} Sin tarjeta</span></div>
+      <div class="proof"><span>${I.shield} Sin contraseñas</span><span>${I.zap} Resultados en 1 minuto</span><span>${I.check} Sin tarjeta</span></div>
     </div>
     <div class="mock fade-in" style="animation-delay:.1s">
       <div class="bar"><i></i><i></i><i></i></div>
@@ -135,7 +150,16 @@ function renderLanding(scrollTo) {
     </div>
   </div></section>
 
-  <section class="block alt"><div class="wrap">
+  <section class="block alt" id="panel-sec"><div class="wrap">
+    <div class="sec-head center"><span class="kicker">Tu panel</span><h2 class="title">Todo lo que pagas, en una sola pantalla.</h2><p class="sub">Así se ve HorahFlow por dentro. Son capturas reales de la app con datos de ejemplo.</p></div>
+    <div class="shots">
+      <div class="shot-tabs" role="tablist">${PANEL_SHOTS.map(([k, t, d], i) => `<button role="tab" class="shot-tab${i ? '' : ' on'}" data-shot="${k}" aria-selected="${!i}"><b>${t}</b><span>${d}</span><i class="shot-bar"></i></button>`).join('')}</div>
+      <div class="shot-frame"><div class="shot-chrome"><i></i><i></i><i></i><span>horahflow.com</span></div>
+        <div class="shot-imgs">${PANEL_SHOTS.map(([k, t], i) => `<picture class="${i ? '' : 'on'}" data-img="${k}"><source media="(max-width: 700px)" srcset="/media/app/${k}-m.webp" width="600" height="1200"><img src="/media/app/${k}.webp" alt="Captura de HorahFlow: ${t}" width="1600" height="1025" loading="${i ? 'lazy' : 'eager'}"></picture>`).join('')}</div></div>
+    </div>
+  </div></section>
+
+  <section class="block"><div class="wrap">
     <div class="sec-head"><span class="kicker">Lo que encuentra</span><h2 class="title">Las brechas por las que se escapa tu dinero.</h2></div>
     <div class="features">
       ${[
@@ -146,6 +170,26 @@ function renderLanding(scrollTo) {
         ['gray', I.list, 'Servicios que se solapan', 'Cuatro plataformas de vídeo a la vez, dos nubes, dos apps de música…', '<span>4 plataformas de vídeo</span><b>48,96 €/mes</b>'],
         ['green', I.leaf, 'Alternativas gratuitas', 'Para cada servicio, opciones gratis o más baratas y el enlace para darte de baja.', '<span>Ofimática de pago</span><b class="g">→ gratis</b>']
       ].map(([c, i, h, p, ex]) => `<div class="feature"><span class="dot ${c}">${i}</span><h3>${h}</h3><p>${p}</p><div class="fx ${c}">${ex}</div></div>`).join('')}
+    </div>
+  </div></section>
+
+  <section class="block alt" id="conectar"><div class="wrap connect-sec">
+    <div>
+      <span class="kicker">Conecta tu correo</span><h2 class="title">Lo configuras una vez. Después, funciona solo.</h2>
+      <p class="sub" style="margin-bottom:24px">Te damos una dirección privada. Tu correo le reenvía solo los recibos y tu panel se actualiza con cada cobro nuevo, sin que tengas que hacer nada.</p>
+      <div class="providers">
+        ${[['Gmail', 'Reenvío automático con un filtro', '3 min'], ['Outlook y Hotmail', 'Reenvío automático · conexión con un clic muy pronto', '3 min'], ['iCloud, Yahoo y otros', 'Cualquier correo que permita reglas de reenvío', '3 min'], ['Tu historial', 'Sube un archivo .mbox y analiza años de recibos de golpe', '1 min']]
+          .map(([n, d, t]) => `<div class="prov"><span class="dot green">${I.check}</span><div><b>${n}</b><span>${d}</span></div><em>${t}</em></div>`).join('')}
+      </div>
+    </div>
+    <div class="flowviz" aria-hidden="true">
+      <div class="fv-node"><span class="dot gray">${I.mail}</span><div><b>Tu correo</b><small>Gmail, Outlook, iCloud…</small></div></div>
+      <div class="fv-link"><i class="fv-pkt">13,99 €</i></div>
+      <div class="fv-node"><span class="dot amber">${I.list}</span><div><b>Filtro «solo recibos»</b><small>facturas, renovaciones, pagos</small></div></div>
+      <div class="fv-link"><i class="fv-pkt" style="animation-delay:1.3s">11,99 €</i></div>
+      <div class="fv-node"><span class="dot green">${I.shield}</span><div><b class="mono" style="font-size:14px">k7m2xq9f@recibos.horahflow.com</b><small>tu dirección privada</small></div></div>
+      <div class="fv-link"><i class="fv-pkt" style="animation-delay:2.6s">72,50 €</i></div>
+      <div class="fv-node dark"><img src="${LOGO}" alt="" style="height:20px;filter:brightness(0) invert(1)"><div><b>Tu panel al día</b><small>y un aviso antes de cada cobro</small></div></div>
     </div>
   </div></section>
 
@@ -165,7 +209,7 @@ function renderLanding(scrollTo) {
     </div>
   </div></section>
 
-  <section class="block alt" id="demo-sec"><div class="wrap">
+  <section class="block" id="demo-sec"><div class="wrap">
     <div class="sec-head center"><span class="kicker">Demo en vivo</span><h2 class="title">Pruébalo con una bandeja de ejemplo.</h2><p class="sub">Así analiza HorahFlow un correo real de 6 meses. Pulsa el botón y mira qué encuentra.</p></div>
     <div class="demo">
       <div class="inbox"><div class="inbox-head"><span>Bandeja de entrada</span><span class="hint" id="demo-count"></span></div><div class="inbox-list" id="demo-inbox"></div></div>
@@ -209,7 +253,8 @@ function renderLanding(scrollTo) {
 
   <section class="block alt" style="padding-bottom:96px"><div class="wrap">
     <div class="sec-head center"><span class="kicker">Preguntas frecuentes</span><h2 class="title">Lo que suele preguntarse.</h2></div>
-    <div class="faq">${FAQ.map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join('')}</div>
+    <div class="faq">${[...new Set(FAQ.map(f => f[2]))].map(g => `<h3 class="faq-g">${g}</h3>${FAQ.filter(f => f[2] === g).map(([q, a]) => `<details><summary>${q}</summary><p>${a}</p></details>`).join('')}`).join('')}
+      <p class="hint" style="text-align:center;margin-top:26px;font-size:15px">¿Otra duda? Escríbenos a <a class="link" href="mailto:hola@horahflow.com">hola@horahflow.com</a> y te respondemos en persona.</p></div>
   </div></section>
 
   ${(window.HF_POSTS || []).length ? `<section class="block"><div class="wrap">
@@ -222,7 +267,7 @@ function renderLanding(scrollTo) {
     <a class="btn btn-green" href="#registro">Crear cuenta gratis ${I.arrow}</a>
   </div></div></section>
   </main>` + footerHTML();
-  bindNav(); bindDemo(); bindPricing(); bindCalc(); bindVideo(); bindThread();
+  bindNav(); bindDemo(); bindPricing(); bindCalc(); bindVideo(); bindThread(); bindShots();
   const pg = $('#priv-grid'); if (pg && window.innerWidth < 900) pg.style.gridTemplateColumns = '1fr';
   if (scrollTo) requestAnimationFrame(() => { const el = $('#' + scrollTo); if (el) window.scrollTo({ top: el.offsetTop - 72, behavior: 'instant' in window ? 'auto' : 'auto' }); });
   else window.scrollTo(0, 0);
