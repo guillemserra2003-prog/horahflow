@@ -481,7 +481,7 @@ function route() {
   if (h === 'blog') return renderBlog();
   if (h.startsWith('blog-')) return renderPost(h.slice(5));
   if (h === 'entrar' || h === 'registro') { if (Auth.user && !Auth.user.demo) { location.hash = 'app'; return; } return renderAuth(h); }
-  if (h === 'privacidad' || h === 'terminos') return renderLegal(h);
+  if (['privacidad', 'terminos', 'cookies', 'aviso-legal'].includes(h)) return renderLegal(h);
   const scroll = { demo: 'demo-sec', precios: 'precios-sec', 'como-funciona': 'como-funciona-sec' }[h];
   renderLanding(scroll);
 }

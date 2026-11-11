@@ -23,7 +23,7 @@ function footerHTML() {
     <div><img src="${LOGO}" alt="HorahFlow" style="height:26px;margin-bottom:14px"><p style="max-width:300px">Encuentra las fugas de dinero que no ves. Suscripciones, cobros recurrentes y gasto hormiga, en un solo panel.</p></div>
     <div><h4>Producto</h4><a href="#como-funciona">Cómo funciona</a><a href="#demo">Demo</a><a href="#precios">Precios</a><a href="#registro">Crear cuenta</a></div>
     <div><h4>Recursos</h4><a href="#blog">Blog</a>${POSTS.slice(0, 2).map(p => `<a href="#blog-${p.slug}">${esc(p.short)}</a>`).join('')}</div>
-    <div><h4>Legal</h4><a href="#privacidad">Privacidad</a><a href="#terminos">Términos</a><a href="mailto:hola@horahflow.com">hola@horahflow.com</a></div>
+    <div><h4>Legal</h4><a href="#privacidad">Privacidad</a><a href="#cookies">Cookies</a><a href="#terminos">Condiciones</a>${legalComplete() ? '<a href="#aviso-legal">Aviso legal</a>' : ''}<a href="mailto:hola@horahflow.com">hola@horahflow.com</a></div>
     <div class="legal"><span>© ${new Date().getFullYear()} HorahFlow · horahflow.com</span><span>Hecho en España</span></div>
   </div></footer>`;
 }
@@ -356,7 +356,7 @@ function renderAuth(mode) {
       <div class="err" id="f-err"></div>
       <button class="btn btn-dark btn-block" type="submit" id="f-btn">${reg ? 'Crear cuenta' : 'Entrar'}</button>
       ${!reg ? '<p style="margin-top:12px;font-size:14px"><button type="button" class="link" id="f-forgot">¿Has olvidado tu contraseña?</button></p>' : ''}
-      ${reg ? `<p class="hint" style="margin-top:12px">Al crear la cuenta aceptas los <a class="link" href="#terminos">términos</a> y la <a class="link" href="#privacidad">política de privacidad</a>.</p>` : ''}
+      ${reg ? `<p class="hint" style="margin-top:12px">Al crear la cuenta aceptas las <a class="link" href="#terminos">condiciones</a> y la <a class="link" href="#privacidad">política de privacidad</a>.</p>` : ''}
       <div class="divider">o</div>
       <button type="button" class="btn btn-ghost btn-block" id="f-demo">Probar con datos de ejemplo</button>
       <p style="margin-top:22px;font-size:15px;text-align:center">${reg ? '¿Ya tienes cuenta? <a class="link" href="#entrar">Entra</a>' : '¿Aún no tienes cuenta? <a class="link" href="#registro">Créala gratis</a>'}</p>
@@ -387,25 +387,4 @@ function confirmScreen(email) {
   $('#auth-form').innerHTML = `<span class="dot green" style="width:56px;height:56px;border-radius:18px;margin-bottom:18px">${I.mail}</span>
     <h1>Revisa tu correo</h1><p class="hint" style="font-size:15px;margin:6px 0 22px">Te hemos enviado un enlace de confirmación a <b>${esc(email)}</b>. Púlsalo y entrarás directamente a tu panel. Si no lo ves, mira en spam.</p>
     <a class="btn btn-ghost btn-block" href="#entrar">Ya lo he confirmado, entrar</a>`;
-}
-
-function renderLegal(which) {
-  const priv = which === 'privacidad';
-  root.innerHTML = navHTML() + `<main><article class="article"><a class="back" href="#inicio">← Inicio</a>
-    <h1>${priv ? 'Política de privacidad' : 'Términos de uso'}</h1><div class="meta">Última actualización: noviembre de 2026 · Borrador pendiente de revisión legal</div>
-    <div class="content">${priv ? `
-      <p>HorahFlow analiza recibos y facturas de tu correo para mostrarte tus gastos recurrentes. Esta página explica qué datos usamos y cómo.</p>
-      <h2>Qué datos tratamos</h2><ul><li>Tu nombre, correo y contraseña cifrada para gestionar tu cuenta.</li><li>De tu correo, solo los mensajes que parecen recibos, facturas o renovaciones: remitente, asunto, fecha y texto del recibo.</li></ul>
-      <h2>Dónde se procesan</h2><p>El análisis de tus correos se realiza en tu navegador. De cada recibo detectado guardamos solo un fragmento (comercio, importe, fecha y frecuencia) en tu cuenta, alojada en servidores de Supabase en la Unión Europea (Frankfurt), para que puedas verlo desde cualquier dispositivo. Nunca guardamos tus correos completos ni los que no son recibos. El permiso de Google es de solo lectura y se revoca al terminar cada sincronización.</p>
-      <h2>Inteligencia artificial</h2><p>Para responder a tus preguntas, generar tu análisis personalizado y leer recibos poco habituales usamos la IA de Anthropic (Claude) desde nuestro servidor. Solo le enviamos un resumen de tus gastos o el fragmento del recibo, nunca tus correos completos. Anthropic actúa como encargado del tratamiento y no utiliza estos datos para entrenar sus modelos.</p>
-      <h2>Pagos</h2><p>Los pagos los procesa Stripe. HorahFlow no ve ni guarda los datos de tu tarjeta.</p>
-      <h2>Responsable</h2><p>Guillem Serra Sentinella · hola@horahflow.com</p>
-      <h2>Uso de datos de Google</h2><p>El uso que HorahFlow hace de la información recibida de las API de Google cumple la Política de Datos de Usuario de los Servicios API de Google, incluidos los requisitos de uso limitado. No usamos estos datos para publicidad ni los vendemos o cedemos a terceros.</p>
-      <h2>Tus derechos</h2><p>Puedes borrar tus datos o eliminar tu cuenta desde Ajustes en cualquier momento y retirar el acceso a Gmail desde tu cuenta de Google. Para ejercer tus derechos de acceso, rectificación o supresión, escribe a hola@horahflow.com.</p>` : `
-      <p>Al usar HorahFlow aceptas estas condiciones.</p>
-      <h2>El servicio</h2><p>HorahFlow ofrece una estimación de tus gastos a partir de los recibos de tu correo. Es una herramienta informativa y no constituye asesoramiento financiero. Los importes pueden no recoger cobros que no generan recibo por correo.</p>
-      <h2>Planes y pagos</h2><p>El plan Gratis no tiene coste. Los planes de pago se renuevan según el periodo elegido y puedes cancelarlos en cualquier momento desde tu panel; la cancelación es efectiva al final del periodo pagado.</p>
-      <h2>Uso responsable</h2><p>Solo puedes conectar buzones de correo que te pertenezcan o que estés autorizado a gestionar.</p>`}
-    </div></article></main>` + footerHTML();
-  bindNav(); window.scrollTo(0, 0);
 }
