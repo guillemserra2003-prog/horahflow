@@ -1,30 +1,59 @@
-# HorahFlow · horahflow.com
+# HorahFlow — horahflow.com
 
-Web completa en un único archivo (`dist/index.html`): inicio, demo interactiva, precios, blog, registro/acceso y la app (resumen, suscripciones, calendario, ahorro, gastos, correos y ajustes).
+Web + app que lee los recibos de tu correo y encuentra suscripciones olvidadas, subidas de precio y gasto hormiga.
 
-## Publicar en horahflow.com
-1. Sube la carpeta `dist/` a Vercel, Netlify o cualquier hosting estático (no necesita build).
-2. Apunta el dominio `horahflow.com` al proyecto.
+## Cómo está montado
 
-## Activar Gmail (10 min)
-1. Google Cloud Console → crea un proyecto → habilita **Gmail API**.
-2. Pantalla de consentimiento OAuth: tipo "Externo", añade el ámbito `gmail.readonly` y tus usuarios de prueba.
-3. Credenciales → ID de cliente OAuth → "Aplicación web" → origen autorizado `https://horahflow.com`.
-4. Pega el ID en `googleClientId` dentro de `window.HF_CONFIG` (al principio de `dist/index.html`, o en `build.py` y vuelve a ejecutar `python3 build.py`).
+- `src/` → la app (una sola página): `engine.js` (análisis), `core.js` (cuentas, datos, Gmail, IA), `site.js` (portada), `app.js` (panel), `legal.js` (textos legales), `faq.js`, `styles.css`.
+- `posts/` → **un archivo `.md` por artículo del blog**. Es lo único que se añade para publicar.
+- `public/` → logo, iconos, imagen para compartir (`assets/og.png`) e imágenes del blog (`blog/img/`).
+- `build.mjs` → genera la web final en `dist/`: portada + app, blog, páginas legales, `sitemap.xml`, `robots.txt`, feed y aviso a buscadores (IndexNow). Vercel lo ejecuta solo en cada cambio de GitHub.
+- `site.config.json` → dirección, claves públicas, enlaces de Stripe, datos del titular y verificación de Google Search Console.
+- `supabase/functions/` → funciones del servidor: `stripe-webhook` (activa planes) e `ai` (Claude).
 
-Importante: `gmail.readonly` es un ámbito **restringido**. En modo prueba funciona con hasta 100 usuarios que añadas a mano. Para abrirlo al público, Google exige verificar la app y pasar una evaluación de seguridad (CASA) anual con un auditor externo. Mientras tanto, los usuarios pueden subir su correo exportado con Google Takeout (.mbox), que ya funciona.
+## Publicar un artículo
 
-## Pagos
-Crea tres Payment Links en Stripe (Pro mensual, Pro anual, Empresas) y pégalos en `stripe`. Sin enlaces, los planes se activan en "modo prueba".
+Crea `posts/nombre-del-articulo.md` → se publica en `horahflow.com/blog/nombre-del-articulo/`.
 
-## Cuentas (Supabase, proyecto `horahflow`, Frankfurt)
-- Tablas: `profiles` (plan, cliente de Stripe), `user_data` (fragmentos de recibos + preferencias, jsonb), `stripe_customers`, `stripe_events`. Todas con RLS.
-- El plan solo lo cambia el servidor (función `stripe-webhook`), nunca el navegador.
-- En Supabase → Authentication → URL Configuration: Site URL `https://horahflow.com` y redirect `https://horahflow.com/**`.
+```
+---
+title: Título del artículo
+seoTitle: Título para Google si el anterior es largo (opcional, máx. ~60 caracteres)
+description: Resumen de 1–2 frases (120–155 caracteres). Sale en Google y en la tarjeta.
+date: 2026-11-12
+tag: Suscripciones
+short: Texto corto para el pie de página (opcional)
+image: /blog/img/nombre-del-articulo.webp
+imageAlt: Descripción de la imagen para Google y personas ciegas
+imageCaption: Pie de foto
+---
 
-## Estructura
-- `src/engine.js` — motor de análisis (detección de importes, servicios, frecuencia, brechas, alternativas).
-- `src/core.js` — almacenamiento, cuentas, Gmail, lectura de .eml/.mbox.
-- `src/site.js` — web pública y blog.
-- `src/app.js` — la app.
-- `build.py` — une todo en `dist/index.html`.
+Primer párrafo.
+
+## Subtítulo
+
+Texto con **negrita**, *cursiva* y [un enlace](/blog/otro-articulo/).
+
+![Descripción](/blog/img/otra-imagen.webp "Pie de foto")
+
+[[cta]]   ← caja «Probar HorahFlow gratis»
+```
+
+- `date` en el futuro → queda **programado** (se publica en la primera actualización a partir de ese día).
+- `draft: true` → **borrador**, no se publica.
+- La portada (`image`) es obligatoria: 1200×630, `.webp`.
+- Si falta algún campo o una imagen, el build falla y Vercel mantiene la versión anterior: nunca se publica nada roto.
+
+## Cuentas, pagos e IA
+
+- **Supabase** (proyecto `horahflow`, Frankfurt): tablas `profiles`, `user_data`, `stripe_customers`, `stripe_events`, `ai_usage`, todas con RLS. El plan solo lo cambia el servidor (`stripe-webhook`).
+- **Stripe**: enlaces de pago y portal de cliente en `site.config.json`.
+- **IA**: función `ai` con límites diarios por plan. Clave `ANTHROPIC_API_KEY` en los secretos de Supabase.
+- **Correo**: envío con Resend desde hola@horahflow.com; recepción con ImprovMX.
+- **Gmail con un clic** (pendiente): necesita `googleClientId`. El permiso `gmail.readonly` es restringido: en modo prueba solo 100 usuarios añadidos a mano; para abrirlo a todos Google exige verificación y auditoría de seguridad anual.
+
+## Probar en local
+
+```
+node build.mjs && cd dist && python3 -m http.server 8000
+```
