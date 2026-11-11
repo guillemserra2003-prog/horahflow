@@ -48,7 +48,11 @@ async function applyCustomer(customerId: string) {
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("ok");
-  const secret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+  let secret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+  if (!secret) {
+    const { data } = await db.rpc("get_private_config", { k: "STRIPE_WEBHOOK_SECRET" });
+    secret = data ?? undefined;
+  }
   const body = await req.text();
   if (!secret || !(await verify(body, req.headers.get("stripe-signature"), secret))) {
     return new Response("firma no válida", { status: 400 });

@@ -367,7 +367,7 @@ function settingsHTML() {
     <p class="hint" style="font-size:15px;margin-bottom:14px">${plan.mailboxes} ${plan.mailboxes === 1 ? 'correo' : 'correos'} · ${plan.history} meses de historial · ${plan.alerts ? 'avisos activados' : 'sin avisos'} · ${plan.export ? 'exportación CSV' : 'sin exportación'}</p>
     ${u.planEnd && plan.id !== 'free' ? `<p class="hint" style="margin:-6px 0 14px">${u.planStatus === 'canceled' ? 'Termina' : 'Se renueva'} el ${new Date(u.planEnd).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</p>` : ''}
     <div style="display:flex;gap:8px;flex-wrap:wrap">${plan.id === 'free' ? '<button class="btn btn-dark btn-sm" data-buy="pro">Pasar a Pro</button><button class="btn btn-ghost btn-sm" data-buy="business">Plan Empresas</button>' : ''}
-    ${u.cloud && u.customer && CFG.stripe.portal ? `<a class="btn btn-ghost btn-sm" href="${esc(CFG.stripe.portal + '?prefilled_email=' + encodeURIComponent(u.email))}" target="_blank" rel="noopener">Gestionar suscripción y facturas</a>` : ''}
+    ${u.cloud && (u.customer || plan.id !== 'free') && CFG.stripe.portal ? `<a class="btn btn-ghost btn-sm" href="${esc(CFG.stripe.portal + '?prefilled_email=' + encodeURIComponent(u.email))}" target="_blank" rel="noopener">Gestionar suscripción y facturas</a>` : ''}
     ${!u.cloud && plan.id !== 'free' && !u.demo ? '<button class="btn btn-ghost btn-sm" id="s-down">Volver a Gratis</button>' : ''}</div></div>
   <div class="card"><h3>Avisos de cobro ${plan.alerts ? '' : '<span class="chip">Pro</span>'}</h3>
     <p class="hint" style="font-size:15px;margin-bottom:12px">Te marcamos en el panel cada cobro que llega en los próximos días para que decidas a tiempo.</p>

@@ -8,8 +8,14 @@ config = '''window.HF_CONFIG = {
   // 2) Opcional: cuentas en la nube con Supabase Auth (si se deja vacío, las cuentas son locales).
   supabaseUrl: 'https://jmqikuquouqvcmkimrdk.supabase.co',
   supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptcWlrdXF1b3VxdmNta2ltcmRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ0MTgwMDUsImV4cCI6MjEwOTk5NDAwNX0.e7EJlj-4okNexW920ySz34_3eo_g00U9x1ClearDQAs',
-  // 3) Pagos: enlaces de pago (Payment Links) de Stripe.
-  stripe: { pro: '', proYear: '', business: '', businessYear: '', portal: '' }
+  // 3) Pagos: enlaces de pago (Payment Links) de Stripe y portal de cliente.
+  stripe: {
+    pro: 'https://buy.stripe.com/5kQcMYew50Y47IL4q36EU00',
+    proYear: 'https://buy.stripe.com/14AfZa73D36cfbd1dR6EU01',
+    business: 'https://buy.stripe.com/9B68wI0FfgX2bZ13lZ6EU02',
+    businessYear: 'https://buy.stripe.com/eVq14ggEdfSY8MPcWz6EU03',
+    portal: 'https://billing.stripe.com/p/login/5kQcMYew50Y47IL4q36EU00'
+  }
 };'''
 html = f'''<!DOCTYPE html>
 <html lang="es">
