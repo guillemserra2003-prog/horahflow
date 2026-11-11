@@ -10,16 +10,42 @@ const CALC_ITEMS = [
 ];
 function bindCalc() {
   const box = $('#calc-items'); if (!box) return;
-  const fmtE = n => (Math.round(n)).toLocaleString('es-ES') + ' €';
-  const upd = () => {
-    let m = 0;
-    $$('.calc-item', box).forEach(el => { const on = $('input[type=checkbox]', el).checked; el.classList.toggle('on', on); if (on) m += Math.max(0, parseFloat($('input[type=number]', el).value.replace(',', '.')) || 0); });
-    $('#calc-m').textContent = m.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
-    $('#calc-y').textContent = fmtE(m * 12); $('#calc-5').textContent = fmtE(m * 60);
+  const eur = (n, d = 2) => n.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: 'always' }) + ' €';
+  const val = el => Math.max(0, parseFloat($('input', el).value.replace(',', '.')) || 0);
+  let shown = { m: 0, y: 0 };
+  const count = (id, from, to, d) => {
+    const el = $(id), t0 = performance.now(), dur = 450;
+    const step = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = eur(from + (to - from) * e, d); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
   };
-  box.addEventListener('input', upd); box.addEventListener('change', upd);
-  $$('.calc-amt input', box).forEach(i => i.addEventListener('click', e => e.preventDefault()));
+  const d = new Date(); $('#r-date').textContent = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  const upd = () => {
+    const on = $$('.chipc', box).filter(el => el.classList.contains('on'));
+    const m = on.reduce((t, el) => t + val(el), 0), y = m * 12;
+    $('#r-lines').innerHTML = on.length ? on.map(el => `<div class="r-line"><span>${esc($('.cn', el).textContent)}</span><i></i><b class="num">${eur(val(el))}</b></div>`).join('') : '<p class="r-empty">Toca un servicio para añadirlo al ticket</p>';
+    count('#calc-m', shown.m, m, 2); count('#calc-y', shown.y, y, 0); shown = { m, y };
+    $('#calc-5').textContent = m ? `y ${eur(m * 60, 0)} en 5 años` : '';
+    const n = Math.floor(y / 60);
+    $('#r-fun').textContent = n >= 2 ? `Con eso salís a cenar dos personas ${n} veces al año.` : '';
+  };
+  const toggle = el => { const on = !el.classList.contains('on'); el.classList.toggle('on', on); el.setAttribute('aria-checked', on); upd(); };
+  box.addEventListener('click', e => { const c = e.target.closest('.chipc'); if (!c || e.target.tagName === 'INPUT') return; toggle(c); });
+  box.addEventListener('keydown', e => { const c = e.target.closest('.chipc'); if (c && e.target === c && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); toggle(c); } });
+  box.addEventListener('input', upd);
   upd();
+}
+function bindThread() {
+  const th = $('#thread'); if (!th) return;
+  const steps = $$('.tstep', th);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const tick = () => {
+    if (!th.isConnected) return removeEventListener('scroll', tick);
+    const r = th.getBoundingClientRect(), vh = innerHeight;
+    const p = reduce ? 1 : Math.min(1, Math.max(0, (vh * 0.85 - r.top) / (vh * 0.55)));
+    th.style.setProperty('--p', p.toFixed(3));
+    steps.forEach((s, i) => s.classList.toggle('lit', p >= i / (steps.length - 1) - 0.02));
+  };
+  addEventListener('scroll', tick, { passive: true }); tick();
 }
 function bindVideo() {
   const v = $('#hf-video'); if (!v || !('IntersectionObserver' in window)) return;
@@ -99,10 +125,13 @@ function renderLanding(scrollTo) {
   <section class="block" id="como-funciona-sec"><div class="wrap">
     <div class="sec-head"><span class="kicker">Cómo funciona</span><h2 class="title">Tres pasos. Ninguna hoja de cálculo.</h2><p class="sub">No tienes que apuntar nada. Todo lo que pagas online deja un recibo en tu correo: HorahFlow los encuentra y los ordena por ti.</p></div>
     <div class="video-card"><video id="hf-video" src="/media/horahflow.mp4" poster="/media/horahflow-poster.jpg" muted playsinline loop preload="metadata" controls aria-label="Vídeo: cómo funciona HorahFlow en 44 segundos"></video></div>
-    <div class="steps">
-      <div class="step"><div class="n">01</div><h3>Conecta tu correo</h3><p>Sube el archivo exportado de tu correo o pega tus recibos; muy pronto, Gmail con un clic. Nunca te pedimos la contraseña del banco.</p></div>
-      <div class="step"><div class="n">02</div><h3>Analizamos tus recibos</h3><p>Filtramos solo facturas, recibos y renovaciones. Detectamos importe, fecha, frecuencia y categoría de cada cobro.</p></div>
-      <div class="step"><div class="n">03</div><h3>Cierra las fugas</h3><p>Ves cuánto pagas, cuándo te lo cobran y qué puedes cancelar, compartir o cambiar por una alternativa gratuita.</p></div>
+    <div class="thread" id="thread">
+      <div class="thread-track"><i class="thread-fill"></i><span class="thread-spark"></span></div>
+      ${[
+        ['Conecta tu correo', 'Sube el archivo exportado de tu correo o pega tus recibos; muy pronto, Gmail con un clic. Nunca te pedimos la contraseña del banco.', '<span>.mbox</span><span>.eml</span><span>texto pegado</span>'],
+        ['Leemos solo los recibos', 'Separamos facturas y renovaciones de la publicidad. De cada cobro sacamos importe, fecha, frecuencia y categoría.', '<span>155 correos</span><span class="ok">153 cobros</span>'],
+        ['Cierra las fugas', 'Ves cuánto pagas, cuándo te lo cobran y qué puedes cancelar, compartir o cambiar por algo gratis.', '<span class="save">−169,47 €/mes</span>']
+      ].map(([h, p, tags], i) => `<div class="tstep" data-i="${i}"><span class="tnode">${i + 1}</span><h3>${h}</h3><p>${p}</p><div class="ttags">${tags}</div></div>`).join('')}
     </div>
   </div></section>
 
@@ -110,26 +139,29 @@ function renderLanding(scrollTo) {
     <div class="sec-head"><span class="kicker">Lo que encuentra</span><h2 class="title">Las brechas por las que se escapa tu dinero.</h2></div>
     <div class="features">
       ${[
-        ['red', I.repeat, 'Suscripciones olvidadas', 'Todo lo que se renueva solo: mensual, anual o semanal, con su próximo cobro.'],
-        ['amber', I.up, 'Subidas de precio', 'Te avisa cuando un servicio te cobra más que el mes anterior, aunque nadie te lo dijera.'],
-        ['red', I.alert, 'Cobros duplicados', 'Dos cargos iguales en pocos días. Te decimos a quién reclamar la devolución.'],
-        ['amber', I.clock, 'Pruebas que pasan a pago', 'Las pruebas gratuitas que acabaron cobrándose sin que lo decidieras.'],
-        ['gray', I.list, 'Servicios que se solapan', 'Cuatro plataformas de vídeo a la vez, dos nubes, dos apps de música…'],
-        ['green', I.leaf, 'Alternativas gratuitas', 'Para cada servicio, opciones gratis o más baratas y el enlace para darte de baja.']
-      ].map(([c, i, h, p]) => `<div class="feature"><span class="dot ${c}">${i}</span><h3>${h}</h3><p>${p}</p></div>`).join('')}
+        ['red', I.repeat, 'Suscripciones olvidadas', 'Todo lo que se renueva solo: mensual, anual o semanal, con su próximo cobro.', '<span>Almacenamiento nube</span><b>2,99 € · día 14</b>'],
+        ['amber', I.up, 'Subidas de precio', 'Te avisa cuando un servicio te cobra más que antes, aunque nadie te lo dijera.', '<span>Fibra + móvil</span><b><s>68,90</s> → 72,50 €</b>'],
+        ['red', I.alert, 'Cobros duplicados', 'Dos cargos iguales en pocos días. Te decimos a quién reclamar la devolución.', '<span>Música · 12 y 13 sept</span><b>2 × 11,99 €</b>'],
+        ['amber', I.clock, 'Pruebas que pasan a pago', 'Las pruebas gratuitas que acabaron cobrándose sin que lo decidieras.', '<span>Prueba de diseño</span><b><s>0,00</s> → 11,99 €</b>'],
+        ['gray', I.list, 'Servicios que se solapan', 'Cuatro plataformas de vídeo a la vez, dos nubes, dos apps de música…', '<span>4 plataformas de vídeo</span><b>48,96 €/mes</b>'],
+        ['green', I.leaf, 'Alternativas gratuitas', 'Para cada servicio, opciones gratis o más baratas y el enlace para darte de baja.', '<span>Ofimática de pago</span><b class="g">→ gratis</b>']
+      ].map(([c, i, h, p, ex]) => `<div class="feature"><span class="dot ${c}">${i}</span><h3>${h}</h3><p>${p}</p><div class="fx ${c}">${ex}</div></div>`).join('')}
     </div>
   </div></section>
 
-  <section class="block" id="calculadora"><div class="wrap">
-    <div class="sec-head center"><span class="kicker">Calculadora</span><h2 class="title">¿Cuánto se te escapa al año?</h2><p class="sub">Marca lo que pagas y ajusta el importe. Te sorprenderá.</p></div>
-    <div class="calc">
-      <div class="calc-items" id="calc-items">${CALC_ITEMS.map((c, i) => `<label class="calc-item${c[2] ? ' on' : ''}" data-i="${i}"><input type="checkbox" ${c[2] ? 'checked' : ''}><span class="calc-name">${c[0]}</span><span class="calc-amt"><input type="number" min="0" step="0.01" value="${c[1]}" aria-label="Importe al mes de ${c[0]}"> €/mes</span></label>`).join('')}</div>
-      <div class="calc-out card">
-        <div class="hint" style="font-weight:700">Pagas al mes</div><div class="calc-big num" id="calc-m">0 €</div>
-        <div class="calc-rows"><div><span>Al año</span><b class="num" id="calc-y">0 €</b></div><div><span>En 5 años</span><b class="num" id="calc-5">0 €</b></div></div>
-        <p class="hint" style="font-size:14px;margin:14px 0 18px">Importes orientativos: ajústalos a lo que pagas tú. HorahFlow los calcula solo a partir de tus recibos reales.</p>
-        <a class="btn btn-dark btn-block" href="#registro">Ver mis gastos reales gratis ${I.arrow}</a>
-      </div>
+  <section class="block calc-sec" id="calculadora"><div class="wrap calc">
+    <div class="calc-left">
+      <span class="kicker">Calculadora</span><h2 class="title">¿Cuánto se te escapa al año?</h2>
+      <p class="sub">Toca lo que pagas. Si tu precio es otro, cámbialo. Los importes son orientativos.</p>
+      <div class="chips" id="calc-items">${CALC_ITEMS.map((c, i) => `<div class="chipc${c[2] ? ' on' : ''}" data-i="${i}" role="checkbox" aria-checked="${c[2]}" tabindex="0"><span class="tick"></span><span class="cn">${c[0]}</span><span class="ca"><input inputmode="decimal" value="${String(c[1]).replace('.', ',')}" aria-label="Importe al mes de ${c[0]}"><small>€</small></span></div>`).join('')}</div>
+    </div>
+    <div class="receipt" aria-live="polite">
+      <div class="r-head"><img src="${LOGO}" alt=""><div><b>Tu ticket mensual</b><small id="r-date"></small></div></div>
+      <div class="r-lines" id="r-lines"></div>
+      <div class="r-tot"><span>Al mes</span><b class="num" id="calc-m">0 €</b></div>
+      <div class="r-year"><span>Al año se te van</span><b class="num" id="calc-y">0 €</b><small id="calc-5"></small></div>
+      <p class="r-fun" id="r-fun"></p>
+      <a class="btn btn-dark btn-block" href="#registro">Ver mis gastos reales gratis ${I.arrow}</a>
     </div>
   </div></section>
 
@@ -190,7 +222,7 @@ function renderLanding(scrollTo) {
     <a class="btn btn-green" href="#registro">Crear cuenta gratis ${I.arrow}</a>
   </div></div></section>
   </main>` + footerHTML();
-  bindNav(); bindDemo(); bindPricing(); bindCalc(); bindVideo();
+  bindNav(); bindDemo(); bindPricing(); bindCalc(); bindVideo(); bindThread();
   const pg = $('#priv-grid'); if (pg && window.innerWidth < 900) pg.style.gridTemplateColumns = '1fr';
   if (scrollTo) requestAnimationFrame(() => { const el = $('#' + scrollTo); if (el) window.scrollTo({ top: el.offsetTop - 72, behavior: 'instant' in window ? 'auto' : 'auto' }); });
   else window.scrollTo(0, 0);
