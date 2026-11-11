@@ -1,0 +1,12 @@
+require('/home/claude/horahflow/src/engine.js'); const E=globalThis.HFEngine;
+const now=new Date('2026-11-11T18:00:00');
+const inbox=E.demoInbox(now); const r=E.analyze(inbox,{},now);
+console.log('emails',inbox.length,'charges',r.charges.length);
+for(const s of r.subs) console.log(s.status.padEnd(9),s.merchant.padEnd(22),s.cycle.padEnd(8),s.amount,s.monthly,s.next.toISOString().slice(0,10),s.priceUp?'UP':'',s.trial?'TRIAL':'');
+console.log('oneoffs',r.oneoffs.length, [...new Set(r.oneoffs.map(o=>o.merchant))]);
+console.log(r.totals);
+r.leaks.forEach(l=>console.log('-',l.type,l.title,l.saving));
+console.log(r.months, r.categories.map(c=>c.label+':'+c.value).join(' | '));
+console.log(E.extractAmount('Subtotal 10,00 € IVA 2,10 € Total: 12,10 €'), E.extractAmount('Amount paid $1,299.00'));
+const eml='From: "Netflix" <info@netflix.com>\nSubject: =?UTF-8?B?VHUgcmVjaWJv?=\nDate: Tue, 3 Nov 2026 10:00:00 +0100\nContent-Type: text/html; charset=utf-8\nContent-Transfer-Encoding: quoted-printable\n\n<p>Total: 13,99&nbsp;=E2=82=AC</p>';
+console.log(E.parseEml(eml), E.toCharge(E.parseEml(eml)));
