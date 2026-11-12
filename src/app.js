@@ -287,21 +287,24 @@ function calendarHTML(a) {
     let d = new Date(s.next), k = 0;
     while (d.getFullYear() * 12 + d.getMonth() <= y * 12 + m && k < 60) { if (d > now) push(d, { name: s.merchant, amount: s.amount, past: false }); d = addCyc(d, s.cycle); k++; }
   }
+  // Compras y pagos puntuales (un pedido de Glovo, una entrada…): salen en su día, en gris
+  for (const c of a.oneoffs) push(c.date, { name: c.merchant, amount: c.amount, past: true, one: true });
   const first = new Date(y, m, 1), start = (first.getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate();
   const cells = [];
   for (let i = 0; i < start; i++) cells.push(`<div class="d out"></div>`);
-  let monthTotal = 0;
+  let monthTotal = 0, monthOne = 0;
   for (let d = 1; d <= days; d++) {
-    const ev = events[d] || []; const tot = ev.reduce((x, e) => x + e.amount, 0); monthTotal += tot;
+    const ev = events[d] || []; const tot = ev.reduce((x, e) => x + e.amount, 0);
+    monthTotal += ev.filter(e => !e.one).reduce((x, e) => x + e.amount, 0); monthOne += ev.filter(e => e.one).reduce((x, e) => x + e.amount, 0);
     const today = d === now.getDate() && m === now.getMonth() && y === now.getFullYear();
-    cells.push(`<div class="d ${today ? 'today' : ''}"><span class="dn">${d}</span>${ev.slice(0, 3).map(e => `<div class="ev ${e.amount >= 40 ? 'big' : ''}" style="${e.past ? 'opacity:.55' : ''}" title="${esc(e.name)} · ${fmt(e.amount)}"><span>${esc(e.name)}</span><b class="num">${Math.round(e.amount)}€</b></div>`).join('')}${ev.length > 3 ? `<span class="hint" style="font-size:11px">+${ev.length - 3} más</span>` : ''}${tot ? `<span class="tot num">${fmt(tot)}</span>` : ''}</div>`);
+    cells.push(`<div class="d ${today ? 'today' : ''}"><span class="dn">${d}</span>${ev.slice(0, 3).map(e => `<div class="ev ${e.one ? 'one' : e.amount >= 40 ? 'big' : ''}" style="${e.past && !e.one ? 'opacity:.55' : ''}" title="${esc(e.name)} · ${fmt(e.amount)}"><span>${esc(e.name)}</span><b class="num">${Math.round(e.amount)}€</b></div>`).join('')}${ev.length > 3 ? `<span class="hint" style="font-size:11px">+${ev.length - 3} más</span>` : ''}${tot ? `<span class="tot num">${fmt(tot)}</span>` : ''}</div>`);
   }
   while (cells.length % 7) cells.push(`<div class="d out"></div>`);
   const lbl = calMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), label = lbl.charAt(0).toUpperCase() + lbl.slice(1);
   const up = a.upcoming;
-  return topbar('Calendario de cobros', 'Cuándo te cobra cada suscripción', `<button class="btn btn-ghost btn-sm" id="cal-prev" aria-label="Mes anterior">←</button><b style="min-width:140px;text-align:center">${label}</b><button class="btn btn-ghost btn-sm" id="cal-next" aria-label="Mes siguiente">→</button>`) + `
+  return topbar('Calendario de cobros', 'Cuándo te cobra cada suscripción y qué has comprado cada día', `<button class="btn btn-ghost btn-sm" id="cal-prev" aria-label="Mes anterior">←</button><b style="min-width:140px;text-align:center">${label}</b><button class="btn btn-ghost btn-sm" id="cal-next" aria-label="Mes siguiente">→</button>`) + `
   <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
-    <div class="card kpi"><div class="l">Recurrentes este mes</div><div class="v num">${fmt(monthTotal)}</div></div>
+    <div class="card kpi"><div class="l">Recurrentes este mes</div><div class="v num">${fmt(monthTotal)}</div>${monthOne ? `<div class="s">+ ${fmt(monthOne)} en compras y pagos puntuales</div>` : ''}</div>
     <div class="card kpi"><div class="l">Próximos 7 días</div><div class="v num">${fmt(up.filter(s => (s.next - now) / 864e5 <= 7).reduce((x, s) => x + s.amount, 0))}</div></div>
     <div class="card kpi"><div class="l">Próximos 30 días</div><div class="v num">${fmt(up.reduce((x, s) => x + s.amount, 0))}</div></div>
   </div>
@@ -376,7 +379,7 @@ function exportCSV() {
 }
 
 /* ---------- Correos / fuentes ---------- */
-const GMAIL_QUERY = 'subject:(recibo OR factura OR receipt OR invoice OR suscripción OR subscription OR renovación OR renewal OR "tu pedido" OR "your order" OR "confirmación de pago" OR "payment")';
+const GMAIL_QUERY = 'subject:(recibo OR factura OR receipt OR invoice OR suscripción OR subscription OR renovación OR renewal OR pedido OR order OR compra OR purchase OR pago OR payment OR cargo OR "tu viaje" OR "your trip" OR reserva OR booking OR entrada OR cuota OR membresía OR membership OR préstamo)';
 const gmailSearch = q => 'https://mail.google.com/mail/u/0/#search/' + encodeURIComponent(q);
 let fwdTab = null, guideOpen = null;
 function guessProvider() {

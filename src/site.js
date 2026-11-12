@@ -384,7 +384,7 @@ function renderAuth(mode) {
   root.innerHTML = `<div class="auth">
     <div class="side"><a href="#inicio"><img src="${LOGO}" alt="HorahFlow" style="height:30px;width:auto"></a>
       <blockquote>“Pagaba 11 suscripciones. Creía que eran 5.”<div class="hint" style="font-size:15px;font-weight:600;margin-top:14px;letter-spacing:0">Lo que descubre casi todo el mundo la primera vez.</div></blockquote>
-      <div style="display:grid;gap:10px;color:var(--muted);font-weight:600;font-size:14px"><span style="display:flex;gap:8px;align-items:center">${I.shield} Acceso de solo lectura</span><span style="display:flex;gap:8px;align-items:center">${I.check} Sin datos bancarios</span></div>
+      <div style="display:grid;gap:10px;color:var(--muted);font-weight:600;font-size:14px"><span style="display:flex;gap:8px;align-items:center">${I.shield} Sin contraseñas de tu correo</span><span style="display:flex;gap:8px;align-items:center">${I.check} Sin datos bancarios</span></div>
     </div>
     <div class="form-wrap"><form id="auth-form" novalidate>
       <a href="#inicio" class="hidden-d" style="display:block;margin-bottom:28px"><img src="${LOGO}" alt="HorahFlow" style="height:26px;width:auto"></a>

@@ -18,7 +18,8 @@ window.supabase={createClient(){
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
-        pg = await b.new_page(viewport={'width':1300,'height':900}); errs=[]
+        pg = await b.new_page(viewport={'width':1300,'height':900})
+        await pg.add_init_script("setInterval(()=>{ if (typeof Tour!=='undefined' && Tour.open) Tour.end(); }, 150)"); errs=[]
         pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.route('**/supabase.min.js', lambda r: r.fulfill(status=200, content_type='application/javascript', body=MOCK))
         await pg.goto('file:///home/claude/horahflow/dist/index.html#registro'); await pg.wait_for_timeout(800)

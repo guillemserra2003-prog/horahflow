@@ -292,6 +292,7 @@ textarea.input{height:auto;min-height:150px;padding:12px 14px;resize:vertical;fo
 .cal .dn{font-weight:700;color:var(--muted);font-size:13px}
 .cal .ev{background:var(--soft-2);border-radius:6px;padding:3px 6px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;gap:4px;white-space:nowrap;overflow:hidden}
 .cal .ev.big{background:var(--red-soft);color:var(--red)}
+.cal .ev.one{background:#fff;border:1px dashed var(--line-2);color:var(--muted);font-weight:600}
 .cal .ev span{overflow:hidden;text-overflow:ellipsis}
 .cal .tot{margin-top:auto;font-size:11px;color:var(--faint);font-weight:700}
 
