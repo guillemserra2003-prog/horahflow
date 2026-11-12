@@ -173,6 +173,7 @@ footer.foot .legal{grid-column:1/-1;border-top:1px solid var(--line);padding-top
 .article .content p{font-size:18px;line-height:1.75;margin-bottom:22px;color:#2A2836}
 .article .content h2{font-size:24px;letter-spacing:-.02em;margin:40px 0 14px}
 .article .content ul{margin:0 0 22px 22px;font-size:18px;line-height:1.75;color:#2A2836}
+.article .content .template{background:#fff;border:1px dashed var(--line-2);border-radius:16px;padding:20px 24px;margin:24px 0;font-size:16px}.article .content .template p{margin:0 0 12px}.article .content .template p:last-child{margin:0}
 .article .content blockquote{border-left:3px solid var(--g2);padding:6px 0 6px 20px;margin:28px 0;font-size:20px;font-weight:700;letter-spacing:-.01em}
 
 /* Auth */

@@ -68,11 +68,13 @@ function inline(s) {
 }
 const CTA = `<div class="cta-inline"><p>¿Cuánto se te escapa a ti? Descúbrelo en un minuto.</p><a class="btn btn-dark btn-sm" href="/#registro">Probar HorahFlow gratis</a></div>`;
 function markdown(md) {
-  const out = []; let list = null, para = [];
+  const out = []; let list = null, para = [], tpl = null;
   const flushP = () => { if (para.length) { out.push(`<p>${inline(para.join(" "))}</p>`); para = []; } };
   const flushL = () => { if (list) { out.push(`<${list.t}>${list.items.map(i => `<li>${inline(i)}</li>`).join("")}</${list.t}>`); list = null; } };
   for (const raw of md.split(/\r?\n/)) {
     const line = raw.trim(); let m;
+    if (tpl) { if (line === ":::") { tpl.push(...(para.length ? [para.splice(0)] : [])); out.push(`<div class="template">${tpl.map(x => `<p>${inline(x.join(" "))}</p>`).join("")}</div>`); tpl = null; } else if (!line) { if (para.length) tpl.push(para.splice(0)); } else para.push(line); continue; }
+    if (line === "::: plantilla") { flushP(); flushL(); tpl = []; continue; }
     if (!line) { flushP(); flushL(); continue; }
     if (line === "[[cta]]") { flushP(); flushL(); out.push(CTA); continue; }
     if ((m = line.match(/^!\[(.*?)\]\((\S+?)(?:\s+"(.*)")?\)$/))) { flushP(); flushL(); out.push(`<figure>${imgTag(m[2], m[1])}${m[3] ? `<figcaption>${inline(m[3])}</figcaption>` : ""}</figure>`); continue; }
