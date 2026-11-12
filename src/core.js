@@ -382,6 +382,20 @@ const Inbound = {
     await this.load();
   },
   /** Las N direcciones más antiguas son las que funcionan con el plan actual (igual que en el servidor) */
+  async confirm(id) {
+    const sb = await getSupabase();
+    const { error } = await sb.rpc('confirm_inbound_address', { p_id: id });
+    if (error) throw new Error(ERR_ES(error.message));
+    await this.load();
+  },
+  /** Estado de conexión: 'paused' | 'pending' | 'connected' | 'idle' | 'none' */
+  state(a) {
+    if (!this.active(a)) return 'paused';
+    const seen = a.last_seen_at || a.last_received_at;
+    if (a.verify_at && !a.confirmed_at && !(seen && new Date(seen) > new Date(a.verify_at))) return 'pending';
+    if (a.confirmed_at || seen) return seen && (Date.now() - new Date(seen)) > 45 * 864e5 ? 'idle' : 'connected';
+    return 'none';
+  },
   active(a) { return this.addresses.slice(0, Auth.plan().mailboxes).some(x => x.id === a.id); },
   /** Trae los recibos reenviados pendientes, los añade a tus datos y los borra del servidor */
   async sync() {

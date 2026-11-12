@@ -403,14 +403,20 @@ function fwdGuide(addr) {
   return `<div class="tabs-mini" id="fwd-tabs">${[['gmail', 'Gmail'], ['outlook', 'Outlook / Hotmail'], ['icloud', 'iCloud'], ['manual', 'A mano']].map(([k, l]) => `<button class="${fwdTab === k ? 'on' : ''}" data-fwd="${k}">${l}</button>`).join('')}</div>${G[fwdTab]}`;
 }
 function addressRow(a) {
-  const email = Inbound.email(a), on = Inbound.active(a);
-  const status = !on ? '<span class="chip amber">Pausada: supera el límite de tu plan</span>'
-    : a.last_received_at ? `<span class="chip green">${a.received_count} recibidos · último ${fmtDate(a.last_received_at)}</span>` : '<span class="chip">Esperando el primer recibo</span>';
-  const done = (Data.state?.prefs?.verifyDone || {})[a.id] === a.verify_at;
-  const verify = a.verify_at && !done && (!a.last_received_at || new Date(a.verify_at) > new Date(a.last_received_at)) && (Date.now() - new Date(a.verify_at)) < 7 * 864e5
+  const email = Inbound.email(a), st = Inbound.state(a), who = a.source_email || a.label;
+  const seen = a.last_seen_at || a.last_received_at;
+  const ST = {
+    connected: ['green', 'Conectado', a.received_count ? `${a.received_count} ${a.received_count === 1 ? 'recibo' : 'recibos'} · último ${fmtDate(a.last_received_at || seen)}` : 'Conectado. Tus próximos recibos llegarán solos.'],
+    pending: ['amber', 'Pendiente de confirmar', 'Confirma el reenvío en tu correo (aviso de abajo).'],
+    idle: ['red', 'Sin actividad', `No llega nada desde el ${fmtDate(seen)}. Revisa que el filtro de reenvío siga activo.`],
+    none: ['grey', 'Sin conectar', 'Configura el reenvío con la guía de abajo.'],
+    paused: ['amber', 'Pausada', 'Supera el límite de direcciones de tu plan.'],
+  }[st];
+  const pill = `<span class="conn ${ST[0]}" title="${esc(ST[2])}"><i></i><b>${esc(who)}</b><span>· ${ST[1]}</span></span>`;
+  const verify = st === 'pending' && a.verify_at && (Date.now() - new Date(a.verify_at)) < 7 * 864e5
     ? `<div class="verify">${I.check}<div><b>Gmail te pide confirmar el reenvío</b><span>${a.verify_code ? `Código: <b class="mono">${esc(a.verify_code)}</b> ` : ''}${a.verify_link ? `· <a class="link" href="${esc(a.verify_link)}" target="_blank" rel="noopener">Confirmar con un clic</a>` : ''}<br>Pulsa «Confirmar» una sola vez en la página de Google. Después, crea el filtro del paso 3.</span></div><div style="display:flex;gap:6px;flex-wrap:wrap">${a.verify_code ? `<button class="btn btn-ghost btn-sm" data-copy="${esc(a.verify_code)}">Copiar código</button>` : ''}<button class="btn btn-dark btn-sm" data-verifydone="${a.id}">Ya lo he confirmado</button></div></div>` : '';
-  return `<div class="addr${on ? '' : ' off'}"><div class="addr-top"><div class="addr-main"><b>${esc(a.label)}</b><div class="copyline"><code>${esc(email)}</code><button class="btn btn-dark btn-sm" data-copy="${esc(email)}">${I.copy} Copiar</button></div></div>
-    <div class="addr-side">${status}<div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" data-rename="${a.id}">Renombrar</button><button class="btn btn-ghost btn-sm" data-deladdr="${a.id}" aria-label="Eliminar dirección">${I.x}</button></div></div></div>${verify}</div>`;
+  return `<div class="addr${st === 'paused' ? ' off' : ''}"><div class="conn-row">${pill}<small class="conn-note">${esc(ST[2])}</small></div><div class="addr-top"><div class="addr-main"><b>${esc(a.label)}</b><div class="copyline"><code>${esc(email)}</code><button class="btn btn-dark btn-sm" data-copy="${esc(email)}">${I.copy} Copiar</button></div></div>
+    <div class="addr-side"><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" data-rename="${a.id}">Renombrar</button><button class="btn btn-ghost btn-sm" data-deladdr="${a.id}" aria-label="Eliminar dirección">${I.x}</button></div></div></div>${verify}</div>`;
 }
 function sourcesHTML() {
   const plan = Auth.plan(), st = Data.state, cloud = Inbound.available() && !Auth.user.demo;
@@ -558,9 +564,9 @@ function bindAppView(view) {
         catch (err) { $('#an-e', bg).textContent = err.message; btn.disabled = false; } }; });
   });
   $('#addr-sync')?.addEventListener('click', async e => { const b = e.currentTarget; b.disabled = true; b.textContent = 'Comprobando…'; await Inbound.load().catch(() => {}); const n = await Inbound.sync(); toast(n ? `${n} recibos nuevos importados` : 'No hay recibos nuevos todavía'); route(); });
-  $$('[data-verifydone]').forEach(b => b.onclick = () => { const a = Inbound.addresses.find(x => x.id === b.dataset.verifydone); if (!a) return;
-    Data.state.prefs.verifyDone = { ...(Data.state.prefs.verifyDone || {}), [a.id]: a.verify_at }; Data.save('prefs');
-    toast('¡Listo! Tu correo ya reenvía a HorahFlow. Crea el filtro del paso 3 y los recibos llegarán solos.', 6000); route(); });
+  $$('[data-verifydone]').forEach(b => b.onclick = async () => { b.disabled = true;
+    try { await Inbound.confirm(b.dataset.verifydone); toast('¡Conectado! Si ya creaste el filtro, tus recibos llegarán solos.', 6000); route(); }
+    catch (err) { b.disabled = false; toast(err.message, 4000); } });
   $$('[data-rename]').forEach(b => b.onclick = () => { const a = Inbound.addresses.find(x => x.id === b.dataset.rename); if (!a) return;
     modal(`<h2>Renombrar</h2><form id="rn-f"><div class="field"><label for="rn-l">Nombre</label><input class="input" id="rn-l" maxlength="40" value="${esc(a.label)}" required></div><button class="btn btn-dark btn-block">Guardar</button></form>`,
       (bg, close) => { $('#rn-f', bg).onsubmit = async ev => { ev.preventDefault(); try { await Inbound.rename(a.id, $('#rn-l', bg).value); close(); route(); } catch (err) { toast(err.message, 4000); } }; }); });

@@ -5,7 +5,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { loadEngine } from "./engine-loader.ts";
-import { unwrapForward, verifySvix, gmailVerification } from "./mail.ts";
+import { unwrapForward, verifySvix, gmailVerification, forwardSource } from "./mail.ts";
 
 const DOMAIN = "recibos.horahflow.com";
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
 
   const results: unknown[] = [];
   for (const token of tokens) {
-    const { data: addr } = await db.from("inbound_addresses").select("id,user_id,created_at").eq("token", token).maybeSingle();
+    const { data: addr } = await db.from("inbound_addresses").select("id,user_id,created_at,source_email").eq("token", token).maybeSingle();
     if (!addr) { results.push({ token, ignored: "no existe" }); continue; }
 
     // Límite del plan: solo cuentan las N direcciones más antiguas
@@ -62,9 +62,16 @@ Deno.serve(async (req) => {
     // Correo de confirmación de reenvío de Gmail: se muestra el código en la app
     const v = gmailVerification(from, subject, text);
     if (v) {
-      await db.from("inbound_addresses").update({ verify_code: v.code, verify_link: v.link, verify_at: new Date().toISOString() }).eq("id", addr.id);
+      const src = forwardSource(text);
+      await db.from("inbound_addresses").update({ verify_code: v.code, verify_link: v.link, verify_at: new Date().toISOString(), confirmed_at: null, ...(src ? { source_email: src } : {}) }).eq("id", addr.id);
       results.push({ token, verify: true }); continue;
     }
+
+    // Ha llegado un correo reenviado de verdad: la dirección está conectada
+    const nowIso = new Date().toISOString();
+    const src = addr.source_email ? "" : forwardSource("", mail.headers);
+    await db.from("inbound_addresses").update({ last_seen_at: nowIso, ...(src ? { source_email: src } : {}) }).eq("id", addr.id);
+    await db.from("inbound_addresses").update({ confirmed_at: nowIso }).eq("id", addr.id).is("confirmed_at", null);
 
     // Reenvío manual: se recupera el remitente, asunto y fecha originales
     const m = unwrapForward({ from, subject, body: text, date: receivedAt });

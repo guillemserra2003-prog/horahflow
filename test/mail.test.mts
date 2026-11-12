@@ -42,4 +42,17 @@ ok(r.from.includes('spotify') && r.date === now, 'auto-reenvío intacto');
 // mailto de outlook
 r = unwrapForward({ from: 'x <x@y.com>', subject: 'RV: Recibo', date: now, body: '-----Original Message-----\nFrom: Uber [mailto:noreply@uber.com]\nSent: Monday, November 3, 2026 3:40 PM\nSubject: Tu viaje\n\nTotal 12,30 €' });
 ok(r.from === 'Uber <noreply@uber.com>' && r.subject === 'Tu viaje', 'mailto ' + r.from);
+
+// forwardSource
+{
+  const { forwardSource } = await import("../supabase/functions/inbound/mail.ts");
+  const es = "guillemserra2003@gmail.com ha solicitado reenviar automáticamente el correo a tu dirección de correo electrónico jaqua4kb6d@recibos.horahflow.com.";
+  if (forwardSource(es) !== "guillemserra2003@gmail.com") throw new Error("origen ES: " + forwardSource(es));
+  const en = "(Ana.Lopez@outlook.es) has requested to automatically forward mail to your email address abc@recibos.horahflow.com.";
+  if (forwardSource(en) !== "ana.lopez@outlook.es") throw new Error("origen EN");
+  if (forwardSource("", [{ name: "X-Forwarded-For", value: "pepe@gmail.com abc@recibos.horahflow.com" }]) !== "pepe@gmail.com") throw new Error("cabecera array");
+  if (forwardSource("", { "x-forwarded-for": "pepe@gmail.com abc@recibos.horahflow.com" }) !== "pepe@gmail.com") throw new Error("cabecera objeto");
+  if (forwardSource("Contacta en forwarding-noreply@google.com") !== "") throw new Error("google no cuenta");
+  console.log("forwardSource OK");
+}
 console.log(fail ? `\n${fail} FALLOS` : '\nTodo OK'); process.exit(fail ? 1 : 0);

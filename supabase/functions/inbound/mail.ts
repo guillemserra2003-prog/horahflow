@@ -32,6 +32,16 @@ export function gmailVerification(from: string, subject: string, text: string): 
   return code || link ? { code, link: link.replace(/[)>\].,]+$/, "") } : null;
 }
 
+/** Correo de origen: en la verificación de Gmail («x@gmail.com ha solicitado reenviar…») o en las cabeceras X-Forwarded-For. */
+export function forwardSource(text: string, headers?: unknown): string {
+  const ok = (e: string) => !/@(?:[a-z0-9-]+\.)*(?:horahflow\.com|google\.com|googlemail\.com)$/i.test(e);
+  const h: Record<string, string> = {};
+  if (Array.isArray(headers)) for (const x of headers as any[]) { if (x && x.name) h[String(x.name).toLowerCase()] = String(x.value ?? ""); }
+  else if (headers && typeof headers === "object") for (const [k, v] of Object.entries(headers as Record<string, unknown>)) h[k.toLowerCase()] = String(v ?? "");
+  const pick = (s: string) => (s.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) || []).map((e) => e.toLowerCase()).find(ok) || "";
+  return (pick(h["x-forwarded-for"] || "") || pick(h["x-original-to"] || "") || pick(text.slice(0, 2000))).slice(0, 254);
+}
+
 const MONTHS: Record<string, number> = {
   jan: 0, ene: 0, january: 0, enero: 0, feb: 1, february: 1, febrero: 1, mar: 2, march: 2, marzo: 2, apr: 3, abr: 3, april: 3, abril: 3,
   may: 4, mayo: 4, jun: 5, june: 5, junio: 5, jul: 6, july: 6, julio: 6, aug: 7, ago: 7, august: 7, agosto: 7,
