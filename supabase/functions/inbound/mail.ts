@@ -137,7 +137,12 @@ function splitHead(raw: string): [Record<string, string>, string] {
 }
 const param = (v: string, p: string) => ((v || "").match(new RegExp(`${p}\\s*=\\s*"?([^";]+)"?`, "i")) || [])[1] || "";
 
-function walk(raw: string, acc: { text: string; html: string }, depth = 0) {
+export type Pdf = { name: string; bytes: Uint8Array };
+export const MAX_PDF_BYTES = 3_000_000, MAX_PDFS = 2;
+/** ¿Es un PDF? Por tipo o por nombre (Outlook a veces lo manda como octet-stream). */
+export const isPdf = (type = "", name = "") => /application\/(x-)?pdf/i.test(type) || (/octet-stream/i.test(type) && /\.pdf$/i.test(name)) || (!type && /\.pdf$/i.test(name));
+
+function walk(raw: string, acc: { text: string; html: string; pdfs: Pdf[] }, depth = 0) {
   if (depth > 6) return;
   const [h, body] = splitHead(raw);
   const ct = (h["content-type"] || "text/plain").toLowerCase();
@@ -147,9 +152,17 @@ function walk(raw: string, acc: { text: string; html: string }, depth = 0) {
     for (const p of parts.slice(1)) { if (p.startsWith("--")) break; walk(p.replace(/^\r?\n/, ""), acc, depth + 1); }
     return;
   }
+  const enc = (h["content-transfer-encoding"] || "").toLowerCase();
+  const name = decodeWords(param(h["content-disposition"], "filename") || param(h["content-type"], "name"));
+  if (isPdf(ct, name)) {
+    if (acc.pdfs.length < MAX_PDFS && body.length < MAX_PDF_BYTES * 1.4) {
+      const bytes = enc.includes("base64") ? b64Decode(body) : toBytes(body);
+      if (bytes.length > 4 && bytes.length <= MAX_PDF_BYTES) acc.pdfs.push({ name: name || "factura.pdf", bytes });
+    }
+    return;
+  }
   if (/attachment/i.test(h["content-disposition"] || "")) return;
   if (!ct.startsWith("text/")) return;
-  const enc = (h["content-transfer-encoding"] || "").toLowerCase();
   const bytes = enc.includes("base64") ? b64Decode(body) : enc.includes("quoted") ? qpDecode(body) : toBytes(body);
   const txt = decodeText(bytes, param(h["content-type"], "charset"));
   if (ct.startsWith("text/plain") && !acc.text) acc.text = txt;
@@ -157,11 +170,11 @@ function walk(raw: string, acc: { text: string; html: string }, depth = 0) {
 }
 
 /** Lee un .eml y devuelve remitente, asunto, fecha y cuerpo (texto o HTML). */
-export function parseEml(input: Uint8Array | string): { from: string; subject: string; date: Date | null; text: string; html: string } {
+export function parseEml(input: Uint8Array | string): { from: string; subject: string; date: Date | null; text: string; html: string; pdfs: Pdf[] } {
   const raw = typeof input === "string" ? input : latin1(input);
   const [h] = splitHead(raw);
-  const acc = { text: "", html: "" };
+  const acc = { text: "", html: "", pdfs: [] as Pdf[] };
   walk(raw, acc);
   const d = h["date"] ? new Date(h["date"]) : null;
-  return { from: decodeWords(h["from"] || ""), subject: decodeWords(h["subject"] || ""), date: d && !isNaN(+d) ? d : null, text: acc.text, html: acc.html };
+  return { from: decodeWords(h["from"] || ""), subject: decodeWords(h["subject"] || ""), date: d && !isNaN(+d) ? d : null, text: acc.text, html: acc.html, pdfs: acc.pdfs };
 }

@@ -10,6 +10,10 @@
     {
       "source": "/vendor/supabase.js",
       "destination": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"
+    },
+    {
+      "source": "/vendor/pdfjs/:file(pdf\\.min\\.mjs|pdf\\.worker\\.min\\.mjs)",
+      "destination": "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/legacy/build/:file"
     }
   ],
   "redirects": [

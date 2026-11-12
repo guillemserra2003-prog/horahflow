@@ -481,11 +481,11 @@ function sourcesHTML() {
     ${fwd}</div>
   <h3 class="sec-mini">Otras formas de añadir recibos</h3>
   <div class="connect-grid two">
-    <div class="connect"><span class="dot gray">${I.upload}</span><h4>Subir archivos</h4><p>Correos .eml o un archivo .mbox (Google Takeout, Outlook, Apple Mail o Thunderbird). Ideal para traer tu historial de golpe.</p>
-      <label class="btn btn-ghost btn-sm" for="c-file" style="cursor:pointer">Elegir archivos</label><input type="file" id="c-file" multiple accept=".eml,.mbox,.txt,message/rfc822" class="hidden"></div>
+    <div class="connect"><span class="dot gray">${I.upload}</span><h4>Subir archivos</h4><p>Facturas en PDF (la luz, el agua, la ITV…), correos .eml o un archivo .mbox de Google Takeout, Outlook o Apple Mail. Se leen en tu navegador.</p>
+      <label class="btn btn-ghost btn-sm" for="c-file" style="cursor:pointer">Elegir archivos</label><input type="file" id="c-file" multiple accept=".pdf,application/pdf,.eml,.mbox,.txt,message/rfc822" class="hidden"></div>
     <div class="connect"><span class="dot gray">${I.copy}</span><h4>Pegar recibos</h4><p>Copia el texto de uno o varios correos y pégalo. Útil para revisar algo rápido.</p><button class="btn btn-ghost btn-sm" id="c-paste">Pegar texto</button></div>
   </div>
-  <div class="drop" id="drop">${I.upload}<div style="margin-top:6px">Arrastra aquí tus archivos .eml o .mbox</div></div>
+  <div class="drop" id="drop">${I.upload}<div style="margin-top:6px">Arrastra aquí tus facturas PDF o tus archivos .eml y .mbox</div></div>
   <div class="card" style="margin-top:16px"><h3>Fuentes <small>${st.emails.length} recibos guardados</small></h3>
     ${st.sources.length ? st.sources.map(s => `<div class="source"><span class="dot ${s.type === 'reenvio' ? 'green' : 'gray'}">${s.type === 'reenvio' ? I.mail : s.type === 'gmail' ? I.google : s.type === 'demo' ? I.spark : s.type === 'archivo' ? I.upload : I.copy}</span>
       <div class="info"><b>${esc(s.label)}</b><span>${esc(s.account || '')} · ${s.count} recibos · actualizado ${fmtDate(s.updated || s.added)}</span></div>
@@ -513,7 +513,9 @@ async function handleFiles(files) {
     const emails = await readFiles(files);
     const added = await Data.addEmails({ type: 'archivo', label: files.length === 1 ? files[0].name : `${files.length} archivos`, account }, emails, (d, t, txt) => pm.set(d, t, txt));
     pm.close();
-    toast(added ? `${added} recibos encontrados en ${emails.length} correos` : `No hemos encontrado recibos en ${emails.length} correos`, 3500);
+    const n = emails.length, what = files.every(f => /\.pdf$/i.test(f.name)) ? (n === 1 ? 'factura' : 'facturas') : (n === 1 ? 'correo' : 'correos');
+    const unread = (emails.unread || []).length ? ` · ${emails.unread.length === 1 ? `«${emails.unread[0]}» no tiene texto (parece escaneado)` : `${emails.unread.length} PDF sin texto (parecen escaneados)`}` : '';
+    toast((added ? `${added} ${added === 1 ? 'gasto encontrado' : 'gastos encontrados'} en ${n} ${what}` : n ? `No hemos encontrado gastos en ${n} ${what}` : 'No hemos podido leer estos archivos') + unread, unread ? 6000 : 3500);
     if (added) location.hash = 'app'; else route();
   } catch (e) { pm.close(); toast('No se pudo leer el archivo: ' + e.message, 4000); }
 }

@@ -5,7 +5,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { loadEngine } from "./engine-loader.ts";
-import { unwrapForward, verifySvix, gmailVerification, forwardSource, parseEml } from "./mail.ts";
+import { unwrapForward, verifySvix, gmailVerification, forwardSource, parseEml, isPdf, MAX_PDF_BYTES, MAX_PDFS, type Pdf } from "./mail.ts";
 
 const DOMAIN = "recibos.horahflow.com";
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
@@ -21,6 +21,26 @@ async function secret(name: string): Promise<string | undefined> {
   const { data } = await db.rpc("get_private_config", { k: name });
   return data ?? undefined;
 }
+// Base64 en trozos (btoa es nativo y rápido; el límite de CPU es de 2 s por llamada)
+const b64 = (b: Uint8Array) => { let s = ""; for (let i = 0; i < b.length; i += 32768) s += String.fromCharCode(...b.subarray(i, i + 32768)); return btoa(s); };
+// Un PDF merece la pena leerlo si el correo parece un recibo o el archivo se llama como una factura
+const invoiceName = (n: string) => /factura|invoice|recibo|receipt|ticket|justificante|comprobante|pedido|order|bill/i.test(n || "");
+
+/** Guarda el recibo. Si no trae importe pero sí una factura en PDF, el PDF queda en cola para «pdf-worker». */
+async function save(E: any, row: Record<string, unknown>, c: { from: string; subject: string; date: string; body: string }, pdfs: Pdf[]) {
+  const hasCharge = !!E.toCharge(c);
+  const wantPdf = !hasCharge && pdfs.length > 0 && (E.maybeReceipt(c) || pdfs.some((p) => invoiceName(p.name)));
+  if (!hasCharge && !wantPdf && !E.maybeReceipt(c)) return "skip";
+  const { data, error } = await db.from("inbound_emails").insert({ ...row, pdf_pending: wantPdf }).select("id").single();
+  if (error) return error.code === "23505" ? "dup" : (console.error(error), "error");
+  if (wantPdf) {
+    const { error: pe } = await db.from("inbound_pdfs").insert(pdfs.slice(0, MAX_PDFS).map((p) => ({ email_id: data.id, filename: p.name.slice(0, 200), data: b64(p.bytes) })));
+    if (pe) { console.error("pdf", pe); await db.from("inbound_emails").update({ pdf_pending: false }).eq("id", data.id); return "stored"; }
+    return "queued";
+  }
+  return "stored";
+}
+
 const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json" } });
 
 Deno.serve(async (req) => {
@@ -52,6 +72,15 @@ Deno.serve(async (req) => {
   const receivedAt = mail.created_at ? new Date(mail.created_at) : new Date();
   if (/@horahflow\.com\b/i.test(from)) return json({ ignored: "bucle" });
 
+  // Lista de adjuntos con enlace de descarga (se pide una sola vez por correo)
+  let attCache: any[] | null | undefined;
+  const attachmentsList = async () => {
+    if (attCache !== undefined) return attCache;
+    const lr = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}/attachments?limit=100`, { headers: { Authorization: `Bearer ${apiKey}` } });
+    attCache = lr.ok ? ((await lr.json()).data || []) : null;
+    return attCache;
+  };
+  let queued = 0;
   const results: unknown[] = [];
   for (const token of tokens) {
     const { data: addr } = await db.from("inbound_addresses").select("id,user_id,created_at,source_email").eq("token", token).maybeSingle();
@@ -78,14 +107,15 @@ Deno.serve(async (req) => {
     await db.from("inbound_addresses").update({ confirmed_at: nowIso }).eq("id", addr.id).is("confirmed_at", null);
 
     // Importación del historial: correos reenviados como archivo adjunto (.eml)
-    const attached = (Array.isArray(mail.attachments) ? mail.attachments : []).filter(isEml);
+    const meta = Array.isArray(mail.attachments) ? mail.attachments : [];
+    const attached = meta.filter(isEml);
     if (attached.length) {
       const months = HISTORY[prof?.plan || "free"] ?? 3;
       const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - months);
-      const lr = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}/attachments?limit=100`, { headers: { Authorization: `Bearer ${apiKey}` } });
-      if (!lr.ok) return json({ error: "adjuntos " + lr.status }, 502);
-      const list = ((await lr.json()).data || []).filter(isEml).slice(0, MAX_ATTACHED);
-      let stored = 0, old = 0, skipped = 0;
+      const all = await attachmentsList();
+      if (!all) return json({ error: "adjuntos" }, 502);
+      const list = all.filter(isEml).slice(0, MAX_ATTACHED);
+      let stored = 0, old = 0, skipped = 0, pdf = 0;
       for (const att of list) {
         try {
           if (att.size && att.size > MAX_EML_BYTES) { skipped++; continue; }
@@ -96,35 +126,54 @@ Deno.serve(async (req) => {
           if (date < cutoff) { old++; continue; }
           const body = (e.text || E.htmlToText(e.html || "")).trim().slice(0, 20000);
           const c = { from: e.from, subject: e.subject, date: date.toISOString(), body };
-          if (!E.toCharge(c) && !E.maybeReceipt(c)) { skipped++; continue; }
-          const { error } = await db.from("inbound_emails").insert({
+          const r = await save(E, {
             user_id: addr.user_id, address_id: addr.id, resend_id: `${emailId}:${token}:${att.id}`,
             from_addr: c.from.slice(0, 300), subject: c.subject.slice(0, 500), received_at: c.date, body: body.slice(0, 8000),
-          });
-          if (!error) stored++;
-          else if (error.code !== "23505") { console.error(error); skipped++; }
+          }, c, e.pdfs);
+          if (r === "stored") stored++;
+          else if (r === "queued") { stored++; pdf++; }
+          else if (r !== "dup") skipped++;
         } catch (err) { console.error("eml", err); skipped++; }
       }
       await db.rpc("inbound_touch_n", { a: addr.id, n: stored });
-      results.push({ token, imported: stored, old, skipped });
+      results.push({ token, imported: stored, old, skipped, pdf });
+      queued += pdf;
       continue;
     }
 
     // Reenvío manual: se recupera el remitente, asunto y fecha originales
     const m = unwrapForward({ from, subject, body: text, date: receivedAt });
     const candidate = { from: m.from, subject: m.subject, date: m.date.toISOString(), body: m.body };
-    if (!E.toCharge(candidate) && !E.maybeReceipt(candidate)) { results.push({ token, ignored: "no parece un cobro" }); continue; }
+    // Facturas en PDF adjuntas directamente al correo (p. ej. la ITV o la luz)
+    let pdfs: Pdf[] = [];
+    const pdfMeta = meta.filter((a: any) => isPdf(a?.content_type, a?.filename));
+    if (pdfMeta.length && !E.toCharge(candidate)) {
+      const all = await attachmentsList();
+      for (const a of (all || []).filter((a: any) => isPdf(a?.content_type, a?.filename)).slice(0, MAX_PDFS)) {
+        if (a.size && a.size > MAX_PDF_BYTES) continue;
+        try { const dl = await fetch(a.download_url); if (dl.ok) pdfs.push({ name: String(a.filename || "factura.pdf"), bytes: new Uint8Array(await dl.arrayBuffer()) }); } catch (err) { console.error("pdf dl", err); }
+      }
+    }
+    if (!E.toCharge(candidate) && !E.maybeReceipt(candidate) && !pdfs.some((p) => invoiceName(p.name))) { results.push({ token, ignored: "no parece un cobro" }); continue; }
 
     const { count } = await db.from("inbound_emails").select("id", { count: "exact", head: true }).eq("user_id", addr.user_id);
     if ((count ?? 0) >= 3000) { results.push({ token, ignored: "cola llena" }); continue; }
 
-    const { error } = await db.from("inbound_emails").insert({
+    const r = await save(E, {
       user_id: addr.user_id, address_id: addr.id, resend_id: `${emailId}:${token}`,
       from_addr: m.from.slice(0, 300), subject: m.subject.slice(0, 500), received_at: m.date.toISOString(), body: m.body.slice(0, 8000),
-    });
-    if (error && error.code !== "23505") { console.error(error); return json({ error: "db" }, 500); }
-    await db.rpc("inbound_touch", { a: addr.id });
-    results.push({ token, stored: !error });
+    }, candidate, pdfs);
+    if (r === "error") return json({ error: "db" }, 500);
+    if (r === "queued") queued++;
+    if (r === "stored" || r === "queued") await db.rpc("inbound_touch", { a: addr.id });
+    results.push({ token, stored: r === "stored" || r === "queued", pdf: r === "queued" });
+  }
+  // Hay facturas en PDF por leer: se avisa al lector (si falla, el cron lo recoge en 5 minutos)
+  if (queued) {
+    const key = await secret("CRON_KEY");
+    const kick = fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/pdf-worker`, { method: "POST", headers: { "Content-Type": "application/json", "x-cron-key": key || "" }, body: "{}" }).catch((e) => console.error("kick", e));
+    // @ts-ignore EdgeRuntime existe en Supabase
+    if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(kick); else await kick;
   }
   return json({ ok: true, results });
 });

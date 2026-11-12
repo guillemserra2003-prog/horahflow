@@ -518,9 +518,59 @@ const Gmail = {
 };
 
 /* ---------- Archivos ---------- */
+/* ---------- Facturas en PDF (se leen en tu navegador; el archivo no sale de tu equipo) ---------- */
+const PDFJS_V = '6.2.108';
+let pdfjs = null;
+async function getPdfjs() {
+  if (pdfjs) return pdfjs;
+  const proxied = /(^|\.)horahflow\.com$|\.vercel\.app$/.test(location.hostname);
+  const cdn = f => `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_V}/legacy/build/${f}`;
+  const src = f => proxied ? `/vendor/pdfjs/${f}` : cdn(f);
+  try { pdfjs = await import(src('pdf.min.mjs')); } catch { pdfjs = await import(cdn('pdf.min.mjs')); }
+  pdfjs.GlobalWorkerOptions.workerSrc = src('pdf.worker.min.mjs');
+  return pdfjs;
+}
+const isPdfFile = f => /\.pdf$/i.test(f.name) || f.type === 'application/pdf';
+/** Texto de las 3 primeras páginas de un PDF. */
+async function pdfToText(buf) {
+  const lib = await getPdfjs();
+  const task = lib.getDocument({ data: new Uint8Array(buf), isEvalSupported: false, disableFontFace: true });
+  const doc = await task.promise;
+  try {
+    const out = [];
+    for (let p = 1; p <= Math.min(doc.numPages, 3); p++) {
+      const tc = await (await doc.getPage(p)).getTextContent();
+      out.push(tc.items.map(i => (i.str || '') + (i.hasEOL ? '\n' : ' ')).join(''));
+    }
+    return out.join('\n').replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').trim().slice(0, 6000);
+  } finally { try { await task.destroy(); } catch { /* nada */ } }
+}
+/** Una factura en PDF suelta se convierte en un «correo» para el motor: emisor, fecha y texto. */
+function pdfEmail(text, file) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const CO = /\b(S\.?A\.?U?\.?|S\.?L\.?U?\.?|S\.?Coop|Inc\.?|LLC|Ltd\.?|GmbH|B\.?V\.?|SAS|S\.?p\.?A\.?)(?=[\s,.—-]|$)/;
+  const issuer = (lines.slice(0, 15).find(l => CO.test(l)) || '').split(/\s[—–-]\s|,|\s{2,}/)[0]
+    || file.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').replace(/\b(factura|invoice|recibo|receipt|fra|n[ºo°]?)\b|\d{3,}/gi, ' ').replace(/\s+/g, ' ').trim();
+  // Fecha: la de la factura; si no, la del cargo; si no, la primera que aparezca (y nunca en el futuro)
+  const D = '(\\d{1,2})[/.-](\\d{1,2})[/.-](\\d{2,4})';
+  const toDate = m => { if (!m) return null; const y = +m[3] < 100 ? 2000 + +m[3] : +m[3]; const d = new Date(y, +m[2] - 1, +m[1], 12); return isNaN(d) || d > new Date(Date.now() + 864e5) || y < 2000 ? null : d; };
+  const date = toDate(text.match(new RegExp('(?:fecha(?: de)?(?: (?:la )?factura| emisi[oó]n| expedici[oó]n)?|invoice date|issue date|date)\\s*:?\\s*' + D, 'i')))
+    || toDate(text.match(new RegExp('(?:cargar[aá]?|cargo|cobr\\w*|adeudo|pago|vencimiento)[^\\d\\n]{0,40}' + D, 'i')))
+    || toDate((text.match(new RegExp('per[ií]odo[^\\n]{0,30}?' + D + '\\s*(?:-|–|al|a|hasta)\\s*' + D, 'i')) || []).slice(3))
+    || toDate(text.match(new RegExp('\\b' + D + '\\b'))) || new Date(file.lastModified || Date.now());
+  const base = file.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').trim();
+  return { id: 'pdf-' + file.name + '-' + file.size, from: issuer ? `${issuer} <factura@pdf>` : '', subject: /factura|invoice|recibo|receipt/i.test(base) ? base : 'Factura · ' + base, date: date.toISOString(), body: text, source: 'archivo' };
+}
+
 async function readFiles(files) {
-  const out = [];
+  const out = []; out.unread = [];
   for (const f of files) {
+    if (isPdfFile(f)) {
+      // Un PDF sin texto suele ser una foto escaneada: no hay nada que leer
+      try { const t = await pdfToText(await f.arrayBuffer()); if (t.replace(/\s/g, '').length > 20) out.push(pdfEmail(t, f)); else out.unread.push(f.name); }
+      catch (e) { console.warn('PDF', f.name, e); out.unread.push(f.name); }
+      continue;
+    }
     const txt = await f.text();
     if (/\.mbox$/i.test(f.name) || /^From \S+/.test(txt)) out.push(...E.parseMbox(txt, 'archivo'));
     else if (/\.eml$/i.test(f.name) || /^(Received|Return-Path|From|Delivered-To|MIME-Version|Date):/im.test(txt.slice(0, 2000))) { const e = E.parseEml(txt, 'archivo'); if (e) out.push(e); }

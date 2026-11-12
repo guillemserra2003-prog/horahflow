@@ -1,0 +1,13 @@
+import { parseEml, isPdf } from '../supabase/functions/inbound/mail.ts';
+import fs from 'node:fs';
+const pdf = fs.readFileSync('/tmp/pdft/itv.pdf');
+const b64 = pdf.toString('base64').replace(/(.{76})/g, '$1\r\n');
+const eml = `From: ITV Lleida <facturas@itvlleida.es>\r\nSubject: =?UTF-8?Q?Su_factura_de_inspecci=C3=B3n?=\r\nDate: Tue, 03 Nov 2026 10:00:00 +0100\r\nContent-Type: multipart/mixed; boundary="B1"\r\n\r\n--B1\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nAdjuntamos su factura.\r\n--B1\r\nContent-Type: application/octet-stream; name="Factura_F-2026-004512.pdf"\r\nContent-Disposition: attachment; filename="Factura_F-2026-004512.pdf"\r\nContent-Transfer-Encoding: base64\r\n\r\n${b64}\r\n--B1--\r\n`;
+const e = parseEml(new TextEncoder().encode(eml));
+const ok = (c, m) => { if (!c) { console.error('FALLO', m); process.exit(1); } };
+ok(e.subject === 'Su factura de inspección', 'asunto ' + e.subject);
+ok(e.text.includes('Adjuntamos'), 'texto');
+ok(e.pdfs.length === 1 && e.pdfs[0].name === 'Factura_F-2026-004512.pdf', 'pdf nombre');
+ok(Buffer.from(e.pdfs[0].bytes).equals(pdf), 'pdf bytes idénticos');
+ok(isPdf('application/pdf', '') && isPdf('application/octet-stream', 'a.PDF') && !isPdf('image/png', 'a.png'), 'isPdf');
+console.log('Todo OK');
