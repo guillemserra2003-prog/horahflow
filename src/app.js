@@ -406,8 +406,9 @@ function addressRow(a) {
   const email = Inbound.email(a), on = Inbound.active(a);
   const status = !on ? '<span class="chip amber">Pausada: supera el límite de tu plan</span>'
     : a.last_received_at ? `<span class="chip green">${a.received_count} recibidos · último ${fmtDate(a.last_received_at)}</span>` : '<span class="chip">Esperando el primer recibo</span>';
-  const verify = a.verify_at && (!a.last_received_at || new Date(a.verify_at) > new Date(a.last_received_at)) && (Date.now() - new Date(a.verify_at)) < 7 * 864e5
-    ? `<div class="verify">${I.check}<div><b>Gmail te pide confirmar el reenvío</b><span>${a.verify_code ? `Código: <b class="mono">${esc(a.verify_code)}</b> ` : ''}${a.verify_link ? `· <a class="link" href="${esc(a.verify_link)}" target="_blank" rel="noopener">Confirmar con un clic</a>` : ''}</span></div>${a.verify_code ? `<button class="btn btn-ghost btn-sm" data-copy="${esc(a.verify_code)}">Copiar código</button>` : ''}</div>` : '';
+  const done = (Data.state?.prefs?.verifyDone || {})[a.id] === a.verify_at;
+  const verify = a.verify_at && !done && (!a.last_received_at || new Date(a.verify_at) > new Date(a.last_received_at)) && (Date.now() - new Date(a.verify_at)) < 7 * 864e5
+    ? `<div class="verify">${I.check}<div><b>Gmail te pide confirmar el reenvío</b><span>${a.verify_code ? `Código: <b class="mono">${esc(a.verify_code)}</b> ` : ''}${a.verify_link ? `· <a class="link" href="${esc(a.verify_link)}" target="_blank" rel="noopener">Confirmar con un clic</a>` : ''}<br>Pulsa «Confirmar» una sola vez en la página de Google. Después, crea el filtro del paso 3.</span></div><div style="display:flex;gap:6px;flex-wrap:wrap">${a.verify_code ? `<button class="btn btn-ghost btn-sm" data-copy="${esc(a.verify_code)}">Copiar código</button>` : ''}<button class="btn btn-dark btn-sm" data-verifydone="${a.id}">Ya lo he confirmado</button></div></div>` : '';
   return `<div class="addr${on ? '' : ' off'}"><div class="addr-top"><div class="addr-main"><b>${esc(a.label)}</b><div class="copyline"><code>${esc(email)}</code><button class="btn btn-dark btn-sm" data-copy="${esc(email)}">${I.copy} Copiar</button></div></div>
     <div class="addr-side">${status}<div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" data-rename="${a.id}">Renombrar</button><button class="btn btn-ghost btn-sm" data-deladdr="${a.id}" aria-label="Eliminar dirección">${I.x}</button></div></div></div>${verify}</div>`;
 }
@@ -557,6 +558,9 @@ function bindAppView(view) {
         catch (err) { $('#an-e', bg).textContent = err.message; btn.disabled = false; } }; });
   });
   $('#addr-sync')?.addEventListener('click', async e => { const b = e.currentTarget; b.disabled = true; b.textContent = 'Comprobando…'; await Inbound.load().catch(() => {}); const n = await Inbound.sync(); toast(n ? `${n} recibos nuevos importados` : 'No hay recibos nuevos todavía'); route(); });
+  $$('[data-verifydone]').forEach(b => b.onclick = () => { const a = Inbound.addresses.find(x => x.id === b.dataset.verifydone); if (!a) return;
+    Data.state.prefs.verifyDone = { ...(Data.state.prefs.verifyDone || {}), [a.id]: a.verify_at }; Data.save('prefs');
+    toast('¡Listo! Tu correo ya reenvía a HorahFlow. Crea el filtro del paso 3 y los recibos llegarán solos.', 6000); route(); });
   $$('[data-rename]').forEach(b => b.onclick = () => { const a = Inbound.addresses.find(x => x.id === b.dataset.rename); if (!a) return;
     modal(`<h2>Renombrar</h2><form id="rn-f"><div class="field"><label for="rn-l">Nombre</label><input class="input" id="rn-l" maxlength="40" value="${esc(a.label)}" required></div><button class="btn btn-dark btn-block">Guardar</button></form>`,
       (bg, close) => { $('#rn-f', bg).onsubmit = async ev => { ev.preventDefault(); try { await Inbound.rename(a.id, $('#rn-l', bg).value); close(); route(); } catch (err) { toast(err.message, 4000); } }; }); });

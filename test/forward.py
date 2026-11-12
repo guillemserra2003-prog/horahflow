@@ -48,6 +48,8 @@ async def run(p, w, h, tag):
     # verificación de Gmail
     await pg.evaluate("__addr[0].verify_code='987654321';__addr[0].verify_link='https://mail-settings.google.com/mail/vf-abc';__addr[0].verify_at=new Date().toISOString(); Inbound.load().then(()=>route())"); await pg.wait_for_timeout(400)
     print(tag,'verificación:', (await pg.inner_text('.verify')).replace('\n',' '))
+    await pg.click('[data-verifydone]'); await pg.wait_for_timeout(400)
+    print(tag,'aviso tras "Ya lo he confirmado":', await pg.locator('.verify').count())
     await pg.click('[data-fwd="outlook"]'); await pg.wait_for_timeout(150)
     print(tag,'guía outlook:', (await pg.inner_text('.fwd-guide'))[:60].replace('\n',' '))
     await pg.click('[data-fwd="gmail"]'); await pg.wait_for_timeout(150)
