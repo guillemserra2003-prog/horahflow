@@ -78,7 +78,12 @@ const Auth = {
     if (!sb) { this.load(); return; }
     sb.auth.onAuthStateChange((ev, session) => {
       if (ev === 'PASSWORD_RECOVERY') { this.recovery = true; setTimeout(newPasswordModal, 300); }
-      if (ev === 'SIGNED_OUT') { this.user = null; Data.state = null; }
+      if (ev === 'SIGNED_OUT') {
+        const wasIn = !!(this.user && this.user.cloud && !this._loggingOut);
+        this.user = null; Data.state = null; if (typeof Inbound !== 'undefined') Inbound.stop();
+        // Sesión caducada mientras usabas la app: avisamos y llevamos a iniciar sesión
+        if (wasIn && /^#app/.test(location.hash)) { location.hash = 'entrar'; setTimeout(() => toast('Tu sesión ha caducado. Vuelve a entrar para continuar.', 6000), 300); }
+      }
     });
     const { data } = await sb.auth.getSession();
     if (data.session) {

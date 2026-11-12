@@ -320,6 +320,16 @@ write(path.join(DIST, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
 ${urls.map(u => `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod}</lastmod></url>`).join("\n")}
 </urlset>
 `);
+// Página 404 propia (Vercel la sirve para cualquier dirección que no exista)
+write(path.join(DIST, "404.html"), page({
+  title: "Página no encontrada | HorahFlow", description: "Esta página no existe. Vuelve al inicio de HorahFlow o lee nuestras guías.", canonical: `${SITE}/`,
+  extraHead: '<meta name="robots" content="noindex">\n', ld: { "@context": "https://schema.org", "@type": "WebPage", name: "Página no encontrada" },
+  body: `<section class="block"><div class="wrap" style="max-width:640px;text-align:center;padding:40px 0 20px">
+  <span class="kicker">Error 404</span><h1 class="title" style="margin:10px 0 14px">Esta página se nos ha escapado</h1>
+  <p class="sub" style="margin:0 auto 26px">Puede que el enlace esté mal escrito o que la página ya no exista. Lo que sí sigue aquí es todo lo demás:</p>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><a class="btn btn-dark" href="/">Ir al inicio</a><a class="btn btn-ghost" href="/blog/">Leer las guías</a><a class="btn btn-ghost" href="/#demo">Ver la demo</a></div>
+</div></section>`
+}));
 write(path.join(DIST, "robots.txt"), `User-agent: *\nAllow: /\nDisallow: /sb/\n\nSitemap: ${SITE}/sitemap.xml\n`);
 write(path.join(DIST, "blog/feed.xml"), `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel>
