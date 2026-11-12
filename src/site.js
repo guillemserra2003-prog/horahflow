@@ -178,7 +178,7 @@ function renderLanding(scrollTo) {
       <span class="kicker">Conecta tu correo</span><h2 class="title">Lo configuras una vez. Después, funciona solo.</h2>
       <p class="sub" style="margin-bottom:24px">Te damos una dirección privada. Tu correo le reenvía solo los recibos y tu panel se actualiza con cada cobro nuevo, sin que tengas que hacer nada.</p>
       <div class="providers">
-        ${[['Gmail', 'Reenvío automático con un filtro', '3 min'], ['Outlook y Hotmail', 'Reenvío automático · conexión con un clic muy pronto', '3 min'], ['iCloud, Yahoo y otros', 'Cualquier correo que permita reglas de reenvío', '3 min'], ['Tu historial', 'Sube un archivo .mbox y analiza años de recibos de golpe', '1 min']]
+        ${[['Gmail', 'Reenvío automático con un filtro', '3 min'], ['Outlook y Hotmail', 'Reenvío automático · conexión con un clic muy pronto', '3 min'], ['iCloud, Yahoo y otros', 'Cualquier correo que permita reglas de reenvío', '3 min'], ['Tu historial', 'Trae tus recibos de los últimos meses con un solo reenvío', '1 min']]
           .map(([n, d, t]) => `<div class="prov"><span class="dot green">${I.check}</span><div><b>${n}</b><span>${d}</span></div><em>${t}</em></div>`).join('')}
       </div>
     </div>
@@ -282,11 +282,11 @@ function plansHTML() {
   return `
   <div class="plan"><h3>Gratis</h3><p class="desc">Para descubrir tus fugas por primera vez.</p>
     <div class="price">0 €</div><div class="per">para siempre</div>
-    <ul>${li(['1 correo con reenvío automático', 'Subir archivos y pegar recibos sin límite', 'Suscripciones, fugas y calendario de cobros', 'Alternativas gratuitas', 'Flow: 15 preguntas al día', '12 meses de historial'])}</ul>
+    <ul>${li(['1 correo con reenvío automático', 'Subir archivos y pegar recibos sin límite', 'Suscripciones, fugas y calendario de cobros', 'Alternativas gratuitas', 'Flow: 15 preguntas al día', 'Importa y analiza tus últimos 3 meses'])}</ul>
     <a class="btn btn-ghost btn-block" href="#registro">Empezar gratis</a></div>
   <div class="plan pop"><span class="tag">Más elegido</span><h3>Pro</h3><p class="desc">Para que HorahFlow vigile por ti y te avise antes de pagar.</p>
     <div class="price num">${p.pro} €</div><div class="per">${per}</div>
-    <ul>${li(['Hasta 5 correos con reenvío automático', '<b>Aviso por email</b> antes de cada cobro', 'Alerta por email de duplicados, subidas y pruebas que pasan a pago', 'Resumen mensual por email', 'Exportar a CSV / Excel', 'Flow: 300 preguntas al día', '24 meses de historial'])}</ul>
+    <ul>${li(['Hasta 5 correos con reenvío automático', '<b>Aviso por email</b> antes de cada cobro', 'Alerta por email de duplicados, subidas y pruebas que pasan a pago', 'Resumen mensual por email', 'Exportar a CSV / Excel', 'Flow: 300 preguntas al día', '<b>24 meses</b> de historial: importa y analiza tus recibos de los últimos 2 años'])}</ul>
     <button class="btn btn-dark btn-block" data-buy="pro">Pasar a Pro</button></div>
   <div class="plan"><h3>Empresas</h3><p class="desc">Para autónomos y pymes con muchos correos y gastos de empresa.</p>
     <div class="price num">${p.biz} €</div><div class="per">${per}</div>

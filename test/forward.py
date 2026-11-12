@@ -15,7 +15,7 @@ window.supabase={createClient(){
    update(p){o._op='update';o._p=p;__calls.push('UPDATE:'+t+':'+Object.keys(p).join(','));return o},
    delete(){o._op='delete';return o},
    then(res,rej){let r={data:null,error:null};
-     if(t==='inbound_addresses'){ if(o._op==='select') r.data=__addr.slice(); else if(o._op==='delete'){__addr=__addr.filter(a=>a.id!==o._f.id);} else if(o._op==='update'){const a=__addr.find(a=>a.id===o._f.id); if(a) Object.assign(a,o._p);} }
+     if(t==='inbound_addresses'){ if(o._op==='select') r.data=__addr.map(x=>({...x})); else if(o._op==='delete'){__addr=__addr.filter(a=>a.id!==o._f.id);} else if(o._op==='update'){const a=__addr.find(a=>a.id===o._f.id); if(a) Object.assign(a,o._p);} }
      else if(t==='inbound_emails'){ if(o._op==='select') r.data=__inbox.slice(); else if(o._op==='delete'){__calls.push('DEL_INBOX:'+o._in.join(',')); __inbox=__inbox.filter(x=>!o._in.includes(x.id));} }
      else if(t==='user_data' && o._op==='update'){ if(db.user_data.u1) db.user_data.u1.prefs=o._p.prefs; }
      return Promise.resolve(r).then(res,rej);}};return o};
@@ -40,31 +40,33 @@ async def run(p, w, h, tag):
     print(tag,'tutorial tras cerrar (debe ser 0):', await pg.evaluate("document.querySelectorAll('.tour').length"))
     # sin direcciones; los recibos pendientes (dirección a1 no existe aún) se importan igual
     print(tag,'recibos importados al abrir:', await pg.evaluate("Data.state.emails.length"), 'pendientes:', await pg.evaluate("__inbox.length"))
-    await pg.screenshot(path=f'shots/{tag}-fwd-empty.png', full_page=True)
-    await pg.click('#addr-new'); await pg.wait_for_timeout(200)
-    await pg.fill('#an-l','Gmail personal'); await pg.click('#an-b'); await pg.wait_for_timeout(500)
-    print(tag,'direcciones:', await pg.evaluate("Inbound.addresses.map(a=>Inbound.email(a))"))
+    # la dirección se crea sola al entrar en Correos
+    await pg.wait_for_selector('.gsteps', timeout=4000)
+    print(tag,'direcciones (auto):', await pg.evaluate("Inbound.addresses.map(a=>a.label)"))
     print(tag,'estado nueva:', (await pg.inner_text('.conn')).replace('\n',' '))
-    # límite gratis: no debe aparecer botón de nueva
-    print(tag,'botón nueva visible (debe ser False):', bool(await pg.query_selector('#addr-new')))
-    # verificación de Gmail
-    await pg.evaluate("__addr[0].verify_code='987654321';__addr[0].verify_link='https://mail-settings.google.com/mail/vf-abc';__addr[0].verify_at=new Date().toISOString(); Inbound.load().then(()=>route())"); await pg.wait_for_timeout(400)
-    print(tag,'verificación:', (await pg.inner_text('.verify')).replace('\n',' '))
-    print(tag,'estado pendiente:', 'Pendiente' in (await pg.inner_text('.conn')))
-    await pg.click('[data-verifydone]'); await pg.wait_for_timeout(400)
-    print(tag,'aviso tras "Ya lo he confirmado":', await pg.locator('.verify').count())
-    print(tag,'estado tras confirmar:', (await pg.inner_text('.conn')).replace('\n',' '))
-    await pg.evaluate("__addr[0].source_email='ana@gmail.com';__addr[0].last_seen_at=new Date(Date.now()-60*864e5).toISOString();__addr[0].last_received_at=__addr[0].last_seen_at;__addr[0].received_count=3; Inbound.load().then(()=>route())"); await pg.wait_for_timeout(400)
-    print(tag,'estado sin actividad:', (await pg.inner_text('.conn-row')).replace('\n',' '))
-    await pg.evaluate("__addr[0].last_seen_at=new Date().toISOString();__addr[0].last_received_at=__addr[0].last_seen_at; Inbound.load().then(()=>route())"); await pg.wait_for_timeout(400)
-    print(tag,'estado activo:', (await pg.inner_text('.conn-row')).replace('\n',' '))
-    await pg.locator('.addr').first.screenshot(path=f'shots/{tag}-conn.png')
-    await pg.click('[data-fwd="outlook"]'); await pg.wait_for_timeout(150)
-    print(tag,'guía outlook:', (await pg.inner_text('.fwd-guide'))[:60].replace('\n',' '))
-    await pg.click('[data-fwd="gmail"]'); await pg.wait_for_timeout(150)
-    await pg.click('.copyline [data-copy]'); await pg.wait_for_timeout(200)
-    print(tag,'portapapeles:', await pg.evaluate("navigator.clipboard.readText()"))
-    await pg.screenshot(path=f'shots/{tag}-fwd.png', full_page=True)
+    G = lambda: pg.evaluate("[...document.querySelectorAll('.g-step')].map(x=>x.className.replace('g-step ',''))")
+    print(tag,'pasos al inicio:', await G(), 'pestaña:', await pg.inner_text('#fwd-tabs .on'))
+    await pg.screenshot(path=f'shots/{tag}-guia-1.png', full_page=True)
+    # llega la verificación de Gmail (el sondeo rápido la detecta sola)
+    await pg.evaluate("__addr[0].verify_code='987654321';__addr[0].verify_link='https://mail-settings.google.com/mail/vf-abc';__addr[0].verify_at=new Date().toISOString()")
+    await pg.wait_for_selector('.g-alert', timeout=9000)
+    print(tag,'aviso de confirmar visible:', 'Confirmar en Google' in await pg.inner_text('.g-step.now'), '| estado:', (await pg.inner_text('.conn')).replace('\n',' '))
+    await pg.screenshot(path=f'shots/{tag}-guia-2.png', full_page=True)
+    await pg.click('[data-verifydone]'); await pg.wait_for_timeout(500)
+    print(tag,'pasos tras confirmar:', await G())
+    await pg.click('[data-filterdone]'); await pg.wait_for_timeout(500)
+    print(tag,'pasos tras filtro:', await G(), '| enlace historial:', await pg.get_attribute('.g-step.now a.btn-dark','href'))
+    await pg.screenshot(path=f'shots/{tag}-guia-3.png', full_page=True)
+    # llega la importación del historial
+    await pg.evaluate("__addr[0].last_import_at=new Date().toISOString();__addr[0].last_import_count=34;__addr[0].received_count=35;__addr[0].last_seen_at=new Date().toISOString();__addr[0].last_received_at=__addr[0].last_seen_at")
+    await pg.wait_for_selector('.g-done', timeout=9000)
+    print(tag,'final:', (await pg.inner_text('.g-done')).replace('\n',' '), '| toast:', await pg.evaluate("document.querySelector('.toast')?.innerText"))
+    await pg.screenshot(path=f'shots/{tag}-guia-4.png', full_page=True)
+    await pg.click('[data-guide="1"]'); await pg.wait_for_timeout(300)
+    print(tag,'pasos visibles de nuevo:', await G())
+    await pg.click('[data-fwd="outlook"]'); await pg.wait_for_timeout(300)
+    print(tag,'outlook:', (await pg.inner_text('.gsteps'))[:80].replace('\n',' '))
+    await pg.click('[data-fwd="gmail"]'); await pg.wait_for_timeout(300)
     # Pro: segunda dirección + ajustes de avisos
     await pg.evaluate("__plan='pro'; Auth.refreshProfile ? Auth.refreshProfile().then(()=>route()) : null"); await pg.wait_for_timeout(600)
     print(tag,'plan ahora:', await pg.evaluate("Auth.plan().id"))

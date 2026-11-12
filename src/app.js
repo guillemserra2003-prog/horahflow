@@ -376,45 +376,87 @@ function exportCSV() {
 
 /* ---------- Correos / fuentes ---------- */
 const GMAIL_QUERY = 'subject:(recibo OR factura OR receipt OR invoice OR suscripción OR subscription OR renovación OR renewal OR "tu pedido" OR "your order" OR "confirmación de pago" OR "payment")';
-let fwdTab = 'gmail';
-function fwdGuide(addr) {
-  const A = addr ? `<b class="mono">${esc(addr)}</b>` : 'tu dirección de HorahFlow';
-  const G = {
-    gmail: `<ol class="steps-list">
-      <li>Abre <b>Gmail en el ordenador</b> → ${I.gear} <b>Ver todos los ajustes</b> → pestaña <b>Reenvío y correo POP/IMAP</b> → <b>Añadir una dirección de reenvío</b> y pega ${A}.</li>
-      <li>Gmail nos manda un código de confirmación. <b>Aparecerá aquí arriba en unos segundos</b>: cópialo en Gmail o pulsa el enlace para confirmar.</li>
-      <li>No actives «reenviar una copia del correo entrante» (eso mandaría todo). En su lugar, pega esta búsqueda en la barra de Gmail, pulsa ${I.list} <b>Crear filtro</b>, marca <b>Reenviarlo a</b> y elige tu dirección de HorahFlow:
-        <div class="copyline"><code id="gq">${esc(GMAIL_QUERY)}</code><button class="btn btn-ghost btn-sm" data-copy="${esc(GMAIL_QUERY)}">${I.copy} Copiar</button></div></li>
-      <li>Listo: desde ahora cada recibo nuevo llega solo. Para los antiguos, reenvíalos a mano o sube un archivo.</li></ol>`,
-    outlook: `<ol class="steps-list">
-      <li>En <b>outlook.com</b> abre ${I.gear} <b>Configuración</b> → <b>Correo</b> → <b>Reglas</b> → <b>Agregar nueva regla</b>.</li>
-      <li>Condición: <b>El asunto incluye</b> → añade <i>recibo</i>, <i>factura</i>, <i>receipt</i>, <i>invoice</i>, <i>suscripción</i> y <i>pedido</i>.</li>
-      <li>Acción: <b>Reenviar a</b> → pega ${A}. Guarda la regla.</li>
-      <li>Si tu empresa bloquea el reenvío automático, puedes reenviar los recibos a mano.</li></ol>`,
-    icloud: `<ol class="steps-list">
-      <li>En <b>icloud.com/mail</b> abre ${I.gear} <b>Ajustes</b> → <b>Reglas</b> → <b>Añadir una regla</b>.</li>
-      <li>Si el mensaje: <b>tiene un asunto que contiene</b> «recibo» → <b>Reenviar a</b> ${A}.</li>
-      <li>Repite la regla con «factura» y «receipt» para cubrir más recibos.</li></ol>`,
-    manual: `<ol class="steps-list">
-      <li>Desde cualquier correo (también desde el móvil), <b>reenvía</b> el recibo a ${A}.</li>
-      <li>HorahFlow reconoce el remitente, el asunto y la fecha originales del recibo reenviado.</li>
-      <li>Puedes reenviar varios a la vez. Los correos que no son un cobro se descartan solos.</li></ol>`
-  };
-  return `<div class="tabs-mini" id="fwd-tabs">${[['gmail', 'Gmail'], ['outlook', 'Outlook / Hotmail'], ['icloud', 'iCloud'], ['manual', 'A mano']].map(([k, l]) => `<button class="${fwdTab === k ? 'on' : ''}" data-fwd="${k}">${l}</button>`).join('')}</div>${G[fwdTab]}`;
+const gmailSearch = q => 'https://mail.google.com/mail/u/0/#search/' + encodeURIComponent(q);
+let fwdTab = null, guideOpen = null;
+function guessProvider() {
+  const d = ((Auth.user && Auth.user.email) || '').split('@')[1] || '';
+  return /gmail|googlemail/.test(d) ? 'gmail' : /outlook|hotmail|live|msn/.test(d) ? 'outlook' : 'gmail';
+}
+const EXT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>';
+const gShot = (src, alt) => `<a class="g-shot" href="${src}" target="_blank" rel="noopener" title="Ver en grande"><img src="${src}" alt="${esc(alt)}" width="1100" height="620" loading="lazy" decoding="async"></a>`;
+
+/** Pasos de conexión para una dirección: cada paso se marca solo cuando lo detectamos. */
+function guideSteps(a) {
+  const prov = fwdTab || guessProvider(), email = Inbound.email(a), months = Auth.plan().history;
+  const seen = a.last_seen_at || a.last_received_at;
+  const verified = !!(a.confirmed_at || (seen && (!a.verify_at || new Date(seen) > new Date(a.verify_at))));
+  const waitingConfirm = !verified && !!a.verify_at;
+  const filterDone = verified && (((Data.state.prefs.filterDone || {})[a.id]) || (a.received_count || 0) > (a.last_import_count || 0));
+  const imported = !!a.last_import_at;
+  const copyAddr = `<button class="btn btn-dark btn-sm" data-copy="${esc(email)}">${I.copy} Copiar mi dirección</button>`;
+  const histQ = GMAIL_QUERY + ' newer_than:' + months + 'm';
+  const more = Auth.plan().id === 'free' ? `<p class="g-up">${I.zap} Con <b>Pro</b> importas hasta 24 meses de historial. <button class="link" data-buy="pro">Pasar a Pro</button></p>` : '';
+  const S = {
+    gmail: [
+      { t: 'Permite que Gmail te reenvíe', done: verified,
+        d: waitingConfirm ? `<div class="g-alert"><b>Gmail te ha mandado la confirmación.</b> Pulsa el botón, luego «Confirmar» en la página de Google, y vuelve aquí.</div>
+            <div class="g-btns">${a.verify_link ? `<a class="btn btn-green" href="${esc(a.verify_link)}" target="_blank" rel="noopener">Confirmar en Google ${EXT}</a>` : ''}${a.verify_code ? `<button class="btn btn-ghost btn-sm" data-copy="${esc(a.verify_code)}">Copiar código ${esc(a.verify_code)}</button>` : ''}<button class="btn btn-ghost btn-sm" data-verifydone="${a.id}">Ya lo he confirmado</button></div>`
+          : `<p>Copia tu dirección, abre los ajustes de Gmail y pégala en <b>«Añadir una dirección de reenvío»</b>. En unos segundos verás aquí el botón para confirmarlo.</p>
+            <div class="g-btns">${copyAddr}<a class="btn btn-ghost btn-sm" href="https://mail.google.com/mail/u/0/#settings/fwdandpop" target="_blank" rel="noopener">Abrir ajustes de Gmail ${EXT}</a></div>${gShot('/media/guia/g1.webp', 'Ajustes de Gmail: Reenvío, Añadir una dirección de reenvío, pegar la dirección y Siguiente')}<p class="g-wait"><span class="spin"></span>Esperando a Gmail…</p>` },
+      { t: 'Elige qué se reenvía: solo recibos', done: filterDone,
+        d: `<p>Abre Gmail con la búsqueda ya preparada, pulsa el icono de opciones de la barra, <b>«Crear filtro»</b>, marca <b>«Reenviarlo a»</b> con tu dirección y guarda. El resto de tu correo no sale de Gmail.</p>
+            <div class="g-btns"><a class="btn btn-dark btn-sm" href="${gmailSearch(GMAIL_QUERY)}" target="_blank" rel="noopener">Abrir Gmail con la búsqueda ${EXT}</a><button class="btn btn-ghost btn-sm" data-copy="${esc(GMAIL_QUERY)}">${I.copy} Copiar búsqueda</button><button class="btn btn-ghost btn-sm" data-filterdone="${a.id}">Ya lo he hecho</button></div>${gShot('/media/guia/g2.webp', 'Gmail: opciones de búsqueda, Crear filtro, Reenviarlo a tu dirección y Crear filtro')}` },
+      { t: `Trae tus recibos de los últimos ${months} meses`, done: imported, opt: true,
+        d: `<p>Abre tus recibos de los últimos ${months} meses, selecciónalos todos y usa <b>⋮ → «Reenviar como archivo adjunto»</b> a tu dirección. En un minuto los verás aquí.</p>
+            <div class="g-btns"><a class="btn btn-dark btn-sm" href="${gmailSearch(histQ)}" target="_blank" rel="noopener">Abrir mis recibos ${EXT}</a>${copyAddr.replace('btn-dark', 'btn-ghost')}</div>${gShot('/media/guia/g3.webp', 'Gmail: seleccionar todos, menú de tres puntos, Reenviar como archivo adjunto y enviar a tu dirección')}
+            <p class="g-note">Solo funciona en Gmail desde el ordenador. Si tienes más de 50 recibos, repítelo en la página siguiente.</p>${more}` }
+    ],
+    outlook: [
+      { t: 'Crea una regla de reenvío', done: verified || filterDone,
+        d: `<p>En Outlook abre <b>Reglas → Agregar nueva regla</b>: si <b>el asunto incluye</b> «recibo», «factura», «receipt», «invoice» o «pedido», <b>reenviar a</b> tu dirección. Guarda y listo.</p>
+            <div class="g-btns">${copyAddr}<a class="btn btn-ghost btn-sm" href="https://outlook.live.com/mail/0/options/mail/rules" target="_blank" rel="noopener">Abrir reglas de Outlook ${EXT}</a><button class="btn btn-ghost btn-sm" data-verifydone="${a.id}">Ya la he creado</button></div>${gShot('/media/guia/o1.webp', 'Outlook: nueva regla, el asunto incluye recibo o factura, reenviar a tu dirección y guardar')}` },
+      { t: `Trae tus recibos de los últimos ${months} meses`, done: imported, opt: true,
+        d: `<p>Busca «recibo» o «factura» en Outlook, selecciona los correos y pulsa <b>Reenviar</b>: Outlook los adjunta todos en un solo mensaje. Envíalo a tu dirección.</p>
+            <div class="g-btns"><a class="btn btn-dark btn-sm" href="https://outlook.live.com/mail/0/" target="_blank" rel="noopener">Abrir Outlook ${EXT}</a>${copyAddr.replace('btn-dark', 'btn-ghost')}</div>${gShot('/media/guia/o2.webp', 'Outlook: seleccionar los recibos, Reenviar y enviar a tu dirección')}${more}` }
+    ],
+    other: [
+      { t: 'Crea una regla de reenvío', done: verified || filterDone,
+        d: `<p>En los ajustes de tu correo (iCloud, Yahoo, el de tu empresa…) busca <b>Reglas</b> o <b>Filtros</b> y crea una: si el asunto contiene «recibo» o «factura», <b>reenviar a</b> tu dirección.</p>
+            <div class="g-btns">${copyAddr}<button class="btn btn-ghost btn-sm" data-verifydone="${a.id}">Ya la he creado</button></div>` },
+      { t: 'Trae tu historial', done: imported, opt: true,
+        d: `<p>Reenvía tus recibos antiguos a tu dirección (si tu correo deja «reenviar como adjunto», puedes mandar muchos de golpe) o sube un archivo .mbox/.eml más abajo.</p><div class="g-btns">${copyAddr}</div>${more}` }
+    ]
+  }[prov];
+  const cur = S.findIndex(x => !x.done);
+  const allDone = cur === -1 || (S.slice(cur).every(x => x.opt) && imported);
+  const tabs = `<div class="tabs-mini" id="fwd-tabs">${[['gmail', 'Gmail'], ['outlook', 'Outlook · Hotmail'], ['other', 'Otro']].map(([k, l]) => `<button class="${prov === k ? 'on' : ''}" data-fwd="${k}">${l}</button>`).join('')}</div>`;
+  const open = guideOpen == null ? !allDone : guideOpen;
+  if (!open) return `<div class="g-done">${I.check}<div><b>Todo listo.</b> Tus recibos llegan solos.${imported ? ` Importamos ${a.last_import_count || 0} recibos de tu historial.` : ''}</div><button class="link" data-guide="1">Ver los pasos</button></div>`;
+  return `${tabs}<ol class="gsteps">${S.map((x, i) => {
+    const state = x.done ? 'done' : i === (cur < 0 ? S.length : cur) ? 'now' : 'next';
+    const ok = x.done && i === S.length - 1 && imported ? `<span class="g-ok">${a.last_import_count || 0} recibos importados</span>` : '';
+    return `<li class="g-step ${state}"><div class="g-num">${x.done ? I.check : i + 1}</div><div class="g-body"><button class="g-title" data-gstep="${i}"><b>${x.t}</b>${x.opt && !x.done ? '<span class="chip">Opcional</span>' : ''}${ok}</button>${state === 'now' || guideStep === i ? `<div class="g-content">${x.d}</div>` : ''}</div></li>`;
+  }).join('')}</ol>${allDone ? '<button class="link" data-guide="0" style="margin-top:6px">Ocultar los pasos</button>' : ''}`;
+}
+let guideStep = null;
+
+let _autoAddr = false;
+function autoCreateAddr() {
+  if (_autoAddr) return; _autoAddr = true;
+  Inbound.create('Mi correo').then(() => route()).catch(err => { _autoAddr = false; toast(err.message, 4000); });
 }
 function addressRow(a) {
-  const email = Inbound.email(a), st = Inbound.state(a), who = a.source_email || a.label;
+  const email = Inbound.email(a), st = Inbound.state(a), who = a.source_email || 'Tu correo';
   const seen = a.last_seen_at || a.last_received_at;
   const ST = {
     connected: ['green', 'Conectado', a.received_count ? `${a.received_count} ${a.received_count === 1 ? 'recibo' : 'recibos'} · último ${fmtDate(a.last_received_at || seen)}` : 'Conectado. Tus próximos recibos llegarán solos.'],
-    pending: ['amber', 'Pendiente de confirmar', 'Confirma el reenvío en tu correo (aviso de abajo).'],
+    pending: ['amber', 'Pendiente de confirmar', 'Confirma el reenvío en Google (paso 1).'],
     idle: ['red', 'Sin actividad', `No llega nada desde el ${fmtDate(seen)}. Revisa que el filtro de reenvío siga activo.`],
-    none: ['grey', 'Sin conectar', 'Configura el reenvío con la guía de abajo.'],
+    none: ['grey', 'Sin conectar', 'Sigue los pasos de abajo: 2 minutos.'],
     paused: ['amber', 'Pausada', 'Supera el límite de direcciones de tu plan.'],
   }[st];
   const pill = `<span class="conn ${ST[0]}" title="${esc(ST[2])}"><i></i><b>${esc(who)}</b><span>· ${ST[1]}</span></span>`;
-  const verify = st === 'pending' && a.verify_at && (Date.now() - new Date(a.verify_at)) < 7 * 864e5
-    ? `<div class="verify">${I.check}<div><b>Gmail te pide confirmar el reenvío</b><span>${a.verify_code ? `Código: <b class="mono">${esc(a.verify_code)}</b> ` : ''}${a.verify_link ? `· <a class="link" href="${esc(a.verify_link)}" target="_blank" rel="noopener">Confirmar con un clic</a>` : ''}<br>Pulsa «Confirmar» una sola vez en la página de Google. Después, crea el filtro del paso 3.</span></div><div style="display:flex;gap:6px;flex-wrap:wrap">${a.verify_code ? `<button class="btn btn-ghost btn-sm" data-copy="${esc(a.verify_code)}">Copiar código</button>` : ''}<button class="btn btn-dark btn-sm" data-verifydone="${a.id}">Ya lo he confirmado</button></div></div>` : '';
+  const verify = '';
   return `<div class="addr${st === 'paused' ? ' off' : ''}"><div class="conn-row">${pill}<small class="conn-note">${esc(ST[2])}</small></div><div class="addr-top"><div class="addr-main"><b>${esc(a.label)}</b><div class="copyline"><code>${esc(email)}</code><button class="btn btn-dark btn-sm" data-copy="${esc(email)}">${I.copy} Copiar</button></div></div>
     <div class="addr-side"><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" data-rename="${a.id}">Renombrar</button><button class="btn btn-ghost btn-sm" data-deladdr="${a.id}" aria-label="Eliminar dirección">${I.x}</button></div></div></div>${verify}</div>`;
 }
@@ -424,20 +466,20 @@ function sourcesHTML() {
   const fwd = !cloud
     ? `<p class="hint" style="font-size:15px">${Auth.user.demo ? 'Crea tu cuenta gratis para tener tu dirección privada de reenvío.' : 'El reenvío automático necesita una cuenta en la nube.'}</p>${Auth.user.demo ? '<a class="btn btn-dark btn-sm" href="#registro">Crear cuenta gratis</a>' : ''}`
     : !Inbound.loaded ? '<p class="hint">Cargando tus direcciones…</p>'
-    : `${addrs.length ? addrs.map(addressRow).join('') : '<p class="hint" style="font-size:15px;margin-bottom:12px">Aún no tienes ninguna dirección. Crea la primera: tarda un segundo.</p>'}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px">${canAdd ? `<button class="btn btn-${addrs.length ? 'ghost' : 'dark'} btn-sm" id="addr-new">+ ${addrs.length ? 'Otra dirección' : 'Crear mi dirección'}</button>` : `<span class="hint">Tu plan ${plan.name} incluye ${plan.mailboxes} ${plan.mailboxes === 1 ? 'dirección' : 'direcciones'}.</span>${plan.id !== 'business' ? `<button class="btn btn-dark btn-sm" data-buy="${plan.id === 'free' ? 'pro' : 'business'}">${plan.id === 'free' ? 'Pro: hasta 5 correos' : 'Empresas: hasta 25'}</button>` : ''}`}
-      ${addrs.length ? '<button class="btn btn-ghost btn-sm" id="addr-sync">Comprobar ahora</button>' : ''}</div>
-      <div class="fwd-guide">${fwdGuide(addrs[0] ? Inbound.email(addrs[0]) : '')}</div>`;
+    : !addrs.length ? (autoCreateAddr(), '<p class="hint"><span class="spin"></span> Creando tu dirección privada…</p>')
+    : `${addrs.map(addressRow).join('')}
+      ${addrs.some(x => Inbound.state(x) === 'connected') ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px">${canAdd ? `<button class="btn btn-${addrs.length ? 'ghost' : 'dark'} btn-sm" id="addr-new">+ ${addrs.length ? 'Otra dirección' : 'Crear mi dirección'}</button>` : `<span class="hint">Tu plan ${plan.name} incluye ${plan.mailboxes} ${plan.mailboxes === 1 ? 'dirección' : 'direcciones'}.</span>${plan.id !== 'business' ? `<button class="btn btn-dark btn-sm" data-buy="${plan.id === 'free' ? 'pro' : 'business'}">${plan.id === 'free' ? 'Pro: hasta 5 correos' : 'Empresas: hasta 25'}</button>` : ''}`}
+      ${addrs.length ? '<button class="btn btn-ghost btn-sm" id="addr-sync">Comprobar ahora</button>' : ''}</div>` : ''}
+      <div class="fwd-guide">${guideSteps(addrs.find(x => Inbound.state(x) !== 'connected') || addrs[0])}</div>`;
   return topbar('Correos', cloud ? `${used} de ${plan.mailboxes} ${plan.mailboxes === 1 ? 'dirección de reenvío' : 'direcciones de reenvío'} en tu plan ${plan.name} · archivos y texto pegado sin límite` : 'Conecta tus recibos') + `
-  <div class="card fwd-card"><div class="fwd-head"><span class="dot green">${I.mail}</span><div><h3 style="margin:0">Reenvío automático <span class="chip green">Recomendado</span></h3>
-    <p class="hint" style="font-size:15px;margin-top:4px">Te damos una dirección privada. Configura tu correo para reenviarle tus recibos y HorahFlow se actualiza solo, sin que tengas que hacer nada más. Funciona con Gmail, Outlook, iCloud, Yahoo y cualquier otro.</p></div></div>
+  <div class="card fwd-card"><div class="fwd-head"><span class="dot green">${I.mail}</span><div><h3 style="margin:0">Conecta tu correo</h3>
+    <p class="hint" style="font-size:15px;margin-top:4px">Tu correo reenvía a HorahFlow solo tus recibos y facturas. Sin contraseñas y sin acceso al resto de tus correos. Se hace una vez y tarda 2 minutos.</p></div></div>
     ${fwd}</div>
   <h3 class="sec-mini">Otras formas de añadir recibos</h3>
-  <div class="connect-grid">
+  <div class="connect-grid two">
     <div class="connect"><span class="dot gray">${I.upload}</span><h4>Subir archivos</h4><p>Correos .eml o un archivo .mbox (Google Takeout, Outlook, Apple Mail o Thunderbird). Ideal para traer tu historial de golpe.</p>
       <label class="btn btn-ghost btn-sm" for="c-file" style="cursor:pointer">Elegir archivos</label><input type="file" id="c-file" multiple accept=".eml,.mbox,.txt,message/rfc822" class="hidden"></div>
     <div class="connect"><span class="dot gray">${I.copy}</span><h4>Pegar recibos</h4><p>Copia el texto de uno o varios correos y pégalo. Útil para revisar algo rápido.</p><button class="btn btn-ghost btn-sm" id="c-paste">Pegar texto</button></div>
-    <div class="connect soon"><span class="dot gray">${I.google}</span><h4>Gmail con un clic</h4><p>Conexión directa con tu cuenta de Google. Estamos terminando la verificación de seguridad con Google.</p><span class="chip">Próximamente</span></div>
   </div>
   <div class="drop" id="drop">${I.upload}<div style="margin-top:6px">Arrastra aquí tus archivos .eml o .mbox</div></div>
   <div class="card" style="margin-top:16px"><h3>Fuentes <small>${st.emails.length} recibos guardados</small></h3>
@@ -554,7 +596,13 @@ function bindAppView(view) {
   $('#export')?.addEventListener('click', exportCSV);
   $('#ai-run')?.addEventListener('click', runAdvice);
   $$('[data-copy]').forEach(b => b.onclick = async e => { e.preventDefault(); try { await navigator.clipboard.writeText(b.dataset.copy); toast('Copiado'); } catch { prompt('Copia este texto:', b.dataset.copy); } });
-  $$('[data-fwd]').forEach(b => b.onclick = () => { fwdTab = b.dataset.fwd; const g = $('.fwd-guide'); if (g) { g.innerHTML = fwdGuide(Inbound.addresses[0] ? Inbound.email(Inbound.addresses[0]) : ''); bindAppView('guide'); } });
+  const reGuide = () => { const y = scrollY; route(); scrollTo(0, y); };
+  $$('[data-fwd]').forEach(b => b.onclick = () => { fwdTab = b.dataset.fwd; guideStep = null; reGuide(); });
+  $$('[data-gstep]').forEach(b => b.onclick = () => { const i = +b.dataset.gstep; guideStep = guideStep === i ? null : i; reGuide(); });
+  $$('[data-guide]').forEach(b => b.onclick = () => { guideOpen = b.dataset.guide === '1'; reGuide(); });
+  $$('[data-filterdone]').forEach(b => b.onclick = () => { Data.state.prefs.filterDone = { ...(Data.state.prefs.filterDone || {}), [b.dataset.filterdone]: Date.now() }; Data.save('prefs'); toast('¡Perfecto! Tus recibos nuevos llegarán solos.', 4000); reGuide(); });
+  if (view === 'app-correos') Inbound.fastWatch(changed => { if (location.hash === '#app-correos' && !document.querySelector('.modal-bg')) reGuide(); if (changed && changed.imported) toast(`¡Listo! Hemos importado ${changed.imported} recibos de tu historial.`, 6000); });
+  else Inbound.fastWatch(null);
   $('#addr-new')?.addEventListener('click', e => {
     const first = !Inbound.addresses.length;
     modal(`<h2>${first ? 'Tu dirección de reenvío' : 'Nueva dirección'}</h2><p class="hint" style="font-size:15px;margin:6px 0 14px">Ponle un nombre para reconocer de qué correo vienen los recibos.</p>
@@ -565,7 +613,7 @@ function bindAppView(view) {
   });
   $('#addr-sync')?.addEventListener('click', async e => { const b = e.currentTarget; b.disabled = true; b.textContent = 'Comprobando…'; await Inbound.load().catch(() => {}); const n = await Inbound.sync(); toast(n ? `${n} recibos nuevos importados` : 'No hay recibos nuevos todavía'); route(); });
   $$('[data-verifydone]').forEach(b => b.onclick = async () => { b.disabled = true;
-    try { await Inbound.confirm(b.dataset.verifydone); toast('¡Conectado! Si ya creaste el filtro, tus recibos llegarán solos.', 6000); route(); }
+    try { await Inbound.confirm(b.dataset.verifydone); toast('¡Hecho! Siguiente paso.', 3000); const y = scrollY; route(); scrollTo(0, y); }
     catch (err) { b.disabled = false; toast(err.message, 4000); } });
   $$('[data-rename]').forEach(b => b.onclick = () => { const a = Inbound.addresses.find(x => x.id === b.dataset.rename); if (!a) return;
     modal(`<h2>Renombrar</h2><form id="rn-f"><div class="field"><label for="rn-l">Nombre</label><input class="input" id="rn-l" maxlength="40" value="${esc(a.label)}" required></div><button class="btn btn-dark btn-block">Guardar</button></form>`,

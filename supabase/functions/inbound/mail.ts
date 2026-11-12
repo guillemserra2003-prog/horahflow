@@ -99,3 +99,69 @@ export function unwrapForward(m: { from: string; subject: string; body: string; 
   const date = (dstr && looseDate(dstr)) || m.date;
   return { from, subject: sub, date, body: lines.slice(i).join("\n").trim() || body };
 }
+
+// ---------- Lector de correos adjuntos (.eml) ----------
+// Para «Reenviar como archivo adjunto»: Gmail y Outlook mandan cada correo original como un .eml.
+
+const latin1 = (b: Uint8Array) => { let s = ""; for (let i = 0; i < b.length; i += 8192) s += String.fromCharCode(...b.subarray(i, i + 8192)); return s; };
+const toBytes = (s: string) => Uint8Array.from(s, (c) => c.charCodeAt(0) & 255);
+function decodeText(b: Uint8Array, charset = "utf-8"): string {
+  const cs = (charset || "utf-8").toLowerCase().replace(/^"|"$/g, "");
+  try { return new TextDecoder(cs === "latin1" ? "iso-8859-1" : cs).decode(b); } catch { return new TextDecoder("utf-8").decode(b); }
+}
+function qpDecode(s: string): Uint8Array {
+  s = s.replace(/=\r?\n/g, "");
+  const out: number[] = [];
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === "=" && /^[0-9a-f]{2}$/i.test(s.slice(i + 1, i + 3))) { out.push(parseInt(s.slice(i + 1, i + 3), 16)); i += 2; }
+    else out.push(s.charCodeAt(i) & 255);
+  }
+  return Uint8Array.from(out);
+}
+function b64Decode(s: string): Uint8Array { try { return toBytes(atob(s.replace(/[^A-Za-z0-9+/=]/g, ""))); } catch { return new Uint8Array(); } }
+
+/** «=?UTF-8?B?...?=» y «=?iso-8859-1?Q?...?=» en cabeceras. */
+export function decodeWords(s: string): string {
+  return s.replace(/\?=\s+=\?/g, "?==?").replace(/=\?([^?]+)\?([bq])\?([^?]*)\?=/gi, (_, cs, enc, txt) =>
+    decodeText(enc.toLowerCase() === "b" ? b64Decode(txt) : qpDecode(txt.replace(/_/g, " ")), cs));
+}
+function splitHead(raw: string): [Record<string, string>, string] {
+  const m = raw.match(/\r?\n\r?\n/);
+  const head = m ? raw.slice(0, m.index) : raw, body = m ? raw.slice((m.index ?? 0) + m[0].length) : "";
+  const h: Record<string, string> = {};
+  for (const line of head.replace(/\r?\n[ \t]+/g, " ").split(/\r?\n/)) {
+    const i = line.indexOf(":"); if (i < 1) continue;
+    const k = line.slice(0, i).trim().toLowerCase(); if (!(k in h)) h[k] = line.slice(i + 1).trim();
+  }
+  return [h, body];
+}
+const param = (v: string, p: string) => ((v || "").match(new RegExp(`${p}\\s*=\\s*"?([^";]+)"?`, "i")) || [])[1] || "";
+
+function walk(raw: string, acc: { text: string; html: string }, depth = 0) {
+  if (depth > 6) return;
+  const [h, body] = splitHead(raw);
+  const ct = (h["content-type"] || "text/plain").toLowerCase();
+  if (ct.startsWith("multipart/")) {
+    const b = param(h["content-type"], "boundary"); if (!b) return;
+    const parts = body.split("--" + b);
+    for (const p of parts.slice(1)) { if (p.startsWith("--")) break; walk(p.replace(/^\r?\n/, ""), acc, depth + 1); }
+    return;
+  }
+  if (/attachment/i.test(h["content-disposition"] || "")) return;
+  if (!ct.startsWith("text/")) return;
+  const enc = (h["content-transfer-encoding"] || "").toLowerCase();
+  const bytes = enc.includes("base64") ? b64Decode(body) : enc.includes("quoted") ? qpDecode(body) : toBytes(body);
+  const txt = decodeText(bytes, param(h["content-type"], "charset"));
+  if (ct.startsWith("text/plain") && !acc.text) acc.text = txt;
+  else if (ct.startsWith("text/html") && !acc.html) acc.html = txt;
+}
+
+/** Lee un .eml y devuelve remitente, asunto, fecha y cuerpo (texto o HTML). */
+export function parseEml(input: Uint8Array | string): { from: string; subject: string; date: Date | null; text: string; html: string } {
+  const raw = typeof input === "string" ? input : latin1(input);
+  const [h] = splitHead(raw);
+  const acc = { text: "", html: "" };
+  walk(raw, acc);
+  const d = h["date"] ? new Date(h["date"]) : null;
+  return { from: decodeWords(h["from"] || ""), subject: decodeWords(h["subject"] || ""), date: d && !isNaN(+d) ? d : null, text: acc.text, html: acc.html };
+}

@@ -5,11 +5,15 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { loadEngine } from "./engine-loader.ts";
-import { unwrapForward, verifySvix, gmailVerification, forwardSource } from "./mail.ts";
+import { unwrapForward, verifySvix, gmailVerification, forwardSource, parseEml } from "./mail.ts";
 
 const DOMAIN = "recibos.horahflow.com";
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 const LIMIT: Record<string, number> = { free: 1, pro: 5, business: 25 };
+// Meses de historial que se pueden importar (igual que en la app: core.js PLANS.history)
+const HISTORY: Record<string, number> = { free: 3, pro: 24, business: 36 };
+const MAX_ATTACHED = 120, MAX_EML_BYTES = 3_000_000;
+const isEml = (a: any) => /message\/rfc822/i.test(a?.content_type || "") || /\.eml$/i.test(a?.filename || "");
 
 async function secret(name: string): Promise<string | undefined> {
   const v = Deno.env.get(name);
@@ -72,6 +76,39 @@ Deno.serve(async (req) => {
     const src = addr.source_email ? "" : forwardSource("", mail.headers);
     await db.from("inbound_addresses").update({ last_seen_at: nowIso, ...(src ? { source_email: src } : {}) }).eq("id", addr.id);
     await db.from("inbound_addresses").update({ confirmed_at: nowIso }).eq("id", addr.id).is("confirmed_at", null);
+
+    // Importación del historial: correos reenviados como archivo adjunto (.eml)
+    const attached = (Array.isArray(mail.attachments) ? mail.attachments : []).filter(isEml);
+    if (attached.length) {
+      const months = HISTORY[prof?.plan || "free"] ?? 3;
+      const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - months);
+      const lr = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}/attachments?limit=100`, { headers: { Authorization: `Bearer ${apiKey}` } });
+      if (!lr.ok) return json({ error: "adjuntos " + lr.status }, 502);
+      const list = ((await lr.json()).data || []).filter(isEml).slice(0, MAX_ATTACHED);
+      let stored = 0, old = 0, skipped = 0;
+      for (const att of list) {
+        try {
+          if (att.size && att.size > MAX_EML_BYTES) { skipped++; continue; }
+          const dl = await fetch(att.download_url);
+          if (!dl.ok) { skipped++; continue; }
+          const e = parseEml(new Uint8Array(await dl.arrayBuffer()));
+          const date = e.date || receivedAt;
+          if (date < cutoff) { old++; continue; }
+          const body = (e.text || E.htmlToText(e.html || "")).trim().slice(0, 20000);
+          const c = { from: e.from, subject: e.subject, date: date.toISOString(), body };
+          if (!E.toCharge(c) && !E.maybeReceipt(c)) { skipped++; continue; }
+          const { error } = await db.from("inbound_emails").insert({
+            user_id: addr.user_id, address_id: addr.id, resend_id: `${emailId}:${token}:${att.id}`,
+            from_addr: c.from.slice(0, 300), subject: c.subject.slice(0, 500), received_at: c.date, body: body.slice(0, 8000),
+          });
+          if (!error) stored++;
+          else if (error.code !== "23505") { console.error(error); skipped++; }
+        } catch (err) { console.error("eml", err); skipped++; }
+      }
+      await db.rpc("inbound_touch_n", { a: addr.id, n: stored });
+      results.push({ token, imported: stored, old, skipped });
+      continue;
+    }
 
     // Reenvío manual: se recupera el remitente, asunto y fecha originales
     const m = unwrapForward({ from, subject, body: text, date: receivedAt });

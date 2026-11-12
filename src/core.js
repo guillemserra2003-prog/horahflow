@@ -30,7 +30,7 @@ const Store = (() => {
 
 /* ---------- Cuentas ---------- */
 const PLANS = {
-  free:     { id: 'free', name: 'Gratis', mailboxes: 1, history: 12, alerts: false, export: false },
+  free:     { id: 'free', name: 'Gratis', mailboxes: 1, history: 3, alerts: false, export: false },
   pro:      { id: 'pro', name: 'Pro', mailboxes: 5, history: 24, alerts: true, export: true },
   business: { id: 'business', name: 'Empresas', mailboxes: 25, history: 36, alerts: true, export: true }
 };
@@ -436,7 +436,25 @@ const Inbound = {
     if (!this._vis) { this._vis = true; document.addEventListener('visibilitychange', () => { if (this._tick && !document.hidden && Date.now() - this.lastSync > 60000) this._tick(); }); }
     tick();
   },
-  stop() { clearInterval(this._timer); this._tick = null; this._for = null; this.addresses = []; this.loaded = false; }
+  /** En la pantalla Correos: comprueba cada 6 s para marcar los pasos al momento */
+  fastWatch(onChange) {
+    clearInterval(this._fast); this._fast = null;
+    if (!onChange || !this.available() || Auth.user.demo) return;
+    const sig = () => JSON.stringify(this.addresses.map(a => [a.id, a.verify_at, a.confirmed_at, a.last_seen_at, a.received_count, a.last_import_at]));
+    const impMap = () => Object.fromEntries(this.addresses.map(a => [a.id, a.last_import_at]));
+    let last = sig(), lastImp = impMap(), t0 = Date.now();
+    this._fast = setInterval(async () => {
+      if (document.hidden) return;
+      if (Date.now() - t0 > 20 * 60000) { clearInterval(this._fast); return; }
+      try { await this.load(); } catch { return; }
+      const now = sig(); if (now === last) return; last = now;
+      const prevImp = lastImp; lastImp = impMap();
+      const imp = this.addresses.find(a => a.last_import_at && a.last_import_at !== prevImp[a.id]);
+      await this.sync();
+      onChange({ imported: imp ? imp.last_import_count : 0 });
+    }, 6000);
+  },
+  stop() { clearInterval(this._fast); clearInterval(this._timer); this._tick = null; this._for = null; this.addresses = []; this.loaded = false; }
 };
 
 /* ---------- Gmail (OAuth en el navegador, solo lectura) ---------- */
