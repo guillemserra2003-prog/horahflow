@@ -142,6 +142,7 @@ function overviewHTML(a) {
   const t = a.totals, hi = Math.max(...a.months.map(m => m.total), 1), cmax = Math.max(...a.categories.map(c => c.value), 1);
   const hour = new Date().getHours();
   const greet = hour < 13 ? 'Buenos días' : hour < 21 ? 'Buenas tardes' : 'Buenas noches';
+  const recent = allTx(a).filter(c => c.date <= new Date());
   const scoreTxt = t.score >= 75 ? 'Muy bien. Tus gastos están bajo control.' : t.score >= 50 ? 'Bien, pero hay fugas que puedes cerrar.' : 'Tienes varias fugas importantes. Empieza por las rojas.';
   return topbar(`${greet}, ${esc(Auth.user.name.split(' ')[0])}`, `Analizados ${t.emails} correos · ${t.found} cargos encontrados`) + `
   <div class="kpis fade-in">
@@ -175,9 +176,15 @@ function overviewHTML(a) {
       <p class="hint" style="font-size:12px;margin-top:8px">* Mes en curso</p>
     </div>
   </div>
+  <div class="grid-2b">
+  <div class="card"><h3>Últimos gastos <small>${fmt(recent.filter(c => Date.now() - c.date < 30 * 864e5).reduce((x, c) => x + c.amount, 0))} en 30 días</small></h3>
+    ${recent.length ? `<table class="table"><tbody>${recent.slice(0, 8).map(c => `<tr><td><div class="svc">${logoSq(c.merchant)}<div>${esc(c.merchant)}<small>${new Date(c.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} · ${c.kind}</small></div></div></td><td class="right"><b class="num">${fmt(c.amount)}</b></td></tr>`).join('')}</tbody></table>` : '<p class="hint">Aún no hay gastos.</p>'}
+    <a href="#app-gastos" class="link" style="display:inline-block;margin-top:14px;font-size:14px">Ver todos los gastos</a>
+  </div>
   <div class="card"><h3>Próximos cobros <small>${fmt(a.upcoming.reduce((s, x) => s + x.amount, 0))} en 30 días</small></h3>
     ${a.upcoming.length ? `<table class="table"><tbody>${a.upcoming.slice(0, 8).map(s => upcomingRow(s)).join('')}</tbody></table>` : '<p class="hint">No hay cobros previstos en los próximos 30 días.</p>'}
     <a href="#app-calendario" class="link" style="display:inline-block;margin-top:14px;font-size:14px">Ver calendario</a>
+  </div>
   </div>`;
 }
 function upcomingRow(s) {

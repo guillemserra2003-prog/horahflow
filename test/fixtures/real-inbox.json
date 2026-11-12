@@ -1,28 +1,218 @@
 [
- {"id":"p1","source":"pegado","from":"Invoice","subject":"Invoice","date":"2026-11-11T19:15:50Z","body":"Invoice Invoice number AFA7ARCT-0002 Date of issue November 11, 2026 Date due November 11, 2026 VAT Registration EU VAT: IE4276970QH Anthropic, PBC 548 Market Street San Francisco United States support@anthropic.com Bill to Usuario $6.05 USD due November 11, 2026 Pay online Description Qty Unit price Tax Amount One-time credit purchase 1 $5.00 21% $5.00 Subtotal $5.00 Total excluding tax $5.00 VAT - Spain (21% on $5.00) $1.05 Total $6.05 Amount due $6.05 USD"},
- {"id":"r1","source":"reenvio","from":"Anthropic, PBC <invoice+statements@mail.anthropic.com>","subject":"Your receipt from Anthropic, PBC #2678-7983-2675","date":"2026-11-11T20:12:00Z","body":"<https://www.anthropic.com/> Anthropic, PBC Receipt from Anthropic, PBC $6.05 Paid on November 11, 2026 with [image: Mastercard] - 0000 Receipt #2678-7983-2675 One-time credit purchase Qty 1 $5.00 Subtotal $5.00 Total excluding tax $5.00 VAT - Spain (21%) $1.05 Total $6.05 Amount paid $6.05 Download receipt"},
- {"id":"r2","source":"reenvio","from":"guillem serra <usuario@gmail.com>","subject":"Fwd: Your receipt from Anthropic, PBC #2678-7983-2675","date":"2026-11-11T23:09:05Z","body":"<https://www.anthropic.com/> Anthropic, PBC Receipt from Anthropic, PBC $6.05 Paid on November 11, 2026 with [image: Mastercard] - 0000 Receipt #2678-7983-2675 One-time credit purchase Qty 1 $5.00 Subtotal $5.00 Total excluding tax $5.00 VAT - Spain (21%) $1.05 Total $6.05 Amount paid $6.05 Download receipt"},
- {"id":"r3","source":"reenvio","from":"Lovable Labs Incorporated <invoice+statements+acct_1Nu5mUKvR4zlUMOU@stripe.com>","subject":"Your receipt from Lovable Labs Incorporated #2764-2896","date":"2026-02-08T17:06:31Z","body":"Lovable Labs Incorporated (https://lovable.dev) Lovable Labs Incorporated Receipt from Lovable Labs Incorporated €25.00 Paid February 8, 2026 (invoice illustration) Download invoice (https://pay.stripe.com/invoice/x/pdf)"},
- {"id":"r4","source":"reenvio","from":"\"MOONSHOT AI PTE. LTD.\" <invoice+statements+acct_1S39uHEEbgVYrRm7@stripe.com>","subject":"Your receipt from MOONSHOT AI PTE. LTD. #2198-6360","date":"2026-03-12T03:56:41Z","body":"MOONSHOT AI PTE. LTD. Receipt from MOONSHOT AI PTE. LTD. $39.00 Paid March 12, 2026 (invoice illustration) Download invoice (https://pay.stripe.com/invoice/x)"},
- {"id":"r5","source":"reenvio","from":"\"Anthropic, PBC\" <invoice+statements@mail.anthropic.com>","subject":"Your receipt from Anthropic, PBC #2411-5865-8843","date":"2026-05-03T15:54:40Z","body":"Anthropic, PBC (https://www.anthropic.com/) Anthropic, PBC Receipt from Anthropic, PBC €12.10 Paid May 3, 2026 (invoice illustration) Download invoice (https://pay.stripe.com/invoice/x/pdf)"},
- {"id":"r6","source":"reenvio","from":"\"Anthropic, PBC\" <invoice+statements@mail.anthropic.com>","subject":"Your receipt from Anthropic, PBC #2270-7460-3002","date":"2026-05-26T18:43:49Z","body":"Anthropic, PBC (https://www.anthropic.com/) Anthropic, PBC Receipt from Anthropic, PBC €21.78 Paid May 26, 2026 (invoice illustration) Download invoice (https://pay.stripe.com/invoice/x/pd"},
- {"id":"r7","source":"reenvio","from":"Apple <no_reply@email.apple.com>","subject":"Tu factura de Apple","date":"2026-06-02T08:35:13Z","body":"com iCloud iCloud+ con 200 GB (Mensual) Se renueva el 2 de julio de 2026 iPhone 2,99 € Incluye el VAT del 21 % 0,52 € Pagos y facturación Usuario España Subtotal 2,47 € Se ha cargado un 21 % de VAT 0,52 € MasterCard •••• 0000 2,99 € Este correo electrónico confirma el pago del plan de iCloud+ mencionado anteriormente. Se te facturará cada periodo de pago hasta que lo cance"},
- {"id":"r8","source":"reenvio","from":"Lovable Labs Incorporated <failed-payments@lovable.dev>","subject":"€25.00 payment to Lovable Labs Incorporated was unsuccessful","date":"2026-06-08T17:03:21Z","body":"Lovable Labs Incorporated (https://lovable.dev) Lovable Labs Incorporated €25.00 payment to Lovable Labs Incorporated was unsuccessful We were unable to charge your Mastercard ending in 0000 for your Lovable Labs Incorporated subscription. Please update your billing information to continue your subscription."},
- {"id":"r9","source":"reenvio","from":"Apple <no_reply@email.apple.com>","subject":"Tu factura de Apple","date":"2026-07-15T08:00:56Z","body":"com iCloud iCloud+ con 200 GB (Mensual) Se renueva el 2 de agosto de 2026 2,99 € Incluye el VAT del 21 % 0,52 € Pagos y facturación Usuario España Subtotal 2,47 € Se ha cargado un 21 % de VAT 0,52 € MasterCard •••• 0000 2,99 € Este correo electrónico confirma el pago del plan de iCloud+ mencionado anteriormente."},
- {"id":"r10","source":"reenvio","from":"Apple <no_reply@email.apple.com>","subject":"Tu factura de Apple","date":"2026-08-02T06:53:06Z","body":"com iCloud iCloud+ con 200 GB (Mensual) Se renueva el 2 de septiembre de 2026 2,99 € Incluye el VAT del 21 % 0,52 € Pagos y facturación Usuario España Subtotal 2,47 € Se ha cargado un 21 % de VAT 0,52 € MasterCard •••• 0000 2,99 € Este correo electrónico confirma el pago del plan de iCloud+ mencionado anteriormente."},
- {"id":"r11","source":"reenvio","from":"\"Anthropic, PBC\" <invoice+statements@mail.anthropic.com>","subject":"Your receipt from Anthropic, PBC #2638-8799-6440","date":"2026-08-03T16:55:50Z","body":"Anthropic, PBC (https://www.anthropic.com/) Anthropic, PBC Receipt from Anthropic, PBC €21.78 Paid August 3, 2026 (invoice illustration) Download invoice (https://pay.stripe.com/invoice/x/)"},
- {"id":"r12","source":"reenvio","from":"TikTok Shop <no-reply@shop.tiktok.com>","subject":"¡Tu pedido se ha confirmado!","date":"2026-09-23T20:51:45Z","body":"pedido Dirección de envío Usuario Lérida, España Resumen de tu pedido Subtotal 27,51 € Envío 0 € Cupones - 0,03 € Cupones de vendedor - 3,27 € Total (1 artículo) 24,21 € Este mensaje se envió en relación con una compra reciente realizada en TikTok Shop. Política de privacidad de TikTok UE: Política de Devoluciones, Derecho de Desistimiento y"},
- {"id":"r13","source":"reenvio","from":"guillem serra <usuario@gmail.com>","subject":"Fwd: Este es tu recibo","date":"2026-10-06T06:45:06Z","body":"source=g> 08680 <https://www.google.com/maps/search/Bassacs+Carretera,+60?entry=gmail&source=g> Entrada lunes, 5 de octubre de 2026 Salida martes, 6 de octubre de 2026 *Importe pagado el 5 oct 2026* *€ 56,18* Tu recibo se ha generado de manera automática Esto es solo una prueba de la transacción y no se puede usar para deducir el IVA. Esto no es una factura Solo el alojamiento puede emitir una factura válida a efectos fiscales Booking.com Oosterdokskade n.º 163"},
- {"id":"r14","source":"reenvio","from":"Apple <no_reply@email.apple.com>","subject":"Tu factura de Apple","date":"2026-10-15T00:19:33Z","body":"com ChatGPT ChatGPT Plus (Mensual) Se renueva el 15 de noviembre de 2026 22,99 € Incluye el VAT del 21 % 3,99 € Pagos y facturación Usuario España Subtotal 19,00 € Se ha cargado un 21 % de VAT 3,99 € Mastercard •••• 0000 (Apple Pay) 22,99 € Puedes desactivar los recibos de renovación para dejar de recibir correos electrónicos por cada renovación o pago de suscripción. Consulta tus recibos en cualquier momento en los ajustes de App Store"},
- {"id":"r15","source":"reenvio","from":"TikTok Shop <no-reply@shop.tiktok.com>","subject":"¡Tu pedido se ha confirmado!","date":"2026-10-16T20:20:31Z","body":"ento y garantía legal Los UE: Términos de uso del comprador para el programa de suscripción se aplican cuando realizas un pedido a través del programa pedido Dirección de envío Usuario España Resumen de tu pedido Subtotal 114,99 € Envío 0 € Cupones - 12 € Cupones de vendedor - 5 € Total (1 artículo) 97,99 € Información del vendedor Nombre del vendedor Tienda"},
- {"id":"r16","source":"reenvio","from":"GridSentry Technologies <empresa@gmail.com>","subject":"Fwd: Tu factura 311101210252 con fecha de 13/10/2026","date":"2026-10-17T07:04:13Z","body":"n fecha de 13/10/2026 Hola, Usuario: Te adjuntamos tu factura actual 311101210252 con fecha de 13/10/2026 en formato PDF. *N.° de factura:* 311101210252 *N.° de contrato:* 300086410 *Importe de la factura:* 1,21 € Asimismo, siempre puedes consultar tus facturas en la sección correspondiente de tu cuenta: [image: Ver facturas] <https://oc.ionos.es?lt=body_cp_invoices&target=https%3A%2F%2Fmy.ionos.es%2Finvoices> El importe pendiente de"},
- {"id":"r17","source":"reenvio","from":"TikTok Shop <no-reply@shop.tiktok.com>","subject":"¡Tu pedido está en reparto!","date":"2026-10-26T06:14:38Z","body":"Tech monitor gaming curvo Pantalla de 27 inch 114,99 € x 1 Número de pedido 576967929546185487 Fecha del pedido Oct 16, 2026 10:20 PM Resumen de pedidos Subtotal 114,99 € Envío 0 € Cupones - 12 € Cupones de vendedor - 5 € Total (1 artículo) 97,99 € Información de envío Enviado por Envío estándar Número de seguimiento 32300034749306601255906"},
- {"id":"r18","source":"reenvio","from":"TikTok Shop <no-reply@shop.tiktok.com>","subject":"¡Tu pedido se ha entregado!","date":"2026-10-26T11:43:48Z","body":"Tech monitor gaming curvo Pantalla de 27 inch 114,99 € x 1 ID de pedido 576967929546185487 Fecha del pedido Oct 16, 2026 10:20 PM Resumen del paquete Subtotal 114,99 € Envío 0 € Cupones - 12 € Cupones de vendedor - 5 € Total (1 artículo) 97,99 € Este mensaje se envió en relación con una compra reciente realizada en TikTok Shop."},
- {"id":"r19","source":"reenvio","from":"\"Anthropic, PBC\" <invoice+statements@mail.anthropic.com>","subject":"Your receipt from Anthropic, PBC #2846-4445-9581","date":"2026-11-03T16:57:10Z","body":"Anthropic, PBC (https://www.anthropic.com/) Anthropic, PBC Receipt from Anthropic, PBC €21.78 Paid on November 3, 2026 with - 0000 Receipt #2846-4445-9581 Nov 3–Dec 3, 2026 Claude Pro Qty 1 €18.00 Subtotal €18.00 Total excluding tax €18.00 VAT - Spain (21%) €3.78 Total €21.78 Amount paid"},
- {"id":"r20","source":"reenvio","from":"\"Vercel Inc.\" <invoice+statements@vercel.com>","subject":"Your receipt from Vercel Inc. #2354-5235-5542","date":"2026-11-11T18:09:37Z","body":"Vercel Inc. (https://vercel.com) Vercel Inc. Receipt from Vercel Inc. $14.56 Paid on November 11, 2026 with - 1000 Receipt #2354-5235-5542 Domain purchase - horahflow.com Qty 1 $12.03 Subtotal $12.03 Total excluding tax $12.03 Standard Rate - SPAIN (21%) $2.53 Total $14.5"},
- {"id":"r21","source":"reenvio","from":"\"Vercel Inc.\" <invoice+statements@vercel.com>","subject":"Your receipt from Vercel Inc. #2745-6984-2468","date":"2026-11-12T12:04:42Z","body":"Vercel Inc. (https://vercel.com) Vercel Inc. Receipt from Vercel Inc. $24.20 Paid on November 12, 2026 with - 1000 Receipt #2745-6984-2468 Nov 12–Dec 11, 2026 Flat Rate CDN 1M Qty 1 $0.00 Pro Qty 1 $20.00 Subtotal $20.00 Total excluding tax $20.00 Standard Rate - SPAIN (2"},
- {"id":"x1","source":"reenvio","from":"Cofidis <info@cofidis.es>","subject":"Recibo de tu préstamo - cuota 7 de 24","date":"2026-10-05T08:00:00Z","body":"Te informamos del cargo de la cuota mensual de tu préstamo personal. Cuota 7 de 24. Importe de la cuota: 86,40 €. Capital pendiente: 1.520,11 €."},
- {"id":"x2","source":"reenvio","from":"Cofidis <info@cofidis.es>","subject":"Recibo de tu préstamo - cuota 8 de 24","date":"2026-11-05T08:00:00Z","body":"Te informamos del cargo de la cuota mensual de tu préstamo personal. Cuota 8 de 24. Importe de la cuota: 86,40 €. Capital pendiente: 1.438,02 €."},
- {"id":"x3","source":"reenvio","from":"ZARA <noreply@zara.com>","subject":"Gracias por tu compra","date":"2026-10-20T10:00:00Z","body":"Pedido nº 59302211 Gracias por tu compra. Camisa lino 35,95 € Envío gratuito Total 35,95 €"},
- {"id":"x4","source":"reenvio","from":"ZARA <noreply@zara.com>","subject":"Gracias por tu compra","date":"2026-11-08T10:00:00Z","body":"Pedido nº 59400021 Gracias por tu compra. Pantalón 49,95 € Total 49,95 €"}
+ {
+  "id": "p1",
+  "source": "pegado",
+  "from": "Invoice",
+  "subject": "Invoice",
+  "date": "2026-11-11T19:15:50Z",
+  "body": "Invoice Invoice number AFA7ARCT-0002 Date of issue November 11, 2026 Date due November 11, 2026 VAT Registration EU VAT: IE4276970QH Anthropic, PBC 548 Market Street San Francisco United States support@anthropic.com Bill to Usuario $6.05 USD due November 11, 2026 Pay online Description Qty Unit price Tax Amount One-time credit purchase 1 $5.00 21% $5.00 Subtotal $5.00 Total excluding tax $5.00 VAT - Spain (21% on $5.00) $1.05 Total $6.05 Amount due $6.05 USD"
+ },
+ {
+  "id": "r1",
+  "source": "reenvio",
+  "from": "Anthropic, PBC <invoice+statements@mail.anthropic.com>",
+  "subject": "Your receipt from Anthropic, PBC #2678-7983-2675",
+  "date": "2026-11-11T20:12:00Z",
+  "body": "<https://www.anthropic.com/> Anthropic, PBC Receipt from Anthropic, PBC $6.05 Paid on November 11, 2026 with [image: Mastercard] - 0000 Receipt #2678-7983-2675 One-time credit purchase Qty 1 $5.00 Subtotal $5.00 Total excluding tax $5.00 VAT - Spain (21%) $1.05 Total $6.05 Amount paid $6.05 Download receipt"
+ },
+ {
+  "id": "r2",
+  "source": "reenvio",
+  "from": "guillem serra <usuario@gmail.com>",
+  "subject": "Fwd: Your receipt from Anthropic, PBC #2678-7983-2675",
+  "date": "2026-11-11T23:09:05Z",
+  "body": "<https://www.anthropic.com/> Anthropic, PBC Receipt from Anthropic, PBC $6.05 Paid on November 11, 2026 with [image: Mastercard] - 0000 Receipt #2678-7983-2675 One-time credit purchase Qty 1 $5.00 Subtotal $5.00 Total excluding tax $5.00 VAT - Spain (21%) $1.05 Total $6.05 Amount paid $6.05 Download receipt"
+ },
+ {
+  "id": "r3",
+  "source": "reenvio",
+  "from": "Lovable Labs Incorporated <invoice+statements+acct_1Nu5mUKvR4zlUMOU@stripe.com>",
+  "subject": "Your receipt from Lovable Labs Incorporated #2764-2896",
+  "date": "2026-02-08T17:06:31Z",
+  "body": "Lovable Labs Incorporated (https://lovable.dev) Lovable Labs Incorporated Receipt from Lovable Labs Incorporated €25.00 Paid February 8, 2026 (invoice illustration) Download invoice (https://pay.stripe.com/invoice/x/pdf)"
+ },
+ {
+  "id": "r4",
+  "source": "reenvio",
+  "from": "\"MOONSHOT AI PTE. LTD.\" <invoice+statements+acct_1S39uHEEbgVYrRm7@stripe.com>",
+  "subject": "Your receipt from MOONSHOT AI PTE. LTD. #2198-6360",
+  "date": "2026-03-12T03:56:41Z",
+  "body": "MOONSHOT AI PTE. LTD. Receipt from MOONSHOT AI PTE. LTD. $39.00 Paid March 12, 2026 (invoice illustration) Download invoice (https://pay.stripe.com/invoice/x)"
+ },
+ {
+  "id": "r5",
+  "source": "reenvio",
+  "from": "\"Anthropic, PBC\" <invoice+statements@mail.anthropic.com>",
+  "subject": "Your receipt from Anthropic, PBC #2411-5865-8843",
+  "date": "2026-05-03T15:54:40Z",
+  "body": "Anthropic, PBC (https://www.anthropic.com/) Anthropic, PBC Receipt from Anthropic, PBC €12.10 Paid May 3, 2026 (invoice illustration) Download invoice (https://pay.stripe.com/invoice/x/pdf)"
+ },
+ {
+  "id": "r6",
+  "source": "reenvio",
+  "from": "\"Anthropic, PBC\" <invoice+statements@mail.anthropic.com>",
+  "subject": "Your receipt from Anthropic, PBC #2270-7460-3002",
+  "date": "2026-05-26T18:43:49Z",
+  "body": "Anthropic, PBC (https://www.anthropic.com/) Anthropic, PBC Receipt from Anthropic, PBC €21.78 Paid May 26, 2026 (invoice illustration) Download invoice (https://pay.stripe.com/invoice/x/pd"
+ },
+ {
+  "id": "r7",
+  "source": "reenvio",
+  "from": "Apple <no_reply@email.apple.com>",
+  "subject": "Tu factura de Apple",
+  "date": "2026-06-02T08:35:13Z",
+  "body": "com iCloud iCloud+ con 200 GB (Mensual) Se renueva el 2 de julio de 2026 iPhone 2,99 € Incluye el VAT del 21 % 0,52 € Pagos y facturación Usuario España Subtotal 2,47 € Se ha cargado un 21 % de VAT 0,52 € MasterCard •••• 0000 2,99 € Este correo electrónico confirma el pago del plan de iCloud+ mencionado anteriormente. Se te facturará cada periodo de pago hasta que lo cance"
+ },
+ {
+  "id": "r8",
+  "source": "reenvio",
+  "from": "Lovable Labs Incorporated <failed-payments@lovable.dev>",
+  "subject": "€25.00 payment to Lovable Labs Incorporated was unsuccessful",
+  "date": "2026-06-08T17:03:21Z",
+  "body": "Lovable Labs Incorporated (https://lovable.dev) Lovable Labs Incorporated €25.00 payment to Lovable Labs Incorporated was unsuccessful We were unable to charge your Mastercard ending in 0000 for your Lovable Labs Incorporated subscription. Please update your billing information to continue your subscription."
+ },
+ {
+  "id": "r9",
+  "source": "reenvio",
+  "from": "Apple <no_reply@email.apple.com>",
+  "subject": "Tu factura de Apple",
+  "date": "2026-07-15T08:00:56Z",
+  "body": "com iCloud iCloud+ con 200 GB (Mensual) Se renueva el 2 de agosto de 2026 2,99 € Incluye el VAT del 21 % 0,52 € Pagos y facturación Usuario España Subtotal 2,47 € Se ha cargado un 21 % de VAT 0,52 € MasterCard •••• 0000 2,99 € Este correo electrónico confirma el pago del plan de iCloud+ mencionado anteriormente."
+ },
+ {
+  "id": "r10",
+  "source": "reenvio",
+  "from": "Apple <no_reply@email.apple.com>",
+  "subject": "Tu factura de Apple",
+  "date": "2026-08-02T06:53:06Z",
+  "body": "com iCloud iCloud+ con 200 GB (Mensual) Se renueva el 2 de septiembre de 2026 2,99 € Incluye el VAT del 21 % 0,52 € Pagos y facturación Usuario España Subtotal 2,47 € Se ha cargado un 21 % de VAT 0,52 € MasterCard •••• 0000 2,99 € Este correo electrónico confirma el pago del plan de iCloud+ mencionado anteriormente."
+ },
+ {
+  "id": "r11",
+  "source": "reenvio",
+  "from": "\"Anthropic, PBC\" <invoice+statements@mail.anthropic.com>",
+  "subject": "Your receipt from Anthropic, PBC #2638-8799-6440",
+  "date": "2026-08-03T16:55:50Z",
+  "body": "Anthropic, PBC (https://www.anthropic.com/) Anthropic, PBC Receipt from Anthropic, PBC €21.78 Paid August 3, 2026 (invoice illustration) Download invoice (https://pay.stripe.com/invoice/x/)"
+ },
+ {
+  "id": "r12",
+  "source": "reenvio",
+  "from": "TikTok Shop <no-reply@shop.tiktok.com>",
+  "subject": "¡Tu pedido se ha confirmado!",
+  "date": "2026-09-23T20:51:45Z",
+  "body": "pedido Dirección de envío Usuario Lérida, España Resumen de tu pedido Subtotal 27,51 € Envío 0 € Cupones - 0,03 € Cupones de vendedor - 3,27 € Total (1 artículo) 24,21 € Este mensaje se envió en relación con una compra reciente realizada en TikTok Shop. Política de privacidad de TikTok UE: Política de Devoluciones, Derecho de Desistimiento y"
+ },
+ {
+  "id": "r13",
+  "source": "reenvio",
+  "from": "guillem serra <usuario@gmail.com>",
+  "subject": "Fwd: Este es tu recibo",
+  "date": "2026-10-06T06:45:06Z",
+  "body": "source=g> 08680 <https://www.google.com/maps/search/Bassacs+Carretera,+60?entry=gmail&source=g> Entrada lunes, 5 de octubre de 2026 Salida martes, 6 de octubre de 2026 *Importe pagado el 5 oct 2026* *€ 56,18* Tu recibo se ha generado de manera automática Esto es solo una prueba de la transacción y no se puede usar para deducir el IVA. Esto no es una factura Solo el alojamiento puede emitir una factura válida a efectos fiscales Booking.com Oosterdokskade n.º 163"
+ },
+ {
+  "id": "r14",
+  "source": "reenvio",
+  "from": "Apple <no_reply@email.apple.com>",
+  "subject": "Tu factura de Apple",
+  "date": "2026-10-15T00:19:33Z",
+  "body": "com ChatGPT ChatGPT Plus (Mensual) Se renueva el 15 de noviembre de 2026 22,99 € Incluye el VAT del 21 % 3,99 € Pagos y facturación Usuario España Subtotal 19,00 € Se ha cargado un 21 % de VAT 3,99 € Mastercard •••• 0000 (Apple Pay) 22,99 € Puedes desactivar los recibos de renovación para dejar de recibir correos electrónicos por cada renovación o pago de suscripción. Consulta tus recibos en cualquier momento en los ajustes de App Store"
+ },
+ {
+  "id": "r15",
+  "source": "reenvio",
+  "from": "TikTok Shop <no-reply@shop.tiktok.com>",
+  "subject": "¡Tu pedido se ha confirmado!",
+  "date": "2026-10-16T20:20:31Z",
+  "body": "ento y garantía legal Los UE: Términos de uso del comprador para el programa de suscripción se aplican cuando realizas un pedido a través del programa pedido Dirección de envío Usuario España Resumen de tu pedido Subtotal 114,99 € Envío 0 € Cupones - 12 € Cupones de vendedor - 5 € Total (1 artículo) 97,99 € Información del vendedor Nombre del vendedor Tienda"
+ },
+ {
+  "id": "r16",
+  "source": "reenvio",
+  "from": "GridSentry Technologies <empresa@gmail.com>",
+  "subject": "Fwd: Tu factura 311101210252 con fecha de 13/10/2026",
+  "date": "2026-10-17T07:04:13Z",
+  "body": "n fecha de 13/10/2026 Hola, Usuario: Te adjuntamos tu factura actual 311101210252 con fecha de 13/10/2026 en formato PDF. *N.° de factura:* 311101210252 *N.° de contrato:* 300086410 *Importe de la factura:* 1,21 € Asimismo, siempre puedes consultar tus facturas en la sección correspondiente de tu cuenta: [image: Ver facturas] <https://oc.ionos.es?lt=body_cp_invoices&target=https%3A%2F%2Fmy.ionos.es%2Finvoices> El importe pendiente de"
+ },
+ {
+  "id": "r17",
+  "source": "reenvio",
+  "from": "TikTok Shop <no-reply@shop.tiktok.com>",
+  "subject": "¡Tu pedido está en reparto!",
+  "date": "2026-10-26T06:14:38Z",
+  "body": "Tech monitor gaming curvo Pantalla de 27 inch 114,99 € x 1 Número de pedido 576967929546185487 Fecha del pedido Oct 16, 2026 10:20 PM Resumen de pedidos Subtotal 114,99 € Envío 0 € Cupones - 12 € Cupones de vendedor - 5 € Total (1 artículo) 97,99 € Información de envío Enviado por Envío estándar Número de seguimiento 32300034749306601255906"
+ },
+ {
+  "id": "r18",
+  "source": "reenvio",
+  "from": "TikTok Shop <no-reply@shop.tiktok.com>",
+  "subject": "¡Tu pedido se ha entregado!",
+  "date": "2026-10-26T11:43:48Z",
+  "body": "Tech monitor gaming curvo Pantalla de 27 inch 114,99 € x 1 ID de pedido 576967929546185487 Fecha del pedido Oct 16, 2026 10:20 PM Resumen del paquete Subtotal 114,99 € Envío 0 € Cupones - 12 € Cupones de vendedor - 5 € Total (1 artículo) 97,99 € Este mensaje se envió en relación con una compra reciente realizada en TikTok Shop."
+ },
+ {
+  "id": "r19",
+  "source": "reenvio",
+  "from": "\"Anthropic, PBC\" <invoice+statements@mail.anthropic.com>",
+  "subject": "Your receipt from Anthropic, PBC #2846-4445-9581",
+  "date": "2026-11-03T16:57:10Z",
+  "body": "Anthropic, PBC (https://www.anthropic.com/) Anthropic, PBC Receipt from Anthropic, PBC €21.78 Paid on November 3, 2026 with - 0000 Receipt #2846-4445-9581 Nov 3–Dec 3, 2026 Claude Pro Qty 1 €18.00 Subtotal €18.00 Total excluding tax €18.00 VAT - Spain (21%) €3.78 Total €21.78 Amount paid"
+ },
+ {
+  "id": "r20",
+  "source": "reenvio",
+  "from": "\"Vercel Inc.\" <invoice+statements@vercel.com>",
+  "subject": "Your receipt from Vercel Inc. #2354-5235-5542",
+  "date": "2026-11-11T18:09:37Z",
+  "body": "Vercel Inc. (https://vercel.com) Vercel Inc. Receipt from Vercel Inc. $14.56 Paid on November 11, 2026 with - 1000 Receipt #2354-5235-5542 Domain purchase - horahflow.com Qty 1 $12.03 Subtotal $12.03 Total excluding tax $12.03 Standard Rate - SPAIN (21%) $2.53 Total $14.5"
+ },
+ {
+  "id": "r21",
+  "source": "reenvio",
+  "from": "\"Vercel Inc.\" <invoice+statements@vercel.com>",
+  "subject": "Your receipt from Vercel Inc. #2745-6984-2468",
+  "date": "2026-11-12T12:04:42Z",
+  "body": "Vercel Inc. (https://vercel.com) Vercel Inc. Receipt from Vercel Inc. $24.20 Paid on November 12, 2026 with - 1000 Receipt #2745-6984-2468 Nov 12–Dec 11, 2026 Flat Rate CDN 1M Qty 1 $0.00 Pro Qty 1 $20.00 Subtotal $20.00 Total excluding tax $20.00 Standard Rate - SPAIN (2"
+ },
+ {
+  "id": "x1",
+  "source": "reenvio",
+  "from": "Cofidis <info@cofidis.es>",
+  "subject": "Recibo de tu préstamo - cuota 7 de 24",
+  "date": "2026-10-05T08:00:00Z",
+  "body": "Te informamos del cargo de la cuota mensual de tu préstamo personal. Cuota 7 de 24. Importe de la cuota: 86,40 €. Capital pendiente: 1.520,11 €."
+ },
+ {
+  "id": "x2",
+  "source": "reenvio",
+  "from": "Cofidis <info@cofidis.es>",
+  "subject": "Recibo de tu préstamo - cuota 8 de 24",
+  "date": "2026-11-05T08:00:00Z",
+  "body": "Te informamos del cargo de la cuota mensual de tu préstamo personal. Cuota 8 de 24. Importe de la cuota: 86,40 €. Capital pendiente: 1.438,02 €."
+ },
+ {
+  "id": "x3",
+  "source": "reenvio",
+  "from": "ZARA <noreply@zara.com>",
+  "subject": "Gracias por tu compra",
+  "date": "2026-10-20T10:00:00Z",
+  "body": "Pedido nº 59302211 Gracias por tu compra. Camisa lino 35,95 € Envío gratuito Total 35,95 €"
+ },
+ {
+  "id": "x4",
+  "source": "reenvio",
+  "from": "ZARA <noreply@zara.com>",
+  "subject": "Gracias por tu compra",
+  "date": "2026-11-08T10:00:00Z",
+  "body": "Pedido nº 59400021 Gracias por tu compra. Pantalón 49,95 € Total 49,95 €"
+ },
+ {
+  "id": "glovo-1",
+  "source": "reenvio",
+  "from": "no-reply@glovoapp.com",
+  "subject": "Detalles de tu pedido",
+  "date": "2026-11-12T19:59:25.442Z",
+  "body": "Durum kebab 13,00 € No se han pedido cubiertos Productos 15,50 € Entrega y tarifas Base imponible 3,70 € más IVA (21%) 0,78 € 4,48 € Servicios Base imponible 1,29 € más IVA (21%) 0,27 € 1,56 € Total 21,54 € Pagado con Apple Pay La factura de la tarifa de entrega se encuentra adjunta al e-mail. Detalles de la entrega ID de Glovo: 100000000000 Entrega de Restaurante"
+ }
 ]

@@ -20,9 +20,10 @@ ok(sub('iCloud+') && sub('iCloud+').amount === 2.99, 'iCloud+: 2,99 € (total, 
 ok(!a.charges.some(c => c.merchant.startsWith('Lovable') && c.date.getMonth() === 5), 'Pago fallido de Lovable: no es un gasto');
 ok(sub('Vercel') && sub('Vercel').count === 1 && one('Vercel').length === 1, 'Vercel: plan Pro (suscripción) y dominio (compra) separados');
 ok(sub('Cofidis') && sub('Cofidis').cat === 'deudas' && sub('Cofidis').debt, 'Cofidis: préstamo mensual');
-ok(one('ZARA').length === 2 && one('ZARA').every(c => c.cat === 'compras'), 'Zara: dos compras, no suscripción');
+ok(one('Zara').length === 2 && one('Zara').every(c => c.cat === 'compras'), 'Zara: dos compras, no suscripción');
 ok(one('Booking.com').length === 1, 'Reenvío a mano de Booking: comercio Booking.com, no el usuario');
 ok(one('Ionos').length === 1, 'Factura de IONOS reenviada por otra cuenta: comercio Ionos');
+ok(one('Glovo').length === 1 && one('Glovo')[0].amount === 21.54 && one('Glovo')[0].cat === 'comida' && !sub('Glovo'), 'Glovo: compra de 21,54 € (el total, no el subtotal), con el nombre Glovo');
 ok(one('Moonshot AI').length === 1 && one('Moonshot AI')[0].cat === 'software', 'Moonshot AI: software (y no «transporte» por «stripe»)');
 ok(!E.maybeReceipt(emails.find(e => e.id === 'r8')), 'El servidor no guarda pagos fallidos');
 

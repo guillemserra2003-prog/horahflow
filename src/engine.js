@@ -268,7 +268,7 @@
     let merchant = svc && svc.id !== 'gym' ? svc.name : cleanMerchant(senderName(email.from)) || (svc && svc.name);
     if (copy && !svc) merchant = cleanMerchant(brandFromBody(body) || merchant);
     // Compra puntual de un servicio que también tiene suscripción (créditos, dominios…): va con el nombre de la empresa
-    if (svc && purchase && !debt && !RX_RECUR_STRONG.test(text)) merchant = cleanMerchant(brandFromBody(body) || senderName(email.from)) || svc.name;
+    if (svc && svc.rec && purchase && !debt && !RX_RECUR_STRONG.test(text)) merchant = cleanMerchant(brandFromBody(body) || senderName(email.from)) || svc.name;
     // Inicio de prueba gratuita sin cargo: se registra como aviso, no como gasto
     if (RX_TRIAL.test(text) && /(?:hoy|today|ahora)[^.]{0,20}\b0[.,]00\b|\b0[.,]00\s?€/i.test(text)) {
       return { trialOnly: true, key: svc ? svc.id : merchant.toLowerCase().replace(/[^a-z0-9]+/g, '-'), merchant, date };
