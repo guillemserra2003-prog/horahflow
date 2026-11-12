@@ -18,6 +18,7 @@
     compras:   { label: 'Compras online',    color: '#B5B2C4' },
     formacion: { label: 'Formación',         color: '#6E9FB8' },
     social:    { label: 'Social y ocio',     color: '#9C7BB5' },
+    deudas:    { label: 'Préstamos y deudas', color: '#8A5A44' },
     otros:     { label: 'Otros',             color: '#CFCDD8' }
   };
 
@@ -110,6 +111,11 @@
     { id: 'playstation', name: 'PlayStation Plus', re: /playstation/i, cat: 'social', rec: true, cycle: 'monthly', cancel: '', alts: [{ n: 'Plan anual en ofertas', d: 'En rebajas el anual sale hasta un 30 % más barato.' }] },
     { id: 'xbox', name: 'Xbox Game Pass', re: /xbox|game pass/i, cat: 'social', rec: true, cycle: 'monthly', cancel: '', alts: [] },
     { id: 'twitch', name: 'Twitch', re: /twitch/i, cat: 'social', rec: true, cycle: 'monthly', cancel: '', alts: [] },
+    { id: 'cofidis', name: 'Cofidis', re: /cofidis/i, cat: 'deudas', rec: true, debt: true, cycle: 'monthly', cancel: '', alts: [] },
+    { id: 'cetelem', name: 'Cetelem', re: /cetelem/i, cat: 'deudas', rec: true, debt: true, cycle: 'monthly', cancel: '', alts: [] },
+    { id: 'younited', name: 'Younited', re: /younited/i, cat: 'deudas', rec: true, debt: true, cycle: 'monthly', cancel: '', alts: [] },
+    { id: 'oney', name: 'Oney', re: /\boney\b/i, cat: 'deudas', rec: true, debt: true, cycle: 'monthly', cancel: '', alts: [] },
+    { id: 'wizink', name: 'WiZink', re: /wizink/i, cat: 'deudas', rec: true, debt: true, cycle: 'monthly', cancel: '', alts: [] },
     { id: 'patreon', name: 'Patreon', re: /patreon/i, cat: 'social', rec: true, cycle: 'monthly', cancel: '', alts: [] }
   ];
 
@@ -127,6 +133,15 @@
   const RX_TRIAL = /prueba gratuita|periodo de prueba|free trial|trial (?:ends|ended|period)|tu prueba|fin de la prueba/i;
   const RX_REFUND = /reembolso|refund|devoluci[oó]n|abono a tu cuenta/i;
   const RX_MARKETING = /hasta un \d+ ?%|ofertas? exclusiv|newsletter|black friday|date de baja|unsubscribe|no te lo pierdas/i;
+  // Tipo de cargo: compra puntual, suscripción, préstamo… y correos que no son un cobro
+  const RX_FAILED = /unsuccessful|payment (?:has )?failed|failed payment|was declined|unable to charge|could not (?:be )?charged?|pago (?:fallido|rechazado)|no (?:hemos podido|se ha podido) (?:cobrar|procesar|realizar el cobro)|cargo rechazado|tarjeta rechazada/i;
+  const RX_SHIPPING = /en reparto|se ha entregado|ha sido entregado|entregado\b|est[aá] en camino|ha salido|enviado\b|out for delivery|has been delivered|\bdelivered\b|has shipped|\bshipped\b|on its way|seguimiento de tu (?:pedido|env[ií]o)/i;
+  const RX_CANCELLED = /se ha cancelado|has been cancell?ed|subscription cancell?ed|suscripci[oó]n cancelada|cancelaci[oó]n de tu|pedido cancelado|order cancell?ed/i;
+  const RX_PURCHASE = /tu pedido|your order|order (?:confirm|number|#)|pedido (?:n[º°o.]|confirmado|realizado)|n[uú]mero de pedido|id de pedido|resumen de (?:tu )?pedido|gracias por tu (?:compra|pedido)|thanks? (?:you )?for your (?:order|purchase)|compra (?:realizada|confirmada)|art[ií]culos?\)|\(\d+ art[ií]culos?\)|one-?time|pago [uú]nico|compra [uú]nica|credit purchase|domain purchase|compra de dominio|top-?up|recarga de saldo|entrada (?:lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)|check-?in/i;
+  const RX_RECUR_STRONG = /se renueva|renews?\b|renovaci[oó]n|renewal|pr[oó]ximo (?:cobro|pago|cargo)|next (?:billing|payment|charge)|periodo de facturaci[oó]n|billing period|\((?:mensual|monthly|anual|annual|yearly|semanal|weekly)\)|(?:plan|suscripci[oó]n|cuota|tarifa) (?:mensual|anual|trimestral)|(?:monthly|annual|yearly) (?:plan|subscription|membership)|tu suscripci[oó]n|your subscription|membres[ií]a|membership|recibo domiciliado|domiciliaci[oó]n|cada periodo de pago|se te facturar[aá]|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|ene|abr|ago|dic)[a-z]* \d{1,2}\s?[–-]\s?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|ene|abr|ago|dic)[a-z]* \d{1,2}/i;
+  const RX_DEBT = /pr[eé]stamo|financiaci[oó]n|cr[eé]dito (?:personal|al consumo)|cuota \d+ de \d+|plazo \d+ de \d+|installment|amortizaci[oó]n|capital pendiente|deuda pendiente|pago aplazado/i;
+  const RX_DOCID = /(?:receipt|recibo|invoice|factura|pedido|order|n[uú]mero de pedido|id de pedido)\s*(?:#|n[.º°o]*\s*|number\s*|n[uú]mero\s*)?[:#]?\s*([A-Z0-9][A-Z0-9-]{5,})/gi;
+  const RX_COPY = /^\s*(?:fwd?|rv|tr|reenv(?:iado|io)?)\s*:/i;
   const RX_AMOUNT = /(?:(€|EUR|USD|US\$|\$|£|GBP)\s?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?))|(?:(\d{1,3}(?:[.,\s]\d{3})*[.,]\d{1,2}|\d+(?:[.,]\d{1,2})?)\s?(€|EUR|euros?|USD|\$|£|GBP))/gi;
 
   function parseNum(s) {
@@ -161,10 +176,13 @@
       const val = parseNum(m[2] || m[3]);
       if (!isFinite(val) || val <= 0 || val > 20000) continue;
       const before = text.slice(Math.max(0, m.index - 28), m.index).toLowerCase();
+      const after = text.slice(m.index + m[0].length, m.index + m[0].length + 18).toLowerCase();
       let score = 0;
-      if (/total|importe|amount|cargo|charged|cobrad|pagad|paid|precio|price|a pagar|you paid|has pagado/.test(before)) score += 3;
-      if (/total/.test(before)) score += 2;
-      if (/subtotal|iva|vat|tax|impuesto|descuento|discount|ahorra|env[ií]o|shipping|antes|was\b/.test(before.slice(-14))) score -= 3;
+      if (/(?<!sub)total|importe|amount|cargo|charged|cobrad|pagad|paid|precio|price|a pagar|you paid|has pagado/.test(before)) score += 3;
+      if (/(?<!sub)total\b(?! excl)/.test(before.slice(-16))) score += 2;
+      if (/^\s*\*?\s*(?:paid|pagado|cobrado|charged)|^\s*(?:incluye|iva incl|vat incl|impuestos incl|including)/.test(after)) score += 3;
+      if (/subtotal|iva|vat|tax|impuesto|descuento|discount|cup[oó]n|ahorra|env[ií]o|shipping|antes|was\b|excluding|sin iva|base imponible|capital pendiente/.test(before.slice(-22))) score -= 4;
+      if (/^\s*x\s?\d/.test(after)) score -= 2;
       found.push({ val, cur, score, eur: Math.round(val * (FX[cur] || 1) * 100) / 100 });
     }
     if (!found.length) return null;
@@ -186,7 +204,27 @@
   }
 
   function cleanMerchant(n) {
-    return n.replace(/\b(no-?reply|noreply|equipo de|team|billing|facturaci[oó]n|recibos?|receipts?|pagos?|payments?)\b/gi, '').replace(/\s{2,}/g, ' ').trim() || n;
+    const t = n.replace(/\b(no-?reply|noreply|equipo de|team|billing|facturaci[oó]n|recibos?|receipts?|pagos?|payments?)\b/gi, '')
+      .replace(/,?\s*\b(?:inc|incorporated|llc|ltd|limited|pte|pbc|gmbh|s\.?\s?l\.?u?|s\.?\s?a\.?|corp|co)\b\.?/gi, ' ')
+      .replace(/[,.\s]+$/g, '').replace(/\s{2,}/g, ' ').trim()
+      .replace(/^([A-Za-z][\w-]+)\.(?:es|com|net|org|eu|de|fr|it)$/i, (m, b) => /booking|hotels/i.test(b) ? m : b);
+    if (!t) return n;
+    return t === t.toUpperCase() && t.length > 4 && /\s/.test(t) ? t.split(' ').map(w => w.length <= 2 ? w : w.charAt(0) + w.slice(1).toLowerCase()).join(' ') : t;
+  }
+  /** En reenvíos a mano o texto pegado, el remitente es el usuario: buscamos la marca dentro del recibo. */
+  function brandFromBody(body) {
+    const rf = body.match(/(?:receipt|recibo|factura|invoice) (?:from|de) ([A-Z][\w&'. -]{1,40}?)(?=\s+(?:[#€$£]|\d|paid|pagado)|[,(]|$)/);
+    if (rf) return rf[1].trim();
+    const STOP = /^(google|gmail|googleusercontent|stripe|amazonaws|apple|icloud|outlook|hotmail|live|yahoo|w3|schema|cloudfront|sendgrid|mailchimp|list-manage|horahflow|wa|bit|t|x|facebook|instagram|twitter|linkedin|youtube|whatsapp)$/i;
+    const count = {};
+    for (const m of body.matchAll(/\b(?:[a-z0-9-]+\.)*([a-z0-9-]{3,})\.(com|es|net|io|dev|app|co|org|eu|ai|de|fr|it)\b/gi)) {
+      const base = m[1].toLowerCase(); if (STOP.test(base)) continue;
+      const k = base + '.' + m[2].toLowerCase(); count[k] = (count[k] || 0) + 1;
+    }
+    const top = Object.entries(count).sort((a, b) => b[1] - a[1])[0];
+    if (!top) return '';
+    const [base, tld] = top[0].split('.');
+    return /booking|hotels|trip|airbnb/.test(base) ? base.charAt(0).toUpperCase() + base.slice(1) + '.' + tld : base.charAt(0).toUpperCase() + base.slice(1);
   }
 
   function identify(email) {
@@ -200,11 +238,12 @@
   function guessCat(text) {
     const t = text.toLowerCase();
     if (/restaurante|pizza|burger|sushi|comida|food|delivery/.test(t)) return 'comida';
-    if (/taxi|viaje|trip|ride|renfe|vueling|ryanair|iberia|gasolin|parking|aparcamiento/.test(t)) return 'transporte';
+    if (/booking\.com|hotel|alojamiento|airbnb|hostal/.test(t)) return 'social';
+    if (/\btaxi\b|\bviaje\b|\btrip\b|\bride\b|\buber\b|cabify|renfe|vueling|ryanair|iberia|gasolin|parking|aparcamiento/.test(t)) return 'transporte';
     if (/luz|electricidad|gas natural|agua|seguro|alquiler|comunidad/.test(t)) return 'hogar';
     if (/fibra|m[oó]vil|internet|telefon/.test(t)) return 'telecom';
-    if (/software|app|licencia|license|saas|cloud|hosting|dominio|domain/.test(t)) return 'software';
-    if (/curso|course|academy|formaci/.test(t)) return 'formacion';
+    if (/software|\bapp\b|licencia|license|saas|cloud|hosting|dominio|domain|\bai\b|\bapi\b|credits?\b|\bcdn\b|vercel|netlify|github|cloudflare|digitalocean|ionos|hostinger|\.dev\b|\.ai\b/.test(t)) return 'software';
+    if (/\bcurso|\bcourse|academy|\bformaci[oó]n\b|udemy|domestika/.test(t)) return 'formacion';
     if (/pedido|order|compra|purchase|tienda|shop/.test(t)) return 'compras';
     return 'otros';
   }
@@ -217,18 +256,32 @@
     if (RX_REFUND.test(subject)) return null;
     if (!RX_RECEIPT.test(text)) return null;
     if (RX_MARKETING.test(text) && !/recibo|factura|receipt|invoice|cargo|charged/i.test(text)) return null;
+    // Pagos fallidos, avisos de envío y cancelaciones no son un gasto
+    if (RX_FAILED.test(subject) || RX_FAILED.test(body.slice(0, 400))) return null;
+    if (RX_CANCELLED.test(subject)) return null;
     const svc = identify(email);
     const date = new Date(email.date);
     if (isNaN(date)) return null;
-    const merchant = svc && svc.id !== 'gym' ? svc.name : cleanMerchant(senderName(email.from)) || (svc && svc.name);
+    const copy = RX_COPY.test(subject) || email.source === 'pegado' || !email.from || /^(invoice|factura|recibo|receipt)$/i.test(email.from.trim());
+    const purchase = RX_PURCHASE.test(text);
+    const debt = (svc && svc.debt) || RX_DEBT.test(text);
+    let merchant = svc && svc.id !== 'gym' ? svc.name : cleanMerchant(senderName(email.from)) || (svc && svc.name);
+    if (copy && !svc) merchant = cleanMerchant(brandFromBody(body) || merchant);
+    // Compra puntual de un servicio que también tiene suscripción (créditos, dominios…): va con el nombre de la empresa
+    if (svc && purchase && !debt && !RX_RECUR_STRONG.test(text)) merchant = cleanMerchant(brandFromBody(body) || senderName(email.from)) || svc.name;
     // Inicio de prueba gratuita sin cargo: se registra como aviso, no como gasto
     if (RX_TRIAL.test(text) && /(?:hoy|today|ahora)[^.]{0,20}\b0[.,]00\b|\b0[.,]00\s?€/i.test(text)) {
       return { trialOnly: true, key: svc ? svc.id : merchant.toLowerCase().replace(/[^a-z0-9]+/g, '-'), merchant, date };
     }
     const amt = extractAmount(text);
     if (!amt) return null;
-    const cat = (email.cat && CATS[email.cat]) ? email.cat : (svc ? svc.cat : guessCat(text));
-    const recurringHint = (svc && svc.rec) || RX_RECUR.test(text);
+    const g0 = guessCat(text);
+    const cat = (email.cat && CATS[email.cat]) ? email.cat : debt ? 'deudas' : (svc ? svc.cat : purchase && ['otros', 'formacion', 'hogar', 'telecom'].includes(g0) ? 'compras' : g0);
+    // Una compra (pedido, entradas, créditos) nunca es una suscripción aunque el pie del correo hable de «suscripción»
+    const strong = RX_RECUR_STRONG.test(text);
+    const recurringHint = debt || (!purchase && ((svc && svc.rec) || strong || (RX_RECUR.test(subject))));
+    const kind = debt ? 'prestamo' : purchase && !strong ? 'compra' : recurringHint ? 'suscripcion' : /factura|invoice|recibo|receipt/i.test(text) ? 'factura' : 'compra';
+    const docs = [...text.matchAll(RX_DOCID)].map(m => m[1].toUpperCase()).filter(d => /\d/.test(d));
     let cycleHint = null;
     if (/anual|annual|yearly|al año|per year|\/año|\/year/i.test(text)) cycleHint = 'yearly';
     else if (/semanal|weekly/i.test(text)) cycleHint = 'weekly';
@@ -236,7 +289,8 @@
     else if (/mensual|monthly|al mes|per month|\/mes|\/month/i.test(text)) cycleHint = 'monthly';
     return {
       id: email.id || (merchant + date.getTime()),
-      merchant, key: (svc ? svc.id : merchant.toLowerCase().replace(/[^a-z0-9]+/g, '-')),
+      merchant, key: (svc && kind !== 'compra' ? svc.id : merchant.toLowerCase().replace(/[^a-z0-9]+/g, '-')),
+      kind, purchase: kind === 'compra', copy, docs, shipping: RX_SHIPPING.test(subject),
       svc: svc ? svc.id : null, cat, date, amount: amt.eur, original: amt.val, currency: amt.cur,
       recurringHint, cycleHint, trial: RX_TRIAL.test(text),
       subject, source: email.source || 'correo', account: email.account || ''
@@ -247,6 +301,7 @@
   function maybeReceipt(email) {
     const text = `${email.subject || ''} . ${(email.body || '').replace(/\s+/g, ' ')}`;
     if (RX_REFUND.test(email.subject || '')) return false;
+    if (RX_FAILED.test(email.subject || '') || RX_FAILED.test(text.slice(0, 500)) || RX_CANCELLED.test(email.subject || '')) return false;
     if (!RX_RECEIPT.test(text)) return false;
     if (RX_MARKETING.test(text) && !/recibo|factura|receipt|invoice|cargo|charged/i.test(text)) return false;
     return !toCharge(email);
@@ -292,24 +347,37 @@
       else if (c) charges.push(c);
     }
     charges.sort((a, b) => a.date - b.date);
+    // El mismo recibo reenviado dos veces, pegado a mano o con avisos del mismo pedido: cuenta una sola vez
+    const kept = [];
+    for (const c of charges) {
+      const sameAmt = k => k.currency === c.currency && Math.abs(k.original - c.original) < 0.01;
+      const same = kept.find(k => (k.docs.length && c.docs.some(d => k.docs.includes(d))) ||
+        ((k.copy || c.copy) && sameAmt(k) && Math.abs(k.date - c.date) < 3 * DAY && (k.key === c.key || k.copy || c.copy)) ||
+        // Avisos de envío/entrega del mismo pedido que ya teníamos confirmado
+        (k.key === c.key && sameAmt(k) && (k.shipping !== c.shipping || (k.shipping && c.shipping && Math.abs(k.date - c.date) < DAY)) && Math.abs(k.date - c.date) < 20 * DAY));
+      if (same) { if (same.copy && !c.copy) Object.assign(same, c); continue; }
+      kept.push(c);
+    }
+    charges.length = 0; charges.push(...kept);
 
     // 2. Agrupar por comercio
     const groups = {};
-    for (const c of charges) (groups[c.key] = groups[c.key] || []).push(c);
+    // Las compras puntuales de un comercio no se mezclan con su suscripción (p. ej. un dominio y el plan Pro)
+    for (const c of charges) { const gk = c.purchase ? c.key + '#compra' : c.key; (groups[gk] = groups[gk] || []).push(c); }
 
     const subs = [], oneoffs = [], leaks = [];
     const svcById = Object.fromEntries(CATALOG.map(c => [c.id, c]));
 
-    for (const key in groups) {
+    for (const gk in groups) {
+      const g = groups[gk], key = g[0].key;
       if (prefs.ignored && prefs.ignored[key]) continue;
-      const g = groups[key];
       const first = g[0], last = g[g.length - 1];
       const svc = first.svc ? svcById[first.svc] : null;
       // Eliminar cargos duplicados (mismo importe en <4 días) pero registrarlos como brecha
       const clean = [];
       for (const c of g) {
         const prev = clean[clean.length - 1];
-        if (prev && Math.abs(c.date - prev.date) < 4 * DAY && Math.abs(c.amount - prev.amount) < 0.01 && (first.recurringHint)) {
+        if (prev && Math.abs(c.date - prev.date) < 4 * DAY && Math.abs(c.amount - prev.amount) < 0.01 && first.recurringHint && !c.purchase) {
           leaks.push({ type: 'duplicado', sev: 3, key, merchant: c.merchant,
             title: `Cobro duplicado en ${c.merchant}`,
             detail: `Se cobraron ${fmt(c.amount)} dos veces (${fmtDate(prev.date)} y ${fmtDate(c.date)}). Pide la devolución al servicio.`,
@@ -323,7 +391,8 @@
       let cycle = detectCycle(dates);
       const similar = amounts.length > 1 && (Math.max(...amounts) - Math.min(...amounts)) / Math.max(...amounts) < 0.2;
       const hinted = g.some(c => c.recurringHint);
-      const isRec = (hinted && (svc ? svc.rec !== false : true)) || (cycle && similar && clean.length >= 3);
+      const allPurchases = g.every(c => c.purchase);
+      const isRec = !allPurchases && ((hinted && (svc ? svc.rec !== false : true)) || (cycle && similar && clean.length >= 3));
       if (!isRec) { oneoffs.push(...clean); continue; }
       if (!cycle) cycle = g.find(c => c.cycleHint)?.cycleHint || (svc && svc.cycle) || 'monthly';
       const lastC = clean[clean.length - 1];
@@ -337,7 +406,9 @@
       if (!variable && prevC) {
         let j = clean.length - 2;
         while (j >= 0 && Math.abs(clean[j].amount - lastC.amount) < 0.01) j--;
-        if (j >= 0 && lastC.amount > clean[j].amount * 1.03 && (now - clean[j + 1].date) / DAY < 200)
+        let oldRuns = 0; for (let q = j; q >= 0 && Math.abs(clean[q].amount - clean[Math.max(j, 0)].amount) < 0.01; q--) oldRuns++;
+        // El precio anterior tiene que haberse repetido (un primer pago prorrateado no es «el precio de antes»)
+        if (j >= 0 && oldRuns >= 2 && lastC.amount > clean[j].amount * 1.03 && (now - clean[j + 1].date) / DAY < 200)
           priceUp = { from: clean[j].amount, to: lastC.amount, date: clean[j + 1].date };
       }
       const trial = g.some(c => c.trial) || !!trials[key];
@@ -350,7 +421,7 @@
         first: clean[0].date, last: lastC.date, next, count: clean.length,
         totalPaid: Math.round(amounts.reduce((a, b) => a + b, 0) * 100) / 100,
         priceUp, trial, status: cancelled[key] ? 'cancelada' : (overdue ? 'inactiva' : 'activa'),
-        usage: usage[key] || null, history: clean,
+        usage: usage[key] || null, history: clean, debt: lastC.kind === 'prestamo',
         cancel: svc ? svc.cancel : '', alts: svc ? svc.alts : [], account: lastC.account
       };
       subs.push(s);

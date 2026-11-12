@@ -350,7 +350,8 @@ async function runAdvice() {
 /* ---------- Gastos ---------- */
 function allTx(a) {
   const recKeys = new Set(a.subs.map(s => s.key));
-  return [...a.subs.flatMap(s => s.history.map(c => ({ ...c, kind: 'Suscripción' }))), ...a.oneoffs.map(c => ({ ...c, kind: recKeys.has(c.key) ? 'Suscripción' : 'Puntual' }))].sort((x, y) => y.date - x.date);
+  const label = c => c.kind === 'prestamo' ? 'Préstamo' : c.kind === 'compra' ? 'Compra' : c.kind === 'factura' ? 'Factura' : 'Puntual';
+  return [...a.subs.flatMap(s => s.history.map(c => ({ ...c, kind: s.debt ? 'Préstamo' : 'Suscripción' }))), ...a.oneoffs.map(c => ({ ...c, kind: recKeys.has(c.key) && c.kind !== 'compra' ? 'Suscripción' : label(c) }))].sort((x, y) => y.date - x.date);
 }
 function txHTML(a) {
   const f = txFilter;
@@ -360,9 +361,9 @@ function txHTML(a) {
   return topbar('Gastos', `${tx.length} cargos · ${fmt(total)}`, `<button class="btn btn-ghost btn-sm" id="export">${I.upload} Exportar CSV</button>`) + `
   <div class="tools"><input class="input" id="tf-q" placeholder="Buscar comercio o asunto…" value="${esc(f.q)}">
     <select class="input" id="tf-cat"><option value="">Todas las categorías</option>${cats.map(c => `<option value="${c}" ${f.cat === c ? 'selected' : ''}>${E.CATS[c].label}</option>`).join('')}</select>
-    <select class="input" id="tf-kind">${[['', 'Todos'], ['Suscripción', 'Suscripciones'], ['Puntual', 'Puntuales']].map(([v, l]) => `<option value="${v}" ${f.kind === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <select class="input" id="tf-kind">${[['', 'Todos los tipos'], ['Suscripción', 'Suscripciones'], ['Compra', 'Compras'], ['Factura', 'Facturas'], ['Préstamo', 'Préstamos'], ['Puntual', 'Otros puntuales']].map(([v, l]) => `<option value="${v}" ${f.kind === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
   <div class="card" style="padding:12px 10px"><table class="table"><thead><tr><th>Fecha</th><th>Comercio</th><th class="hide-m">Categoría</th><th class="hide-m">Tipo</th><th class="right">Importe</th></tr></thead><tbody>
-  ${tx.slice(0, 300).map(c => `<tr><td class="num" style="white-space:nowrap">${new Date(c.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}</td><td><b>${esc(c.merchant)}</b><div class="hint" style="font-size:12px;max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.subject)}</div></td><td class="hide-m">${E.CATS[c.cat].label}</td><td class="hide-m"><span class="chip ${c.kind === 'Suscripción' ? '' : 'green'}">${c.kind}</span></td><td class="right"><b class="num">${fmt(c.amount)}</b></td></tr>`).join('')}
+  ${tx.slice(0, 300).map(c => `<tr><td class="num" style="white-space:nowrap">${new Date(c.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}</td><td><b>${esc(c.merchant)}</b><div class="hint" style="font-size:12px;max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.subject)}</div></td><td class="hide-m">${E.CATS[c.cat].label}</td><td class="hide-m"><span class="chip ${c.kind === 'Suscripción' ? '' : c.kind === 'Préstamo' ? 'amber' : 'green'}">${c.kind}</span></td><td class="right"><b class="num">${fmt(c.amount)}</b></td></tr>`).join('')}
   </tbody></table>${tx.length > 300 ? `<p class="hint" style="padding:12px">Mostrando 300 de ${tx.length}. Exporta para verlos todos.</p>` : ''}</div>`;
 }
 function exportCSV() {
