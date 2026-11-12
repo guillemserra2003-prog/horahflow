@@ -15,7 +15,8 @@ const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, "site.config.json"), "utf
 const SITE = CFG.url.replace(/\/$/, "");
 const DIST = path.join(ROOT, "dist");
 const SRC = p => fs.readFileSync(path.join(ROOT, "src", p), "utf8");
-const TODAY = new Date().toISOString().slice(0, 10);
+// Fecha de hoy en España (en UTC, de 23:00 a 00:00 seguiría siendo «ayer» y los artículos de hoy no saldrían)
+const TODAY = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" });
 
 /* ---------- utilidades ---------- */
 const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
