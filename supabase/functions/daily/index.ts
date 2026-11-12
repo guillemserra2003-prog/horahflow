@@ -9,7 +9,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { loadEngine } from "./engine-loader.ts";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-const HISTORY: Record<string, number> = { free: 12, pro: 24, business: 36 };
+const HISTORY: Record<string, number> = { free: 3, pro: 24, business: 36 };
 const FROM = "HorahFlow <avisos@horahflow.com>";
 const SITE = "https://horahflow.com";
 const DAY = 86400000;
