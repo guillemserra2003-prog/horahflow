@@ -3,7 +3,7 @@
    Datos del titular en CFG.legal. El aviso legal solo se muestra
    cuando están completos (LSSI art. 10).
    ========================================================= */
-const LEGAL_UPDATED = '11 de noviembre de 2026';
+const LEGAL_UPDATED = '13 de noviembre de 2026';
 const LG = () => Object.assign({ name: 'Guillem Serra Sentinella', email: 'gserrasentinella@gmail.com', nif: '', address: '' }, CFG.legal || {});
 const legalComplete = () => !!(LG().nif && LG().address);
 
@@ -20,7 +20,7 @@ const LEGAL = {
 <h2>2. Qué datos tratamos</h2>
 <ul>
 <li><b>Datos de tu cuenta:</b> nombre, correo electrónico y contraseña (guardada cifrada; nadie puede leerla, tampoco nosotros).</li>
-<li><b>Datos de tus recibos:</b> cuando subes archivos o pegas texto, el análisis se hace en tu navegador. Si usas el <b>reenvío automático</b>, los correos que reenvías a tu dirección privada de HorahFlow llegan a nuestro servidor (también los que reenvías como archivo adjunto para traer tu historial): los que no parecen un cobro, o son más antiguos que el historial de tu plan, se descartan al momento sin guardarse, y los recibos esperan como máximo 60 días hasta que la app los importa, momento en que se borran del servidor. De cada recibo guardamos en tu cuenta solo un fragmento con el comercio, el importe, la fecha y la frecuencia. <b>Nunca guardamos tus correos completos ni los que no son recibos.</b></li>
+<li><b>Datos de tus recibos:</b> cuando subes archivos o pegas texto, el análisis se hace en tu navegador. Si usas el <b>reenvío automático</b>, los correos que reenvías a tu dirección privada de HorahFlow llegan a nuestro servidor (también los que reenvías como archivo adjunto para traer tu historial): los que no parecen un cobro, o son más antiguos que el historial de tu plan, se descartan al momento sin guardarse, y los recibos esperan como máximo 60 días hasta que la app los importa, momento en que se borran del servidor. Si un recibo trae la factura en PDF y el importe solo aparece ahí, leemos ese PDF en nuestro servidor y lo borramos en cuanto tenemos el texto, normalmente en unos segundos. De cada recibo guardamos en tu cuenta solo un fragmento con el comercio, el importe, la fecha y la frecuencia. <b>Nunca guardamos tus correos completos ni los que no son recibos.</b></li>
 <li><b>Tus preferencias en la app:</b> qué suscripciones usas, cuáles has cancelado, avisos, etc.</li>
 <li><b>Datos de pago:</b> si contratas un plan, el pago lo procesa Stripe. HorahFlow no ve ni guarda los datos de tu tarjeta; solo recibimos el estado de tu suscripción.</li>
 <li><b>Estadísticas anónimas de visitas</b> (sin cookies ni identificadores personales), con Vercel Web Analytics.</li>
@@ -69,7 +69,20 @@ const LEGAL = {
 <p>Si consideras que no hemos atendido bien tu solicitud, puedes reclamar ante la <a class="link" href="https://www.aepd.es" target="_blank" rel="noopener">Agencia Española de Protección de Datos</a>.</p>
 
 <h2>9. Seguridad</h2>
-<p>Toda la comunicación va cifrada (HTTPS). Cada usuario solo puede acceder a sus propios datos gracias a reglas de seguridad en la base de datos, y tu plan de pago solo puede modificarlo nuestro servidor tras la confirmación de Stripe.</p>
+<p>Aplicamos medidas técnicas y organizativas adecuadas al riesgo, como exige el artículo 32 del RGPD. Puedes ver un resumen visual en nuestra <a class="link" href="/seguridad/">página de seguridad</a>.</p>
+<ul>
+<li><b>Sin contraseñas de terceros:</b> nunca te pedimos la contraseña de tu banco ni de tu correo, y no tenemos acceso a tu bandeja de entrada. Solo recibimos los correos que tú decides reenviarnos.</li>
+<li><b>Cifrado:</b> todas las conexiones van cifradas (HTTPS/TLS). Los datos guardados en nuestra base de datos y sus copias de seguridad están cifrados con AES-256.</li>
+<li><b>Servidores en la Unión Europea:</b> tu cuenta y tus recibos se guardan en Frankfurt (Alemania).</li>
+<li><b>Aislamiento por usuario:</b> reglas de seguridad en la propia base de datos impiden que una cuenta lea o modifique los datos de otra.</li>
+<li><b>Mínimo de datos:</b> descartamos al momento lo que no es un recibo, guardamos solo un fragmento de cada recibo y borramos del servidor los recibos pendientes en cuanto la app los importa (máximo 60 días) y los PDF en cuanto los leemos.</li>
+<li><b>Contraseñas protegidas:</b> tu contraseña de HorahFlow se guarda cifrada con un algoritmo de un solo sentido; nadie puede leerla, tampoco nosotros.</li>
+<li><b>Pagos fuera de nuestros servidores:</b> los datos de tu tarjeta los gestiona Stripe; nosotros nunca los vemos. Tu plan solo puede cambiarlo nuestro servidor tras la confirmación de Stripe.</li>
+<li><b>Claves fuera del navegador:</b> las claves de acceso a los servicios internos solo están en el servidor, nunca en la web.</li>
+<li><b>Control total para ti:</b> puedes desactivar el reenvío cuando quieras, borrar tus recibos o eliminar tu cuenta desde Ajustes.</li>
+</ul>
+<p><b>Ningún sistema es invulnerable al 100 %.</b> Si alguna vez se produjera una brecha de seguridad que afectara a tus datos personales, la notificaremos a la Agencia Española de Protección de Datos en un plazo máximo de 72 horas y, si puede suponer un riesgo alto para ti, te avisaremos directamente y te diremos qué medidas tomar, como exigen los artículos 33 y 34 del RGPD.</p>
+<p>La seguridad también depende de ti: usa una contraseña única para HorahFlow, no la compartas y protege el acceso a tu correo y a tus dispositivos. Si sospechas que alguien ha entrado en tu cuenta, cambia la contraseña y escríbenos.</p>
 
 <h2>10. Edad mínima</h2>
 <p>HorahFlow está dirigido a mayores de 18 años.</p>
@@ -148,8 +161,16 @@ const LEGAL = {
 <h2>7. Uso aceptable</h2>
 <p>No está permitido usar HorahFlow para fines ilegales, intentar acceder a datos de otros usuarios, saturar o atacar el servicio, ni revender el acceso sin autorización. Podemos suspender cuentas que incumplan estas normas, avisándote siempre que sea posible.</p>
 
-<h2>8. Disponibilidad y responsabilidad</h2>
-<p>Trabajamos para que HorahFlow esté siempre disponible y funcione correctamente, pero puede haber interrupciones puntuales por mantenimiento o causas ajenas. Las recomendaciones de ahorro, incluidas las generadas por IA, son orientativas: la decisión de cancelar o contratar cualquier servicio es siempre tuya. Nada de lo anterior limita los derechos que te reconoce la normativa de consumidores.</p>
+<h2>8. Disponibilidad, seguridad y responsabilidad</h2>
+<p>Trabajamos para que HorahFlow esté siempre disponible y funcione correctamente, pero puede haber interrupciones puntuales por mantenimiento o causas ajenas. Las recomendaciones de ahorro, incluidas las generadas por IA, son orientativas: la decisión de cancelar o contratar cualquier servicio es siempre tuya.</p>
+<p>Protegemos tus datos con las medidas que describimos en la <a class="link" href="#privacidad">política de privacidad</a> y en nuestra <a class="link" href="/seguridad/">página de seguridad</a>. Aun así, ningún servicio en internet puede garantizar una seguridad absoluta. En la medida en que lo permita la ley, HorahFlow no será responsable de:</p>
+<ul>
+<li>Accesos a tu cuenta causados por no custodiar tu contraseña, por compartirla o por el uso de tus dispositivos por terceros.</li>
+<li>Incidentes de seguridad de tu proveedor de correo (por ejemplo, Gmail u Outlook) o de los servicios cuyos recibos recibes.</li>
+<li>Ataques o fallos de terceros que no hayan podido evitarse aplicando las medidas de seguridad adecuadas, ni casos de fuerza mayor.</li>
+<li>Decisiones que tomes a partir de la información de la app, que es orientativa.</li>
+</ul>
+<p>Si se produjera un incidente que afectara a tus datos, actuaremos como indica la política de privacidad: lo comunicaremos a la autoridad de control y, cuando corresponda, a ti, y pondremos todos los medios a nuestro alcance para limitar sus efectos. Nada de lo anterior limita los derechos que te reconocen la normativa de protección de datos y la de consumidores y usuarios.</p>
 
 <h2>9. Propiedad intelectual</h2>
 <p>La marca HorahFlow, el diseño y el software de la web pertenecen a su titular. Tus datos son tuyos: puedes exportarlos (plan Pro) o borrarlos cuando quieras.</p>

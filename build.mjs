@@ -149,7 +149,7 @@ const footer = () => `<footer class="foot"><div class="wrap">
     <div><img src="/assets/logo.png" alt="HorahFlow" width="520" height="199" style="height:26px;width:auto;margin-bottom:14px"><p style="max-width:300px">Encuentra las fugas de dinero que no ves. Suscripciones, cobros recurrentes y gasto hormiga, en un solo panel.</p></div>
     <div><h4>Producto</h4><a href="/#como-funciona">Cómo funciona</a><a href="/#demo">Demo</a><a href="/#precios">Precios</a><a href="/#registro">Crear cuenta</a></div>
     <div><h4>Recursos</h4><a href="/blog/">Blog</a>${posts.slice(0, 2).map(p => `<a href="/blog/${p.slug}/">${esc(p.short || p.title)}</a>`).join("")}</div>
-    <div><h4>Legal</h4><a href="/privacidad/">Privacidad</a><a href="/cookies/">Cookies</a><a href="/condiciones/">Condiciones</a>${L.legalComplete() ? '<a href="/aviso-legal/">Aviso legal</a>' : ""}<a href="mailto:hola@horahflow.com">hola@horahflow.com</a></div>
+    <div><h4>Legal</h4><a href="/seguridad/">Seguridad</a><a href="/privacidad/">Privacidad</a><a href="/cookies/">Cookies</a><a href="/condiciones/">Condiciones</a>${L.legalComplete() ? '<a href="/aviso-legal/">Aviso legal</a>' : ""}<a href="mailto:hola@horahflow.com">hola@horahflow.com</a></div>
     <div class="legal"><span>© ${new Date().getFullYear()} HorahFlow · horahflow.com</span><span>Hecho en España</span></div>
   </div></footer>`;
 
@@ -314,10 +314,34 @@ for (const key of Object.keys(LEGAL_SLUG)) {
   }));
 }
 
+// 3b) Página de seguridad (contenido en src/seguridad.html)
+const SV = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const SEC_ICONS = {
+  key: SV('<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>'),
+  lock: SV('<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
+  eu: SV('<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/>'),
+  eye: SV('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+  eyeoff: SV('<path d="M17.9 17.9A10 10 0 0 1 12 19c-6.5 0-10-7-10-7a18 18 0 0 1 5.1-5.9M9.9 5.2A9 9 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-2.2 3.2M1 1l22 22"/>'),
+  users: SV('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>'),
+  filter: SV('<path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3z"/>'),
+  card: SV('<rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/>'),
+  toggle: SV('<rect x="1" y="5" width="22" height="14" rx="7"/><circle cx="16" cy="12" r="3"/>'),
+  alert: SV('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4M12 16h.01"/>'),
+  trash: SV('<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="m9 13 2 2 4-4"/>'),
+};
+const SEC_HTML = SRC("seguridad.html").replace(/\{\{(\w+)\}\}/g, (m, k) => SEC_ICONS[k] || m);
+write(path.join(DIST, "seguridad", "index.html"), page({
+  title: "Seguridad y privacidad: así protegemos tus datos | HorahFlow",
+  description: "Sin contraseñas de tu banco ni de tu correo, cifrado AES-256 y servidores en la UE. Mira paso a paso qué pasa con tus recibos en HorahFlow.",
+  canonical: `${SITE}/seguridad/`,
+  ld: { "@context": "https://schema.org", "@type": "WebPage", name: "Seguridad y privacidad en HorahFlow", url: `${SITE}/seguridad/`, inLanguage: "es" },
+  body: SEC_HTML,
+}));
+
 // 4) Sitemap, robots, RSS, IndexNow
 const urls = [{ loc: SITE + "/", lastmod: posts[0]?.date || TODAY }, { loc: `${SITE}/blog/`, lastmod: posts[0]?.date || TODAY },
   ...posts.map(p => ({ loc: `${SITE}/blog/${p.slug}/`, lastmod: p.updated || p.date })),
-  ...legalPages.map(u => ({ loc: u, lastmod: "2026-11-11" }))];
+  ...legalPages.map(u => ({ loc: u, lastmod: "2026-11-13" })), { loc: `${SITE}/seguridad/`, lastmod: "2026-11-13" }];
 write(path.join(DIST, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(u => `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod}</lastmod></url>`).join("\n")}

@@ -88,7 +88,7 @@ function footerHTML() {
     <div><img src="${LOGO}" alt="HorahFlow" style="height:26px;margin-bottom:14px"><p style="max-width:300px">Encuentra las fugas de dinero que no ves. Suscripciones, cobros recurrentes y gasto hormiga, en un solo panel.</p></div>
     <div><h4>Producto</h4><a href="#como-funciona">Cómo funciona</a><a href="#demo">Demo</a><a href="#precios">Precios</a><a href="#registro">Crear cuenta</a></div>
     <div><h4>Recursos</h4><a href="/blog/">Blog</a>${(window.HF_POSTS || []).slice(0, 2).map(p => `<a href="/blog/${p.slug}/">${esc(p.short || p.title)}</a>`).join('')}</div>
-    <div><h4>Legal</h4><a href="/privacidad/">Privacidad</a><a href="/cookies/">Cookies</a><a href="/condiciones/">Condiciones</a>${legalComplete() ? '<a href="/aviso-legal/">Aviso legal</a>' : ''}<a href="mailto:hola@horahflow.com">hola@horahflow.com</a></div>
+    <div><h4>Legal</h4><a href="/seguridad/">Seguridad</a><a href="/privacidad/">Privacidad</a><a href="/cookies/">Cookies</a><a href="/condiciones/">Condiciones</a>${legalComplete() ? '<a href="/aviso-legal/">Aviso legal</a>' : ''}<a href="mailto:hola@horahflow.com">hola@horahflow.com</a></div>
     <div class="legal"><span>© ${new Date().getFullYear()} HorahFlow · horahflow.com</span><span>Hecho en España</span></div>
   </div></footer>`;
 }
@@ -234,7 +234,8 @@ function renderLanding(scrollTo) {
            ['Lo mínimo', 'De cada recibo solo guardamos comercio, importe, fecha y un fragmento. Servidores en la UE.'],
            ['Bórralo cuando quieras', 'Un botón elimina tu cuenta y todos tus datos.']]
           .map(([b, p]) => `<div style="display:flex;gap:12px"><span class="dot green" style="width:26px;height:26px;border-radius:8px">${I.check}</span><div><b>${b}</b><div class="hint" style="font-size:15px">${p}</div></div></div>`).join('')}
-      </div></div>
+      </div>
+      <a class="btn btn-ghost btn-sm" href="/seguridad/" style="margin-top:22px">Mira paso a paso cómo protegemos tus datos ${I.arrow}</a></div>
     <div class="card" style="padding:28px">
       <div class="hint" style="font-weight:700;margin-bottom:10px">Lo que HorahFlow ve de cada recibo</div>
       <div style="font-family:ui-monospace,Menlo,monospace;font-size:14px;line-height:2;background:var(--soft);border-radius:12px;padding:18px">
@@ -384,7 +385,7 @@ function renderAuth(mode) {
   root.innerHTML = `<div class="auth">
     <div class="side"><a href="#inicio"><img src="${LOGO}" alt="HorahFlow" style="height:30px;width:auto"></a>
       <blockquote>“Pagaba 11 suscripciones. Creía que eran 5.”<div class="hint" style="font-size:15px;font-weight:600;margin-top:14px;letter-spacing:0">Lo que descubre casi todo el mundo la primera vez.</div></blockquote>
-      <div style="display:grid;gap:10px;color:var(--muted);font-weight:600;font-size:14px"><span style="display:flex;gap:8px;align-items:center">${I.shield} Sin contraseñas de tu correo</span><span style="display:flex;gap:8px;align-items:center">${I.check} Sin datos bancarios</span></div>
+      <div style="display:grid;gap:10px;color:var(--muted);font-weight:600;font-size:14px"><span style="display:flex;gap:8px;align-items:center">${I.shield} Sin contraseñas de tu correo</span><span style="display:flex;gap:8px;align-items:center">${I.check} Sin datos bancarios</span><a class="link" href="/seguridad/" target="_blank" rel="noopener" style="font-size:13.5px">Cómo protegemos tus datos</a></div>
     </div>
     <div class="form-wrap"><form id="auth-form" novalidate>
       <a href="#inicio" class="hidden-d" style="display:block;margin-bottom:28px"><img src="${LOGO}" alt="HorahFlow" style="height:26px;width:auto"></a>
