@@ -148,7 +148,7 @@ const header = `<header class="nav" id="nav"><div class="wrap">
 const footer = () => `<footer class="foot"><div class="wrap">
     <div><img src="/assets/logo.png" alt="HorahFlow" width="520" height="199" style="height:26px;width:auto;margin-bottom:14px"><p style="max-width:300px">Encuentra las fugas de dinero que no ves. Suscripciones, cobros recurrentes y gasto hormiga, en un solo panel.</p></div>
     <div><h4>Producto</h4><a href="/#como-funciona">Cómo funciona</a><a href="/#demo">Demo</a><a href="/#precios">Precios</a><a href="/#registro">Crear cuenta</a></div>
-    <div><h4>Recursos</h4><a href="/blog/">Blog</a>${posts.slice(0, 2).map(p => `<a href="/blog/${p.slug}/">${esc(p.short || p.title)}</a>`).join("")}</div>
+    <div><h4>Recursos</h4><a href="/calculadora-suscripciones/">Calculadora de suscripciones</a><a href="/blog/">Blog</a>${posts.slice(0, 2).map(p => `<a href="/blog/${p.slug}/">${esc(p.short || p.title)}</a>`).join("")}</div>
     <div><h4>Legal</h4><a href="/seguridad/">Seguridad</a><a href="/privacidad/">Privacidad</a><a href="/cookies/">Cookies</a><a href="/condiciones/">Condiciones</a>${L.legalComplete() ? '<a href="/aviso-legal/">Aviso legal</a>' : ""}<a href="mailto:hola@horahflow.com">hola@horahflow.com</a></div>
     <div class="legal"><span>© ${new Date().getFullYear()} HorahFlow · horahflow.com</span><span>Hecho en España</span></div>
   </div></footer>`;
@@ -338,10 +338,19 @@ write(path.join(DIST, "seguridad", "index.html"), page({
   body: SEC_HTML,
 }));
 
+// 3c) Calculadora de suscripciones (contenido en src/calculadora.html)
+write(path.join(DIST, "calculadora-suscripciones", "index.html"), page({
+  title: "Calculadora de suscripciones: cuánto pagas al año (2026)",
+  description: "Marca tus suscripciones (Netflix, Spotify, Disney+, HBO Max, iCloud…) y descubre cuánto pagas al mes, al año y en 10 años. Gratis, sin registro y con precios de España de 2026.",
+  canonical: `${SITE}/calculadora-suscripciones/`,
+  ld: { "@context": "https://schema.org", "@type": "WebApplication", name: "Calculadora de suscripciones de HorahFlow", url: `${SITE}/calculadora-suscripciones/`, applicationCategory: "FinanceApplication", operatingSystem: "Web", inLanguage: "es", offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" } },
+  body: SRC("calculadora.html"),
+}));
+
 // 4) Sitemap, robots, RSS, IndexNow
 const urls = [{ loc: SITE + "/", lastmod: posts[0]?.date || TODAY }, { loc: `${SITE}/blog/`, lastmod: posts[0]?.date || TODAY },
   ...posts.map(p => ({ loc: `${SITE}/blog/${p.slug}/`, lastmod: p.updated || p.date })),
-  ...legalPages.map(u => ({ loc: u, lastmod: "2026-11-13" })), { loc: `${SITE}/seguridad/`, lastmod: "2026-11-13" }];
+  ...legalPages.map(u => ({ loc: u, lastmod: "2026-11-13" })), { loc: `${SITE}/seguridad/`, lastmod: "2026-11-13" }, { loc: `${SITE}/calculadora-suscripciones/`, lastmod: "2026-11-14" }];
 write(path.join(DIST, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(u => `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod}</lastmod></url>`).join("\n")}

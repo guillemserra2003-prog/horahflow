@@ -1,0 +1,234 @@
+<!-- Página /calculadora-suscripciones/ · la inserta build.mjs en la plantilla de la web.
+     Precios revisados el 14/11/2026. Al cambiar un precio, cámbialo en DATA (abajo) y en la tabla. Todo se calcula en el navegador: no se guarda nada. -->
+<style>
+.calcpg{--cx:min(1120px,calc(100% - 40px));width:100%;min-width:0}
+.calc-app>*{min-width:0}
+.calcpg .w{width:var(--cx);margin:0 auto}
+.calc-hero{padding:64px 0 28px;text-align:center}
+.calc-hero h1{font-size:clamp(32px,5vw,54px);line-height:1.05;letter-spacing:-.035em;font-weight:800;max-width:820px;margin:0 auto}
+.calc-hero h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.calc-hero p{font-size:18.5px;color:var(--muted);max-width:620px;margin:16px auto 0;line-height:1.55}
+.calc-hero .mini{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:18px;font-size:14px;font-weight:700;color:var(--muted)}
+.calc-app{display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start;padding:20px 0 56px}
+.calc-group{margin-bottom:22px}
+.calc-group h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+.calc-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.ci{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:13px 14px;transition:.2s;position:relative}
+.ci.on{border-color:var(--green);box-shadow:0 8px 24px rgba(47,143,91,.12)}
+.ci .top{display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
+.ci .lg{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;flex:none}
+.ci .nm{font-weight:800;font-size:15.5px;line-height:1.2}
+.ci .pr{font-size:13px;color:var(--muted);font-weight:600}
+.ci .ck{margin-left:auto;width:24px;height:24px;border-radius:8px;border:1.5px solid var(--line-2);display:grid;place-items:center;flex:none;transition:.2s}
+.ci.on .ck{background:var(--green);border-color:var(--green);color:#fff}
+.ci .ck svg{width:14px;height:14px;opacity:0}
+.ci.on .ck svg{opacity:1}
+.ci .opts{display:none;margin-top:12px;gap:8px;flex-direction:column}
+.ci.on .opts{display:flex}
+.ci select,.ci input[type=text]{width:100%;font:inherit;font-size:14px;border:1px solid var(--line-2);border-radius:10px;padding:8px 10px;background:#fff;color:var(--ink)}
+.ci .row{display:flex;gap:8px;align-items:center}
+.ci .row input[type=text]{width:96px;flex:none}
+.ci .row span{font-size:13px;color:var(--muted);font-weight:600}
+.ci label.use{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--ink-2);cursor:pointer}
+.ci label.use input{width:16px;height:16px;accent-color:var(--red)}
+.ci .x{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:7px;color:var(--faint);font-size:18px;line-height:1}
+.ci .x:hover{background:var(--soft);color:var(--red)}
+.calc-add{display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed var(--line-2);border-radius:16px;padding:16px;font-weight:800;color:var(--muted);background:transparent;min-height:64px}
+.calc-add:hover{border-color:var(--green);color:var(--green)}
+.calc-res{position:sticky;top:88px;background:var(--ink);color:#fff;border-radius:24px;padding:26px;box-shadow:0 20px 50px rgba(22,21,31,.18)}
+.calc-res .lb{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#A9A6B9;font-weight:800}
+.calc-res .big{font-size:52px;font-weight:800;letter-spacing:-.04em;line-height:1;margin:8px 0 2px}
+.calc-res .big small{font-size:18px;color:#A9A6B9;letter-spacing:0;font-weight:700}
+.calc-res .sub{color:#C9C6D6;font-size:15px}
+.calc-res .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+.calc-res .grid div{background:rgba(255,255,255,.07);border-radius:14px;padding:12px 14px}
+.calc-res .grid b{display:block;font-size:20px;letter-spacing:-.02em}
+.calc-res .grid span{font-size:12.5px;color:#A9A6B9;font-weight:700}
+.calc-res .save{background:rgba(92,197,122,.14);border:1px solid rgba(92,197,122,.35);border-radius:14px;padding:14px;margin-bottom:16px}
+.calc-res .save b{color:var(--g2);font-size:22px}
+.calc-res .save p{font-size:13.5px;color:#C9C6D6;margin-top:4px;line-height:1.45}
+.calc-res .list{max-height:190px;overflow:auto;margin:0 -4px 16px;padding:0 4px}
+.calc-res .list div{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08)}
+.calc-res .list div:first-child{border-top:0}
+.calc-res .list s{color:#8E8BA0}
+.calc-res .empty{color:#A9A6B9;font-size:14.5px;line-height:1.5;margin:14px 0}
+.calc-res .btn{width:100%;justify-content:center}
+.calc-res .share{display:flex;gap:8px;margin-top:10px}
+.calc-res .share button,.calc-res .share a{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:10px;font-weight:700;font-size:14px;color:#fff}
+.calc-res .share button:hover,.calc-res .share a:hover{background:rgba(255,255,255,.08)}
+.calc-res .priv{font-size:12.5px;color:#8E8BA0;margin-top:14px;text-align:center}
+.calc-res .btn-green{background:var(--grad);color:#fff}
+.calc-seo{padding:56px 0;background:var(--soft)}
+.calc-seo h2{font-size:clamp(24px,3.2vw,34px);letter-spacing:-.03em;margin-bottom:10px}
+.calc-seo p.lead{color:var(--muted);font-size:16.5px;margin-bottom:22px;max-width:760px}
+.calc-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;font-size:15px}
+.calc-table th,.calc-table td{text-align:left;padding:12px 16px;border-top:1px solid var(--line)}
+.calc-table th{background:var(--soft-2);font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-top:0}
+.calc-table td:not(:first-child),.calc-table th:not(:first-child){text-align:right;white-space:nowrap}
+.calc-table td:first-child{font-weight:700}
+.calc-note{font-size:13.5px;color:var(--muted);margin-top:10px}
+.calc-faq{max-width:780px;margin:44px auto 0;display:grid;gap:12px}
+.calc-faq details{background:#fff;border:1px solid var(--line);border-radius:16px;padding:0 22px}
+.calc-faq summary{cursor:pointer;list-style:none;padding:17px 0;font-weight:800;font-size:16px;display:flex;justify-content:space-between;gap:16px}
+.calc-faq summary::-webkit-details-marker{display:none}
+.calc-faq summary::after{content:"+";font-size:22px;font-weight:500;color:var(--muted)}
+.calc-faq details[open] summary::after{content:"−"}
+.calc-faq details p{padding:0 0 18px;color:var(--ink-2);line-height:1.6}
+.calc-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-weight:700;font-size:14.5px;opacity:0;transition:.25s;pointer-events:none;z-index:99}
+.calc-toast.show{opacity:1;transform:translateX(-50%)}
+.calc-res .tg{display:none;position:absolute;top:14px;right:16px;color:#A9A6B9;font-weight:800;font-size:13px}
+@media (max-width:960px){
+  .calc-app{grid-template-columns:1fr}
+  .calc-res{position:sticky;top:auto;bottom:0;border-radius:22px 22px 0 0;margin:0 -20px;padding:18px 20px 20px;z-index:20}
+  .calc-res.collapsed .grid,.calc-res.collapsed .save,.calc-res.collapsed .list,.calc-res.collapsed .empty,.calc-res.collapsed .priv,.calc-res.collapsed .share{display:none}
+  .calc-res .big{font-size:40px}
+  .calc-res .tg{display:block}
+}
+@media (max-width:560px){.calc-hero{padding:44px 0 18px}.calc-items{grid-template-columns:1fr}.calc-table{font-size:13.5px}.calc-table th,.calc-table td{padding:10px 10px}}
+</style>
+
+<div class="calcpg">
+  <section class="calc-hero"><div class="w">
+    <span class="kicker">Calculadora gratis · 2026</span>
+    <h1>¿Cuánto pagas de verdad en <em>suscripciones</em>?</h1>
+    <p>Marca las que tienes y descubre lo que te cuestan al mes, al año y en diez años. Con los precios de España de noviembre de 2026.</p>
+    <div class="mini"><span>✓ Sin registro</span><span>✓ 1 minuto</span><span>✓ No guardamos nada</span></div>
+  </div></section>
+
+  <section class="w calc-app">
+    <div id="calc-groups"></div>
+    <aside class="calc-res" id="calc-res" aria-live="polite">
+      <button class="tg" type="button" id="calc-tg">Ver detalle ▲</button>
+      <div class="lb">Pagas al mes</div>
+      <div class="big"><span id="r-month">0 €</span> <small>/mes</small></div>
+      <div class="sub" id="r-count">Marca tus suscripciones</div>
+      <div class="grid">
+        <div><b id="r-year">0 €</b><span>al año</span></div>
+        <div><b id="r-ten">0 €</b><span>en 10 años</span></div>
+      </div>
+      <div class="save" id="r-save-box" hidden><b id="r-save">0 €</b> <span style="color:#C9C6D6;font-weight:700">al año que podrías ahorrar</span><p>Es lo que pagas por lo que has marcado como «Apenas lo uso».</p></div>
+      <div class="list" id="r-list"></div>
+      <p class="empty" id="r-empty">Toca los servicios que pagas. Si alguno no aparece, añádelo con «Otra suscripción».</p>
+      <a class="btn btn-green" href="/#registro" id="r-cta">¿Se te olvida alguna? Encuéntralas gratis</a>
+      <div class="share"><button type="button" id="r-copy">Copiar resultado</button><a id="r-x" href="#" target="_blank" rel="noopener">Compartir en X</a></div>
+      <p class="priv">Se calcula en tu navegador. No guardamos lo que marcas.</p>
+    </aside>
+  </section>
+
+  <section class="calc-seo"><div class="w">
+    <h2>Precios de las suscripciones más comunes en España (noviembre de 2026)</h2>
+    <p class="lead">Las cuotas mensuales que usa la calculadora. Los precios cambian a menudo: si el tuyo es distinto (por una oferta o porque lo pagas con tu operador), cámbialo en la calculadora.</p>
+    <div style="overflow-x:auto"><table class="calc-table" id="calc-table"><thead><tr><th>Servicio</th><th>Plan más barato</th><th>Plan habitual</th><th>Plan superior</th></tr></thead><tbody></tbody></table></div>
+    <p class="calc-note">Precios con IVA para nuevas altas, sin promociones temporales. YouTube Premium: precios tras la subida de agosto de 2026 (a los clientes actuales se les aplica en su renovación). DAZN: plan Fútbol sin permanencia.</p>
+
+    <div class="calc-faq">
+      <details><summary>¿Cuánto se gasta de media en suscripciones?</summary><p>Depende mucho de cada casa, pero es fácil pasar de 50 € al mes sin darse cuenta: un par de plataformas de vídeo, música, almacenamiento en la nube y el gimnasio ya suman eso. Lo importante no es la media, sino lo que pagas tú y si lo usas.</p></details>
+      <details><summary>¿Cómo sé todas las suscripciones que pago?</summary><p>Revisa los cargos de tu cuenta del último año, las suscripciones de tu móvil (en iPhone: Ajustes › tu nombre › Suscripciones; en Android: Play Store › Pagos y suscripciones) y los recibos de tu correo. <a class="link" href="/">HorahFlow</a> hace esto último por ti: lee los recibos de tu correo y te muestra todas las suscripciones, sin pedirte la contraseña del banco.</p></details>
+      <details><summary>¿Cuál es la mejor forma de ahorrar en suscripciones?</summary><p>Cancela lo que apenas usas, comparte planes familiares con quien vivas, pasa a planes con anuncios en servicios que ves poco y rota: en lugar de tener cuatro plataformas a la vez, ten una o dos y cambia cada pocos meses. Tienes los pasos en nuestras guías para <a class="link" href="/blog/cancelar-netflix/">cancelar Netflix</a>, <a class="link" href="/blog/cancelar-spotify/">Spotify</a> o <a class="link" href="/blog/cancelar-amazon-prime/">Amazon Prime</a>.</p></details>
+      <details><summary>¿Guardáis lo que marco en la calculadora?</summary><p>No. La calculadora funciona entera en tu navegador y no envía nada a ningún servidor. Si cierras la página, se borra.</p></details>
+    </div>
+  </div></section>
+</div>
+<div class="calc-toast" id="calc-toast"></div>
+
+<script>
+(function () {
+  // [nombre, color, letra, grupo, planes [[nombre, €/mes]], índice del plan por defecto]
+  var DATA = [
+    ['Netflix', '#E50914', 'N', 'Vídeo', [['Estándar con anuncios', 8.99], ['Estándar', 14.99], ['Premium', 21.99]], 1],
+    ['Disney+', '#113CCF', 'D', 'Vídeo', [['Estándar con anuncios', 6.99], ['Estándar', 10.99], ['Premium', 15.99]], 1],
+    ['HBO Max', '#5822B4', 'H', 'Vídeo', [['Básico con anuncios', 6.99], ['Estándar', 10.99], ['Premium', 15.99]], 1],
+    ['Amazon Prime', '#00A8E1', 'a', 'Vídeo', [['Mensual', 4.99], ['Anual (49,90 €/año)', 4.16]], 0],
+    ['YouTube Premium', '#FF0033', 'Y', 'Vídeo', [['Lite', 8.99], ['Individual', 15.99], ['Familiar', 29.99]], 1],
+    ['DAZN', '#111111', 'Z', 'Vídeo', [['Plan Fútbol (mensual)', 29.99]], 0],
+    ['Spotify', '#1DB954', 'S', 'Música', [['Estudiantes', 6.49], ['Individual', 11.99], ['Duo', 16.99], ['Familiar', 20.99]], 1],
+    ['Apple Music', '#FA2D48', '♪', 'Música', [['Estudiantes', 6.99], ['Individual', 11.99], ['Familiar', 19.99]], 1],
+    ['iCloud+', '#3693F3', '☁', 'Nube y apps', [['50 GB', 0.99], ['200 GB', 2.99], ['2 TB', 9.99]], 0],
+    ['Apple One', '#1D1D1F', '1', 'Nube y apps', [['Individual', 19.95]], 0],
+    ['ChatGPT Plus', '#10A37F', 'G', 'Nube y apps', [['Plus', 22.99]], 0],
+    ['Gimnasio', '#B7791F', '⚑', 'Deporte', [['Tu cuota', 39.9]], 0]
+  ];
+  var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  var eur = function (n) { return n.toLocaleString('es-ES', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €'; };
+  var eur0 = function (n) { return Math.round(n).toLocaleString('es-ES') + ' €'; };
+  var fmtIn = function (n) { return String(n).replace('.', ','); };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var items = DATA.map(function (d, i) { return { id: 'k' + i, name: d[0], color: d[1], letter: d[2], group: d[3], plans: d[4], plan: d[5], price: d[4][d[5]][1], on: false, unused: false }; });
+  var custom = 0;
+
+  // Tabla de precios (sale de los mismos datos que la calculadora)
+  document.querySelector('#calc-table tbody').innerHTML = DATA.filter(function (d) { return d[0] !== 'Gimnasio'; }).map(function (d) {
+    var p = d[4], cell = function (x) { return x ? esc(x[0]) + ' · <b>' + eur(x[1]) + '</b>' : '—'; };
+    if (d[0] === 'Amazon Prime') return '<tr><td>Amazon Prime</td><td>Mensual · <b>4,99 €</b></td><td>Anual · <b>49,90 €/año</b></td><td>—</td></tr>';
+    return '<tr><td>' + esc(d[0]) + '</td><td>' + cell(p[0]) + '</td><td>' + cell(p.length > 1 ? p[1] : null) + '</td><td>' + cell(p.length > 2 ? p[p.length - 1] : null) + '</td></tr>';
+  }).join('');
+
+  var root = document.getElementById('calc-groups');
+  function card(it) {
+    var opts = it.custom
+      ? '<input type="text" maxlength="40" placeholder="Nombre (p. ej. Filmin)" data-f="name" value="' + esc(it.name === 'Otra suscripción' ? '' : it.name) + '">'
+      : (it.plans.length > 1 ? '<select data-f="plan" aria-label="Plan de ' + esc(it.name) + '">' + it.plans.map(function (p, j) { return '<option value="' + j + '"' + (j === it.plan ? ' selected' : '') + '>' + esc(p[0]) + ' · ' + eur(p[1]) + '</option>'; }).join('') + '</select>' : '');
+    return '<div class="ci' + (it.on ? ' on' : '') + '" data-id="' + it.id + '">' +
+      '<div class="top" role="button" tabindex="0" aria-pressed="' + it.on + '"><span class="lg" style="background:' + it.color + '">' + esc(it.letter) + '</span><div><div class="nm">' + esc(it.name) + '</div><div class="pr">' + (it.custom ? 'Pon el precio' : 'desde ' + eur(it.plans[0][1]) + '/mes') + '</div></div><span class="ck">' + CHECK + '</span></div>' +
+      '<div class="opts">' + opts + '<div class="row"><input type="text" inputmode="decimal" autocomplete="off" data-f="price" value="' + fmtIn(it.price) + '" aria-label="Precio al mes de ' + esc(it.name) + '"><span>€ al mes</span></div>' +
+      '<label class="use"><input type="checkbox" data-f="unused"' + (it.unused ? ' checked' : '') + '> Apenas lo uso</label></div>' +
+      (it.custom ? '<button class="x" type="button" data-f="del" aria-label="Quitar">×</button>' : '') + '</div>';
+  }
+  function render() {
+    var groups = [];
+    items.forEach(function (it) { if (groups.indexOf(it.group) < 0) groups.push(it.group); });
+    root.innerHTML = groups.map(function (g) {
+      return '<div class="calc-group"><h2>' + esc(g) + '</h2><div class="calc-items">' + items.filter(function (it) { return it.group === g; }).map(card).join('') + '</div></div>';
+    }).join('') + '<div class="calc-group"><div class="calc-items"><button class="calc-add" type="button" id="calc-add">+ Otra suscripción</button></div></div>';
+    totals();
+  }
+  function find(el) { var c = el.closest('.ci'); return c && items.filter(function (it) { return it.id === c.dataset.id; })[0]; }
+  root.addEventListener('click', function (e) {
+    if (e.target.id === 'calc-add') { custom++; items.push({ id: 'c' + custom, name: 'Otra suscripción', color: '#6B6880', letter: '+', group: 'Otras', plans: [['', 0]], plan: 0, price: 5, on: true, unused: false, custom: true }); render(); var last = root.querySelector('[data-id="c' + custom + '"] input[data-f="name"]'); if (last) last.focus(); return; }
+    var it = find(e.target); if (!it) return;
+    if (e.target.dataset.f === 'del') { items = items.filter(function (x) { return x !== it; }); render(); return; }
+    if (e.target.closest('.top')) { it.on = !it.on; var c = e.target.closest('.ci'); c.classList.toggle('on', it.on); c.querySelector('.top').setAttribute('aria-pressed', it.on); totals(); }
+  });
+  root.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('top')) { e.preventDefault(); e.target.click(); } });
+  root.addEventListener('input', function (e) {
+    var it = find(e.target); if (!it) return; var f = e.target.dataset.f;
+    if (f === 'price') it.price = Math.min(9999, Math.max(0, parseFloat(String(e.target.value).replace(/\s|€/g, '').replace(',', '.')) || 0));
+    if (f === 'name') it.name = e.target.value.trim() || 'Otra suscripción';
+    if (f === 'unused') it.unused = e.target.checked;
+    if (f === 'plan') { it.plan = +e.target.value; it.price = it.plans[it.plan][1]; e.target.closest('.ci').querySelector('[data-f="price"]').value = fmtIn(it.price); }
+    totals();
+  });
+
+  var lastText = '';
+  function totals() {
+    var on = items.filter(function (it) { return it.on && it.price > 0; });
+    var m = on.reduce(function (s, it) { return s + it.price; }, 0);
+    var unused = on.filter(function (it) { return it.unused; }).reduce(function (s, it) { return s + it.price; }, 0);
+    document.getElementById('r-month').textContent = eur(Math.round(m * 100) / 100);
+    document.getElementById('r-year').textContent = eur0(m * 12);
+    document.getElementById('r-ten').textContent = eur0(m * 120);
+    document.getElementById('r-count').textContent = on.length ? on.length + (on.length === 1 ? ' suscripción' : ' suscripciones') : 'Marca tus suscripciones';
+    document.getElementById('r-save-box').hidden = !unused;
+    document.getElementById('r-save').textContent = eur0(unused * 12);
+    document.getElementById('r-empty').hidden = !!on.length;
+    document.getElementById('r-list').innerHTML = on.slice().sort(function (a, b) { return b.price - a.price; }).map(function (it) {
+      return '<div><span>' + (it.unused ? '<s>' + esc(it.name) + '</s>' : esc(it.name)) + '</span><b>' + eur(it.price) + '</b></div>';
+    }).join('');
+    lastText = on.length
+      ? 'Acabo de calcularlo: pago ' + eur0(m * 12) + ' al año en ' + on.length + (on.length === 1 ? ' suscripción' : ' suscripciones') + (unused ? ' (y ' + eur0(unused * 12) + ' en cosas que apenas uso)' : '') + '. ¿Y tú?'
+      : '¿Cuánto pagas al año en suscripciones? Calcúlalo en un minuto:';
+    document.getElementById('r-x').href = 'https://x.com/intent/post?text=' + encodeURIComponent(lastText) + '&url=' + encodeURIComponent('https://horahflow.com/calculadora-suscripciones/');
+  }
+  var toastT;
+  function toast(t) { var el = document.getElementById('calc-toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, 2200); }
+  document.getElementById('r-copy').addEventListener('click', function () {
+    var txt = lastText + ' https://horahflow.com/calculadora-suscripciones/';
+    if (navigator.share && matchMedia('(max-width:960px)').matches) { navigator.share({ text: txt }).catch(function () {}); return; }
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('Resultado copiado'); }, function () { prompt('Copia el texto:', txt); });
+  });
+  var res = document.getElementById('calc-res'), tg = document.getElementById('calc-tg');
+  if (matchMedia('(max-width:960px)').matches) res.classList.add('collapsed');
+  tg.addEventListener('click', function () { var c = res.classList.toggle('collapsed'); tg.textContent = c ? 'Ver detalle ▲' : 'Ocultar ▼'; });
+  render();
+})();
+</script>

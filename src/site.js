@@ -87,7 +87,7 @@ function footerHTML() {
   return `<footer class="foot"><div class="wrap">
     <div><img src="${LOGO}" alt="HorahFlow" style="height:26px;margin-bottom:14px"><p style="max-width:300px">Encuentra las fugas de dinero que no ves. Suscripciones, cobros recurrentes y gasto hormiga, en un solo panel.</p></div>
     <div><h4>Producto</h4><a href="#como-funciona">Cómo funciona</a><a href="#demo">Demo</a><a href="#precios">Precios</a><a href="#registro">Crear cuenta</a></div>
-    <div><h4>Recursos</h4><a href="/blog/">Blog</a>${(window.HF_POSTS || []).slice(0, 2).map(p => `<a href="/blog/${p.slug}/">${esc(p.short || p.title)}</a>`).join('')}</div>
+    <div><h4>Recursos</h4><a href="/calculadora-suscripciones/">Calculadora de suscripciones</a><a href="/blog/">Blog</a>${(window.HF_POSTS || []).slice(0, 2).map(p => `<a href="/blog/${p.slug}/">${esc(p.short || p.title)}</a>`).join('')}</div>
     <div><h4>Legal</h4><a href="/seguridad/">Seguridad</a><a href="/privacidad/">Privacidad</a><a href="/cookies/">Cookies</a><a href="/condiciones/">Condiciones</a>${legalComplete() ? '<a href="/aviso-legal/">Aviso legal</a>' : ''}<a href="mailto:hola@horahflow.com">hola@horahflow.com</a></div>
     <div class="legal"><span>© ${new Date().getFullYear()} HorahFlow · horahflow.com</span><span>Hecho en España</span></div>
   </div></footer>`;
