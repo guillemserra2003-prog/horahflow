@@ -469,10 +469,21 @@ function addressRow(a) {
     paused: ['amber', 'Pausada', 'Supera el límite de direcciones de tu plan.'],
   }[st];
   const pill = `<span class="conn ${ST[0]}" title="${esc(ST[2])}"><i></i><b>${esc(who)}</b><span>· ${ST[1]}</span></span>`;
-  const verify = st === 'pending' && Inbound.active(a) ? `<div class="g-alert" style="margin-top:10px"><b>Google te pide confirmar el reenvío a esta dirección.</b> Pulsa el botón, luego «Confirmar» en la página de Google, y vuelve aquí.
+  const verify = st === 'pending' && Inbound.active(a) && guideTarget(Inbound.addresses) !== a ? `<div class="g-alert" style="margin-top:10px"><b>Google te pide confirmar el reenvío a esta dirección.</b> Pulsa el botón, luego «Confirmar» en la página de Google, y vuelve aquí.
     <div class="g-btns" style="margin-top:8px">${a.verify_link ? `<a class="btn btn-green btn-sm" href="${esc(a.verify_link)}" target="_blank" rel="noopener">Confirmar en Google ${EXT}</a>` : ''}${a.verify_code ? `<button class="btn btn-ghost btn-sm" data-copy="${esc(a.verify_code)}">Copiar código ${esc(a.verify_code)}</button>` : ''}<button class="btn btn-ghost btn-sm" data-verifydone="${a.id}">Ya lo he confirmado</button></div></div>` : '';
   return `<div class="addr${st === 'paused' ? ' off' : ''}"><div class="conn-row">${pill}<small class="conn-note">${esc(ST[2])}</small></div><div class="addr-top"><div class="addr-main"><b>${esc(a.label)}</b><div class="copyline"><code>${esc(email)}</code><button class="btn btn-dark btn-sm" data-copy="${esc(email)}">${I.copy} Copiar</button></div></div>
     <div class="addr-side"><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" data-rename="${a.id}">Renombrar</button><button class="btn btn-ghost btn-sm" data-deladdr="${a.id}" aria-label="Eliminar dirección">${I.x}</button></div></div></div>${verify}</div>`;
+}
+/** La guía se muestra para la dirección a la que le falte algún paso: primero las no conectadas, luego la más nueva sin filtro. */
+function guideTarget(addrs) {
+  const act = addrs.filter(x => Inbound.active(x));
+  const filterOk = x => ((Data.state.prefs.filterDone || {})[x.id]) || (x.received_count || 0) > (x.last_import_count || 0);
+  return act.find(x => Inbound.state(x) !== 'connected') || [...act].reverse().find(x => !filterOk(x)) || [...act].reverse().find(x => !x.last_import_at) || act[0] || addrs[0];
+}
+function guideFor_(addrs) {
+  const t = guideTarget(addrs);
+  const who = addrs.length > 1 ? `<p class="g-for">Pasos para <b>${esc(t.label)}</b>${t.source_email ? ` · ${esc(t.source_email)}` : ''}</p>` : '';
+  return `<div class="fwd-guide">${who}${guideSteps(t)}</div>`;
 }
 function sourcesHTML() {
   const plan = Auth.plan(), st = Data.state, cloud = Inbound.available() && !Auth.user.demo;
@@ -484,7 +495,7 @@ function sourcesHTML() {
     : `${addrs.map(addressRow).join('')}
       ${addrs.some(x => Inbound.state(x) === 'connected') ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px">${canAdd ? `<button class="btn btn-${addrs.length ? 'ghost' : 'dark'} btn-sm" id="addr-new">+ ${addrs.length ? 'Otra dirección' : 'Crear mi dirección'}</button>` : `<span class="hint">Tu plan ${plan.name} incluye ${plan.mailboxes} ${plan.mailboxes === 1 ? 'dirección' : 'direcciones'}.</span>${plan.id !== 'business' ? `<button class="btn btn-dark btn-sm" data-buy="${plan.id === 'free' ? 'pro' : 'business'}">${plan.id === 'free' ? 'Pro: hasta 5 correos' : 'Empresas: hasta 25'}</button>` : ''}`}
       ${addrs.length ? '<button class="btn btn-ghost btn-sm" id="addr-sync">Comprobar ahora</button>' : ''}</div>` : ''}
-      <div class="fwd-guide">${guideSteps(addrs.find(x => Inbound.state(x) !== 'connected') || addrs[0])}</div>`;
+      ${guideFor_(addrs)}`;
   return topbar('Correos', cloud ? `${used} de ${plan.mailboxes} ${plan.mailboxes === 1 ? 'dirección de reenvío' : 'direcciones de reenvío'} en tu plan ${plan.name} · archivos y texto pegado sin límite` : 'Conecta tus recibos') + `
   <div class="card fwd-card"><div class="fwd-head"><span class="dot green">${I.mail}</span><div><h3 style="margin:0">Conecta tu correo</h3>
     <p class="hint" style="font-size:15px;margin-top:4px">Tu correo reenvía a HorahFlow solo tus recibos y facturas. Sin contraseñas y sin acceso al resto de tus correos. Se hace una vez y tarda 2 minutos.</p></div></div>

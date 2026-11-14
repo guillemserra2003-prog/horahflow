@@ -617,3 +617,5 @@ textarea.input{height:auto;min-height:150px;padding:12px 14px;resize:vertical;fo
 @media (prefers-reduced-motion:reduce){.spin{animation:none}}
 
 @media (max-width:720px){#fwd-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%}#fwd-tabs button{white-space:nowrap;flex:none}}
+
+.g-for{font-size:14px;color:var(--muted,#667);margin:14px 0 4px}

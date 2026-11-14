@@ -70,6 +70,21 @@ async def run(p, w, h, tag):
     # Pro: segunda dirección + ajustes de avisos
     await pg.evaluate("__plan='pro'; Auth.refreshProfile ? Auth.refreshProfile().then(()=>route()) : null"); await pg.wait_for_timeout(600)
     print(tag,'plan ahora:', await pg.evaluate("Auth.plan().id"))
+    # Segundo correo (otra cuenta de Gmail) con el primero ya conectado
+    await pg.click('[data-guide="0"]'); await pg.wait_for_timeout(200)  # el usuario había ocultado los pasos
+    await pg.evaluate("location.hash='app-correos'"); await pg.wait_for_timeout(400)
+    await pg.click('#addr-new'); await pg.fill('#an-l','Gmail trabajo'); await pg.click('#an-b'); await pg.wait_for_timeout(800)
+    print(tag,'2ª dirección creada:', await pg.evaluate("Inbound.addresses.length"), '| guía visible:', await pg.evaluate("!!document.querySelector('.gsteps')"), '| pasos:', await G())
+    await pg.evaluate("__addr[1].verify_link='https://mail-settings.google.com/mail/vf-xyz';__addr[1].verify_code='';__addr[1].source_email='otra@gmail.com';__addr[1].verify_at=new Date().toISOString()")
+    await pg.wait_for_selector('.g-step.now .g-alert', timeout=9000)
+    print(tag,'aviso solo en la guía (sin duplicar):', await pg.evaluate("document.querySelectorAll('.addr .g-alert').length"))
+    print(tag,'guía abre la cuenta correcta:', await pg.get_attribute('.g-step.now a.btn-green','href'), await pg.evaluate("[...document.querySelectorAll('.gsteps a')].map(a=>a.href).filter(h=>h.includes('mail.google.com')).every(h=>h.includes('/u/otra%40gmail.com/'))"))
+    await pg.screenshot(path=f'shots/{tag}-segunda.png', full_page=True)
+    await pg.click('.g-step.now [data-verifydone]'); await pg.wait_for_timeout(600)
+    print(tag,'tras confirmar 2ª:', await pg.evaluate("Inbound.addresses.map(a=>Inbound.state(a))"), '| avisos:', await pg.evaluate("document.querySelectorAll('.addr .g-alert').length"), '| pasos:', await G(), '| guía para:', await pg.evaluate("document.querySelector('.g-for')?.innerText"))
+    await pg.click('.g-step.now [data-filterdone]'); await pg.wait_for_timeout(500)
+    print(tag,'tras filtro 2ª:', await G())
+    await pg.screenshot(path=f'shots/{tag}-segunda-2.png', full_page=True)
     await pg.evaluate("location.hash='app-ajustes'"); await pg.wait_for_timeout(400)
     await pg.click('#s-alerts'); await pg.wait_for_timeout(800)
     print(tag,'prefs.emailAlerts tras desmarcar:', await pg.evaluate("Data.state.prefs.emailAlerts"), 'llamadas:', [c for c in await pg.evaluate('__calls') if 'UPDATE' in c or 'UPSERT' in c][-2:])
