@@ -29,7 +29,8 @@ export function gmailVerification(from: string, subject: string, text: string): 
   if (!/forwarding-noreply@google\.com/i.test(from)) return null;
   const code = (subject.match(/#(\d{6,12})/) || text.match(/(?:c[oó]digo de confirmaci[oó]n|confirmation code)\D{0,20}(\d{6,12})/i) || [])[1] || "";
   const link = (text.match(/https:\/\/(?:mail-settings|mail)\.google\.com\/\S+/) || [])[0] || "";
-  return code || link ? { code, link: link.replace(/[)>\].,]+$/, "") } : null;
+  // Aunque Google cambie el formato, un correo de forwarding-noreply nunca cuenta como recibo ni marca la dirección como conectada
+  return { code, link: link.replace(/[)>\].,]+$/, "") };
 }
 
 /** Correo de origen: en la verificación de Gmail («x@gmail.com ha solicitado reenviar…») o en las cabeceras X-Forwarded-For. */
