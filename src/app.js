@@ -387,8 +387,9 @@ function exportCSV() {
 
 /* ---------- Correos / fuentes ---------- */
 const GMAIL_QUERY = 'subject:(recibo OR factura OR receipt OR invoice OR suscripción OR subscription OR renovación OR renewal OR pedido OR order OR compra OR purchase OR pago OR payment OR cargo OR "tu viaje" OR "your trip" OR reserva OR booking OR entrada OR cuota OR membresía OR membership OR préstamo)';
-const gmailSearch = q => 'https://mail.google.com/mail/u/0/#search/' + encodeURIComponent(q);
-let fwdTab = null, guideOpen = null;
+const gmailU = a => 'https://mail.google.com/mail/u/' + (a && a.source_email && /@(gmail|googlemail)\.com$/i.test(a.source_email) ? encodeURIComponent(a.source_email) : '0') + '/';
+const gmailSearch = (q, a) => gmailU(a) + '#search/' + encodeURIComponent(q);
+let fwdTab = null, guideOpen = null, guideFor = null;
 function guessProvider() {
   const d = ((Auth.user && Auth.user.email) || '').split('@')[1] || '';
   return /gmail|googlemail/.test(d) ? 'gmail' : /outlook|hotmail|live|msn/.test(d) ? 'outlook' : 'gmail';
@@ -413,13 +414,13 @@ function guideSteps(a) {
         d: waitingConfirm ? `<div class="g-alert"><b>Gmail te ha mandado la confirmación.</b> Pulsa el botón, luego «Confirmar» en la página de Google, y vuelve aquí.</div>
             <div class="g-btns">${a.verify_link ? `<a class="btn btn-green" href="${esc(a.verify_link)}" target="_blank" rel="noopener">Confirmar en Google ${EXT}</a>` : ''}${a.verify_code ? `<button class="btn btn-ghost btn-sm" data-copy="${esc(a.verify_code)}">Copiar código ${esc(a.verify_code)}</button>` : ''}<button class="btn btn-ghost btn-sm" data-verifydone="${a.id}">Ya lo he confirmado</button></div>`
           : `<p>Copia tu dirección, abre los ajustes de Gmail y pégala en <b>«Añadir una dirección de reenvío»</b>. En unos segundos verás aquí el botón para confirmarlo.</p>
-            <div class="g-btns">${copyAddr}<a class="btn btn-ghost btn-sm" href="https://mail.google.com/mail/u/0/#settings/fwdandpop" target="_blank" rel="noopener">Abrir ajustes de Gmail ${EXT}</a></div>${gShot('/media/guia/g1.webp', 'Ajustes de Gmail: Reenvío, Añadir una dirección de reenvío, pegar la dirección y Siguiente')}<p class="g-wait"><span class="spin"></span>Esperando a Gmail…</p>` },
+            <div class="g-btns">${copyAddr}<a class="btn btn-ghost btn-sm" href="${gmailU(a)}#settings/fwdandpop" target="_blank" rel="noopener">Abrir ajustes de Gmail ${EXT}</a></div>${gShot('/media/guia/g1.webp', 'Ajustes de Gmail: Reenvío, Añadir una dirección de reenvío, pegar la dirección y Siguiente')}<p class="g-wait"><span class="spin"></span>Esperando a Gmail…</p>` },
       { t: 'Elige qué se reenvía: solo recibos', done: filterDone,
         d: `<p>Abre Gmail con la búsqueda ya preparada, pulsa el icono de opciones de la barra, <b>«Crear filtro»</b>, marca <b>«Reenviarlo a»</b> con tu dirección y guarda. El resto de tu correo no sale de Gmail.</p>
-            <div class="g-btns"><a class="btn btn-dark btn-sm" href="${gmailSearch(GMAIL_QUERY)}" target="_blank" rel="noopener">Abrir Gmail con la búsqueda ${EXT}</a><button class="btn btn-ghost btn-sm" data-copy="${esc(GMAIL_QUERY)}">${I.copy} Copiar búsqueda</button><button class="btn btn-ghost btn-sm" data-filterdone="${a.id}">Ya lo he hecho</button></div>${gShot('/media/guia/g2.webp', 'Gmail: opciones de búsqueda, Crear filtro, Reenviarlo a tu dirección y Crear filtro')}` },
+            <div class="g-btns"><a class="btn btn-dark btn-sm" href="${gmailSearch(GMAIL_QUERY, a)}" target="_blank" rel="noopener">Abrir Gmail con la búsqueda ${EXT}</a><button class="btn btn-ghost btn-sm" data-copy="${esc(GMAIL_QUERY)}">${I.copy} Copiar búsqueda</button><button class="btn btn-ghost btn-sm" data-filterdone="${a.id}">Ya lo he hecho</button></div>${gShot('/media/guia/g2.webp', 'Gmail: opciones de búsqueda, Crear filtro, Reenviarlo a tu dirección y Crear filtro')}` },
       { t: `Trae tus recibos de los últimos ${months} meses`, done: imported, opt: true,
         d: `<p>Abre tus recibos de los últimos ${months} meses, selecciónalos todos y usa <b>⋮ → «Reenviar como archivo adjunto»</b> a tu dirección. En un minuto los verás aquí.</p>
-            <div class="g-btns"><a class="btn btn-dark btn-sm" href="${gmailSearch(histQ)}" target="_blank" rel="noopener">Abrir mis recibos ${EXT}</a>${copyAddr.replace('btn-dark', 'btn-ghost')}</div>${gShot('/media/guia/g3.webp', 'Gmail: seleccionar todos, menú de tres puntos, Reenviar como archivo adjunto y enviar a tu dirección')}
+            <div class="g-btns"><a class="btn btn-dark btn-sm" href="${gmailSearch(histQ, a)}" target="_blank" rel="noopener">Abrir mis recibos ${EXT}</a>${copyAddr.replace('btn-dark', 'btn-ghost')}</div>${gShot('/media/guia/g3.webp', 'Gmail: seleccionar todos, menú de tres puntos, Reenviar como archivo adjunto y enviar a tu dirección')}
             <p class="g-note">Solo funciona en Gmail desde el ordenador. Si tienes más de 50 recibos, repítelo en la página siguiente.</p>${more}` }
     ],
     outlook: [
@@ -441,6 +442,7 @@ function guideSteps(a) {
   const cur = S.findIndex(x => !x.done);
   const allDone = cur === -1 || (S.slice(cur).every(x => x.opt) && imported);
   const tabs = `<div class="tabs-mini" id="fwd-tabs">${[['gmail', 'Gmail'], ['outlook', 'Outlook · Hotmail'], ['other', 'Otro']].map(([k, l]) => `<button class="${prov === k ? 'on' : ''}" data-fwd="${k}">${l}</button>`).join('')}</div>`;
+  if (guideFor !== a.id) { guideFor = a.id; guideOpen = null; guideStep = null; }
   const open = guideOpen == null ? !allDone : guideOpen;
   if (!open) return `<div class="g-done">${I.check}<div><b>Todo listo.</b> Tus recibos llegan solos.${imported ? ` Importamos ${a.last_import_count || 0} recibos de tu historial.` : ''}</div><button class="link" data-guide="1">Ver los pasos</button></div>`;
   return `${tabs}<ol class="gsteps">${S.map((x, i) => {
@@ -467,7 +469,8 @@ function addressRow(a) {
     paused: ['amber', 'Pausada', 'Supera el límite de direcciones de tu plan.'],
   }[st];
   const pill = `<span class="conn ${ST[0]}" title="${esc(ST[2])}"><i></i><b>${esc(who)}</b><span>· ${ST[1]}</span></span>`;
-  const verify = '';
+  const verify = st === 'pending' && Inbound.active(a) ? `<div class="g-alert" style="margin-top:10px"><b>Google te pide confirmar el reenvío a esta dirección.</b> Pulsa el botón, luego «Confirmar» en la página de Google, y vuelve aquí.
+    <div class="g-btns" style="margin-top:8px">${a.verify_link ? `<a class="btn btn-green btn-sm" href="${esc(a.verify_link)}" target="_blank" rel="noopener">Confirmar en Google ${EXT}</a>` : ''}${a.verify_code ? `<button class="btn btn-ghost btn-sm" data-copy="${esc(a.verify_code)}">Copiar código ${esc(a.verify_code)}</button>` : ''}<button class="btn btn-ghost btn-sm" data-verifydone="${a.id}">Ya lo he confirmado</button></div></div>` : '';
   return `<div class="addr${st === 'paused' ? ' off' : ''}"><div class="conn-row">${pill}<small class="conn-note">${esc(ST[2])}</small></div><div class="addr-top"><div class="addr-main"><b>${esc(a.label)}</b><div class="copyline"><code>${esc(email)}</code><button class="btn btn-dark btn-sm" data-copy="${esc(email)}">${I.copy} Copiar</button></div></div>
     <div class="addr-side"><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" data-rename="${a.id}">Renombrar</button><button class="btn btn-ghost btn-sm" data-deladdr="${a.id}" aria-label="Eliminar dirección">${I.x}</button></div></div></div>${verify}</div>`;
 }
