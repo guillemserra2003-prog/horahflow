@@ -74,7 +74,7 @@ function navHTML() {
   return `<header class="nav" id="nav"><div class="wrap">
     <a href="#inicio" class="logo"><img src="${LOGO}" alt="HorahFlow"></a>
     <nav class="links">
-      <a href="#como-funciona">Cómo funciona</a><a href="#demo">Demo</a><a href="#precios">Precios</a><a href="/blog/">Blog</a>
+      <a href="/calculadora-suscripciones/" class="nav-calc">Calculadora <span class="nav-free">Gratis</span></a><a href="#como-funciona">Cómo funciona</a><a href="#demo">Demo</a><a href="#precios">Precios</a><a href="/blog/">Blog</a>
     </nav>
     <div class="right">
       ${logged ? `<a class="btn btn-dark btn-sm" href="#app">Ir a mi panel</a>` :
@@ -118,6 +118,7 @@ function renderLanding(scrollTo) {
         <a class="btn btn-ghost" href="#demo">Ver la demo</a>
       </div>
       <div class="proof"><span>${I.shield} Sin contraseñas</span><span>${I.zap} Resultados en 1 minuto</span><span>${I.check} Sin tarjeta</span></div>
+      <a class="hero-calc" href="/calculadora-suscripciones/"><span class="nav-free">Nuevo</span> ¿Cuánto pagas en suscripciones? Calcúlalo gratis, sin registro ${I.arrow}</a>
     </div>
     <div class="mock fade-in" style="animation-delay:.1s">
       <div class="bar"><i></i><i></i><i></i></div>

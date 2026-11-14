@@ -141,7 +141,7 @@ const pageTitle = t => (t.length + 12 <= 64 ? `${t} | HorahFlow` : t);
 
 const header = `<header class="nav" id="nav"><div class="wrap">
   <a href="/" class="logo" aria-label="HorahFlow, inicio"><img src="/assets/logo.png" alt="HorahFlow" width="520" height="199"></a>
-  <nav class="links"><a href="/#como-funciona">Cómo funciona</a><a href="/#demo">Demo</a><a href="/#precios">Precios</a><a href="/blog/">Blog</a></nav>
+  <nav class="links"><a href="/calculadora-suscripciones/" class="nav-calc">Calculadora <span class="nav-free">Gratis</span></a><a href="/#como-funciona">Cómo funciona</a><a href="/#demo">Demo</a><a href="/#precios">Precios</a><a href="/blog/">Blog</a></nav>
   <div class="right"><a class="btn btn-ghost btn-sm" href="/#entrar">Entrar</a><a class="btn btn-dark btn-sm" href="/#registro">Empezar gratis</a>
   <button class="burger" aria-label="Menú" onclick="document.getElementById('nav').classList.toggle('open')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button></div>
 </div></header>`;
@@ -287,6 +287,7 @@ posts.forEach(p => {
   <div class="content">
 ${p.html}
   </div>
+  <a class="hero-calc" href="/calculadora-suscripciones/" style="margin-top:40px"><span class="nav-free">Gratis</span> Calcula cuánto pagas al año en suscripciones, sin registro ${"→"}</a>
   <div class="cta-band" style="margin-top:48px;padding:36px"><div><h2 style="font-size:26px">¿Cuánto se te escapa a ti?</h2><p>Conecta tu correo y lo sabrás en un minuto. Gratis.</p></div><a class="btn btn-green" href="/#registro">Empezar gratis</a></div>
 </article>
 ${related.length ? `<section class="wrap related" style="max-width:1160px;margin-top:64px"><h2 style="font-size:24px;letter-spacing:-.02em;margin-bottom:20px">Sigue leyendo</h2><div class="blog-grid">${related.map(card).join("")}</div></section>` : ""}`,

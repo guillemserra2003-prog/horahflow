@@ -40,6 +40,11 @@ img{display:block;max-width:100%}
 .nav .logo img{height:30px;width:auto}
 .nav .links{display:flex;gap:28px;font-weight:600;font-size:15px;color:var(--ink-2)}
 .nav .links a:hover{color:var(--ink)}
+.nav .links .nav-calc{display:inline-flex;align-items:center;gap:7px;color:var(--ink);font-weight:800}
+.nav-free{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--green);background:var(--green-soft);border-radius:999px;padding:3px 8px;line-height:1.2}
+.hero-calc{display:inline-flex;align-items:center;gap:10px;margin-top:22px;padding:10px 16px 10px 10px;border:1px solid var(--line-2);border-radius:999px;background:#fff;font-weight:700;font-size:14.5px;color:var(--ink-2);box-shadow:var(--shadow);transition:.2s}
+.hero-calc:hover{border-color:var(--green);color:var(--ink)}
+.hero-calc svg{width:15px;height:15px;flex:none}
 .nav .right{margin-left:auto;display:flex;gap:10px;align-items:center}
 .nav .burger{display:none;width:40px;height:40px;border-radius:10px;border:1px solid var(--line-2);align-items:center;justify-content:center}
 
