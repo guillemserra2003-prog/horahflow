@@ -273,7 +273,12 @@ const Data = {
       const k = (m.id || '') + '|' + m.subject + '|' + m.date;
       if (seen.has(k)) continue; seen.add(k);
       // Solo se guardan correos que parecen gastos: nunca el buzón completo
-      if (E.toCharge(Object.assign({}, m, { body: e.body }))) { this.state.emails.push(m); added++; }
+      const c = E.toCharge(Object.assign({}, m, { body: e.body }));
+      if (c) {
+        // Extractos y liquidaciones: se guarda la cifra que te van a cobrar (el fragmento recortado podría perderla)
+        if (c.stmt) m.body = `${c.kind === 'prestamo' ? 'Préstamo o crédito. ' : ''}Cantidad a pagar: ${String(c.original.toFixed(2)).replace('.', ',')} €.${c.cycleHint === 'monthly' ? ' Cuota mensual.' : ''} ${m.body}`.slice(0, 1200);
+        this.state.emails.push(m); added++;
+      }
       else if (E.maybeReceipt(e)) doubtful.push({ e, m });
     }
     // Los recibos que las reglas no saben leer se los pasamos a la IA (solo el fragmento del recibo)
@@ -415,6 +420,12 @@ const Inbound = {
       let added = 0;
       const groups = {};
       rows.forEach(r => (groups[r.address_id] = groups[r.address_id] || []).push(r));
+      // PDF con contraseña que no hemos podido abrir: se avisa en Correos para que el usuario lo suba
+      const locked = rows.filter(r => /PDF protegido con contraseña/.test(r.body || '')).map(r => ({ from: String(r.from_addr || '').replace(/<[^>]*>/, '').trim().slice(0, 60), subject: String(r.subject || '').slice(0, 120), date: r.received_at, files: [...String(r.body).matchAll(/\[([^\]]{1,120})\] PDF protegido con contraseña/g)].map(m => m[1]) }));
+      if (locked.length) {
+        const P = Data.state.prefs, seen = new Set((P.pdfLocked || []).map(x => x.subject + x.date));
+        P.pdfLocked = [...locked.filter(x => !seen.has(x.subject + x.date)), ...(P.pdfLocked || [])].slice(0, 10);
+      }
       for (const [aid, list] of Object.entries(groups)) {
         const a = this.addresses.find(x => x.id === aid);
         const account = a ? this.email(a) : 'reenvío';
@@ -532,9 +543,10 @@ async function getPdfjs() {
 }
 const isPdfFile = f => /\.pdf$/i.test(f.name) || f.type === 'application/pdf';
 /** Texto de las 3 primeras páginas de un PDF. */
-async function pdfToText(buf) {
+async function pdfToText(buf, password) {
   const lib = await getPdfjs();
-  const task = lib.getDocument({ data: new Uint8Array(buf), isEvalSupported: false, disableFontFace: true });
+  // La contraseña solo se usa aquí, en tu navegador, para abrir el PDF. No se guarda ni se envía.
+  const task = lib.getDocument({ data: new Uint8Array(buf.slice ? buf.slice(0) : buf), isEvalSupported: false, disableFontFace: true, ...(password ? { password } : {}) });
   const doc = await task.promise;
   try {
     const out = [];
@@ -549,7 +561,8 @@ async function pdfToText(buf) {
 function pdfEmail(text, file) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   const CO = /\b(S\.?A\.?U?\.?|S\.?L\.?U?\.?|S\.?Coop|Inc\.?|LLC|Ltd\.?|GmbH|B\.?V\.?|SAS|S\.?p\.?A\.?)(?=[\s,.—-]|$)/;
-  const issuer = (lines.slice(0, 15).find(l => CO.test(l)) || '').split(/\s[—–-]\s|,|\s{2,}/)[0]
+  const coLine = lines.slice(0, 40).find(l => CO.test(l)) || '';
+  const issuer = (coLine.split(/\s[·|•]\s/).find(x => CO.test(x)) || coLine).split(/\s[—–-]\s|,|\s{2,}/)[0].trim()
     || file.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').replace(/\b(factura|invoice|recibo|receipt|fra|n[ºo°]?)\b|\d{3,}/gi, ' ').replace(/\s+/g, ' ').trim();
   // Fecha: la de la factura; si no, la del cargo; si no, la primera que aparezca (y nunca en el futuro)
   const D = '(\\d{1,2})[/.-](\\d{1,2})[/.-](\\d{2,4})';
@@ -562,13 +575,25 @@ function pdfEmail(text, file) {
   return { id: 'pdf-' + file.name + '-' + file.size, from: issuer ? `${issuer} <factura@pdf>` : '', subject: /factura|invoice|recibo|receipt/i.test(base) ? base : 'Factura · ' + base, date: date.toISOString(), body: text, source: 'archivo' };
 }
 
-async function readFiles(files) {
-  const out = []; out.unread = [];
+const isPwErr = e => e && (e.name === 'PasswordException' || /password/i.test(e.message || ''));
+/** askPassword(nombre, intento) → contraseña o null. Si un PDF tiene contraseña, se pide (hasta 3 intentos). */
+async function readFiles(files, askPassword) {
+  const out = []; out.unread = []; out.locked = [];
   for (const f of files) {
     if (isPdfFile(f)) {
+      const buf = await f.arrayBuffer();
+      let t = null, pw = null;
+      for (let i = 0; i < 4; i++) {
+        try { t = await pdfToText(buf, pw); break; }
+        catch (e) {
+          if (!isPwErr(e)) { console.warn('PDF', f.name, e); break; }
+          pw = askPassword && i < 3 ? await askPassword(f.name, i) : null;
+          if (!pw) { out.locked.push(f.name); break; }
+        }
+      }
       // Un PDF sin texto suele ser una foto escaneada: no hay nada que leer
-      try { const t = await pdfToText(await f.arrayBuffer()); if (t.replace(/\s/g, '').length > 20) out.push(pdfEmail(t, f)); else out.unread.push(f.name); }
-      catch (e) { console.warn('PDF', f.name, e); out.unread.push(f.name); }
+      if (t != null) { if (t.replace(/\s/g, '').length > 20) out.push(pdfEmail(t, f)); else out.unread.push(f.name); }
+      else if (!out.locked.includes(f.name)) out.unread.push(f.name);
       continue;
     }
     const txt = await f.text();

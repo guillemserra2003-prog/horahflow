@@ -619,3 +619,7 @@ textarea.input{height:auto;min-height:150px;padding:12px 14px;resize:vertical;fo
 @media (max-width:720px){#fwd-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%}#fwd-tabs button{white-space:nowrap;flex:none}}
 
 .g-for{font-size:14px;color:var(--muted,#667);margin:14px 0 4px}
+
+.manual-cta{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:14px;padding:14px 18px;border:1px dashed var(--line-2,#d9d7e0);border-radius:14px;background:var(--bg-2,#fafafb)}
+.manual-cta b{display:block}.manual-cta .hint{font-size:14px}
+.lbl{display:block;font-size:13px;font-weight:700;color:var(--muted,#667);margin:0 0 5px}

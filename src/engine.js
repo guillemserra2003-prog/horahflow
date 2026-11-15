@@ -139,7 +139,7 @@
   const RX_CANCELLED = /se ha cancelado|has been cancell?ed|subscription cancell?ed|suscripci[oó]n cancelada|cancelaci[oó]n de tu|pedido cancelado|order cancell?ed/i;
   const RX_PURCHASE = /tu pedido|your order|order (?:confirm|number|#)|pedido (?:n[º°o.]|confirmado|realizado)|n[uú]mero de pedido|id de pedido|resumen de (?:tu )?pedido|gracias por tu (?:compra|pedido)|thanks? (?:you )?for your (?:order|purchase)|compra (?:realizada|confirmada)|art[ií]culos?\)|\(\d+ art[ií]culos?\)|one-?time|pago [uú]nico|compra [uú]nica|credit purchase|domain purchase|compra de dominio|top-?up|recarga de saldo|entrada (?:lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)|check-?in/i;
   const RX_RECUR_STRONG = /se renueva|renews?\b|renovaci[oó]n|renewal|pr[oó]ximo (?:cobro|pago|cargo)|next (?:billing|payment|charge)|periodo de facturaci[oó]n|billing period|\((?:mensual|monthly|anual|annual|yearly|semanal|weekly)\)|(?:plan|suscripci[oó]n|cuota|tarifa) (?:mensual|anual|trimestral)|(?:monthly|annual|yearly) (?:plan|subscription|membership)|tu suscripci[oó]n|your subscription|membres[ií]a|membership|recibo domiciliado|domiciliaci[oó]n|cada periodo de pago|se te facturar[aá]|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|ene|abr|ago|dic)[a-z]* \d{1,2}\s?[–-]\s?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|ene|abr|ago|dic)[a-z]* \d{1,2}/i;
-  const RX_DEBT = /pr[eé]stamo|financiaci[oó]n|cr[eé]dito (?:personal|al consumo)|cuota \d+ de \d+|plazo \d+ de \d+|installment|amortizaci[oó]n|capital pendiente|deuda pendiente|pago aplazado/i;
+  const RX_DEBT = /pr[eé]stamo|financiaci[oó]n|revolving|l[ií]nea de cr[eé]dito|cr[eé]dito (?:personal|al consumo)|cuota \d+ de \d+|plazo \d+ de \d+|installment|amortizaci[oó]n|capital pendiente|deuda pendiente|pago aplazado/i;
   const RX_DOCID = /(?:receipt|recibo|invoice|factura|pedido|order|n[uú]mero de pedido|id de pedido)\s*(?:#|n[.º°o]*\s*|number\s*|n[uú]mero\s*)?[:#]?\s*([A-Z0-9][A-Z0-9-]{5,})/gi;
   const RX_COPY = /^\s*(?:fwd?|rv|tr|reenv(?:iado|io)?)\s*:/i;
   const RX_AMOUNT = /(?:(€|EUR|USD|US\$|\$|£|GBP)\s?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?))|(?:(\d{1,3}(?:[.,\s]\d{3})*[.,]\d{1,2}|\d+(?:[.,]\d{1,2})?)\s?(€|EUR|euros?|USD|\$|£|GBP))/gi;
@@ -165,6 +165,36 @@
     if (c === '$' || c === 'US$' || c === 'USD') return 'USD';
     if (c === '£' || c === 'GBP') return 'GBP';
     return 'EUR';
+  }
+
+  // Extractos y liquidaciones (préstamos, tarjetas, créditos): la cifra que importa es lo que te van a cobrar
+  const RX_STMT = [
+    /cantidad\s*a\s*pagar|importe\s*a\s*pagar|total\s*a\s*pagar|importe\s*a\s*cargar|importe\s*(?:del|de\s*(?:tu|su|la))\s*(?:pr[oó]ximo\s*)?(?:recibo|cuota)|pr[oó]xim[ao]\s*(?:recibo|cuota)/gi,
+    /cuota\s*(?:mensual|a\s*pagar|del\s*mes)|recibo\s*mensual/gi,
+    /pago\s*m[ií]nimo/gi
+  ];
+  // «C A N T I D A D A PA G A R» (texto con letras separadas en algunos PDF) → «CANTIDADAPAGAR»
+  const squash = t => t.replace(/(?:\b[A-ZÁÉÍÓÚÑÜ]{1,2} ){2,}[A-ZÁÉÍÓÚÑÜ]{1,2}\b/g, m => m.replace(/ /g, ''));
+  const AMT1 = new RegExp('^[\\s:.=–-]*(?:' + RX_AMOUNT.source + ')', 'i');
+  function statementAmount(text) {
+    const t = squash(text);
+    for (const rx of RX_STMT) {
+      rx.lastIndex = 0; let m;
+      while ((m = rx.exec(t))) {
+        const a = extractAmount(t.slice(m.index + m[0].length, m.index + m[0].length + 40).match(AMT1)?.[0] || '');
+        if (a) return a;
+      }
+    }
+    // Tabla (Cofidis y otros): «Cuota mensual» en la cabecera y la fila de datos debajo. La cuota es el importe más pequeño de la fila.
+    const h = t.search(/cuota\s*mensual/i);
+    if (h > -1) {
+      const rows = t.slice(h, h + 700).split('\n').slice(1);
+      for (const r of rows) {
+        const amts = [...r.matchAll(/(\d{1,3}(?:\.\d{3})*,\d{2})\s?€/g)].map(x => parseNum(x[1])).filter(v => v > 0);
+        if (amts.length >= 2) { const v = Math.min(...amts); return { val: v, cur: 'EUR', score: 9, eur: v }; }
+      }
+    }
+    return null;
   }
 
   function extractAmount(text) {
@@ -273,7 +303,8 @@
     if (RX_TRIAL.test(text) && /(?:hoy|today|ahora)[^.]{0,20}\b0[.,]00\b|\b0[.,]00\s?€/i.test(text)) {
       return { trialOnly: true, key: svc ? svc.id : merchant.toLowerCase().replace(/[^a-z0-9]+/g, '-'), merchant, date };
     }
-    const amt = extractAmount(text);
+    const stmt = (debt || /extracto|liquidaci[oó]n|cuota/i.test(text)) ? statementAmount(`${subject}\n${email.body || ''}`) : null;
+    const amt = stmt || extractAmount(text);
     if (!amt) return null;
     const g0 = guessCat(text);
     const cat = (email.cat && CATS[email.cat]) ? email.cat : debt ? 'deudas' : (svc ? svc.cat : purchase && ['otros', 'formacion', 'hogar', 'telecom'].includes(g0) ? 'compras' : g0);
@@ -283,16 +314,19 @@
     const kind = debt ? 'prestamo' : purchase && !strong ? 'compra' : recurringHint ? 'suscripcion' : /factura|invoice|recibo|receipt/i.test(text) ? 'factura' : 'compra';
     const docs = [...text.matchAll(RX_DOCID)].map(m => m[1].toUpperCase()).filter(d => /\d/.test(d));
     let cycleHint = null;
-    if (/anual|annual|yearly|al año|per year|\/año|\/year/i.test(text)) cycleHint = 'yearly';
-    else if (/semanal|weekly/i.test(text)) cycleHint = 'weekly';
-    else if (/trimestral|quarterly/i.test(text)) cycleHint = 'quarterly';
-    else if (/mensual|monthly|al mes|per month|\/mes|\/month/i.test(text)) cycleHint = 'monthly';
+    // «Tasa anual equivalente», «tipo nominal anual»… no dicen cada cuánto te cobran
+    const ct = text.replace(/tasa anual equivalente|(?:inter[eé]s|tipo)(?: deudor)?(?: nominal)? anual|nominal anual|\bTAE\b|\bTIN\b/gi, ' ');
+    if (stmt && /mensual|monthly|cada mes/i.test(ct)) cycleHint = 'monthly';
+    else if (/anual|annual|yearly|al año|per year|\/año|\/year/i.test(ct)) cycleHint = 'yearly';
+    else if (/semanal|weekly/i.test(ct)) cycleHint = 'weekly';
+    else if (/trimestral|quarterly/i.test(ct)) cycleHint = 'quarterly';
+    else if (/mensual|monthly|al mes|per month|\/mes|\/month/i.test(ct)) cycleHint = 'monthly';
     return {
       id: email.id || (merchant + date.getTime()),
       merchant, key: (svc && kind !== 'compra' ? svc.id : merchant.toLowerCase().replace(/[^a-z0-9]+/g, '-')),
       kind, purchase: kind === 'compra', copy, docs, shipping: RX_SHIPPING.test(subject),
       svc: svc ? svc.id : null, cat, date, amount: amt.eur, original: amt.val, currency: amt.cur,
-      recurringHint, cycleHint, trial: RX_TRIAL.test(text),
+      recurringHint, cycleHint, trial: RX_TRIAL.test(text), stmt: !!stmt,
       subject, source: email.source || 'correo', account: email.account || ''
     };
   }
@@ -425,6 +459,24 @@
         cancel: svc ? svc.cancel : '', alts: svc ? svc.alts : [], account: lastC.account
       };
       subs.push(s);
+    }
+
+    // Cobros añadidos a mano (préstamos, alquiler… que no mandan el importe por correo). Sin historial inventado.
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    for (const m of (prefs.manual || [])) {
+      const anchor = new Date(m && m.date);
+      if (!m || !(m.amount > 0) || !CYCLE[m.cycle] || isNaN(anchor)) continue;
+      const key = 'manual-' + m.id;
+      if (prefs.ignored && prefs.ignored[key]) continue;
+      let next = anchor, last = null, k = 0;
+      while (next < today && k < 1000) { last = next; next = addCycle(anchor, m.cycle, ++k); }
+      const cat = CATS[m.cat] ? m.cat : 'otros', amount = round2(m.amount);
+      subs.push({
+        key, merchant: String(m.name || 'Cobro').slice(0, 40), svc: null, cat, cycle: m.cycle, amount, variable: false, currency: 'EUR', original: amount,
+        monthly: round2(amount * CYCLE[m.cycle].perMonth), first: anchor, last: last || anchor, next, count: 0, totalPaid: 0,
+        priceUp: null, trial: false, status: cancelled[key] ? 'cancelada' : 'activa', usage: usage[key] || null, history: [],
+        debt: cat === 'deudas', cancel: '', alts: [], account: '', manual: m.id
+      });
     }
 
     const active = subs.filter(s => s.status === 'activa');
@@ -675,5 +727,5 @@
     return E.filter(e => new Date(e.date) <= now);
   }
 
-  global.HFEngine = { analyze, toCharge, maybeReceipt, parseEml, parseMbox, parsePasted, htmlToText, demoInbox, extractAmount, CATS, CYCLE, CATALOG, fmt, fmtDate };
+  global.HFEngine = { analyze, toCharge, statementAmount, maybeReceipt, parseEml, parseMbox, parsePasted, htmlToText, demoInbox, extractAmount, CATS, CYCLE, CATALOG, fmt, fmtDate };
 })(typeof window !== 'undefined' ? window : globalThis);

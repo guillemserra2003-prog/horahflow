@@ -31,7 +31,7 @@ function renderApp(view) {
   if (!Auth.user) { location.hash = 'entrar'; return; }
   Data.load();
   const a = Data.analysis;
-  const empty = !Data.state.emails.length && view !== 'app-correos' && view !== 'app-ajustes';
+  const empty = !Data.state.emails.length && !(Data.state.prefs.manual || []).length && view !== 'app-correos' && view !== 'app-ajustes';
   let html;
   if (empty) html = emptyHTML();
   else html = ({
@@ -243,13 +243,14 @@ function subsHTML(a) {
   <div class="card" style="padding:12px 10px">
   ${rows.length ? `<table class="table"><thead><tr><th>Servicio</th><th class="hide-m">Frecuencia</th><th class="hide-m">Próximo cobro</th><th class="right">Importe</th><th class="hide-m">¿Lo usas?</th></tr></thead><tbody>
   ${rows.map(s => `<tr class="clickable" data-sub="${esc(s.key)}">
-    <td><div class="svc">${logoSq(s.merchant)}<div>${esc(s.merchant)} ${s.priceUp ? `<span class="chip amber" style="padding:1px 7px;font-size:11px">↑ precio</span>` : ''}${s.trial ? ` <span class="chip amber" style="padding:1px 7px;font-size:11px">era prueba</span>` : ''}<small>${E.CATS[s.cat].label}${s.account ? ' · ' + esc(s.account) : ''}</small></div></div></td>
+    <td><div class="svc">${logoSq(s.merchant)}<div>${esc(s.merchant)} ${s.priceUp ? `<span class="chip amber" style="padding:1px 7px;font-size:11px">↑ precio</span>` : ''}${s.trial ? ` <span class="chip amber" style="padding:1px 7px;font-size:11px">era prueba</span>` : ''}${s.manual ? ` <span class="chip" style="padding:1px 7px;font-size:11px">a mano</span>` : ''}<small>${E.CATS[s.cat].label}${s.account ? ' · ' + esc(s.account) : ''}</small></div></div></td>
     <td class="hide-m">${E.CYCLE[s.cycle].label}${s.variable ? ' <span class="hint">· variable</span>' : ''}</td>
     <td class="hide-m">${s.status === 'activa' ? fmtDate(s.next) : `<span class="chip">${s.status === 'cancelada' ? 'Cancelada' : 'Último: ' + fmtDate(s.last)}</span>`}</td>
     <td class="right"><b class="num">${fmt(s.amount)}</b>${s.cycle !== 'monthly' ? `<div class="hint num">${fmt(s.monthly)}/mes</div>` : ''}</td>
     <td class="hide-m"><div class="seg" data-usage="${esc(s.key)}">${[['si', 'Sí'], ['aveces', 'A veces'], ['no', 'No']].map(([v, l]) => `<button class="${s.usage === v ? 'on' : ''}" data-v="${v}">${l}</button>`).join('')}</div></td>
   </tr>`).join('')}</tbody></table>` : '<p class="hint" style="padding:20px">No hay suscripciones con estos filtros.</p>'}
   </div>
+  <div class="manual-cta"><div><b>¿Falta algún cobro?</b><span class="hint">Préstamos, alquiler o seguros que no mandan el importe por correo.</span></div><button class="btn btn-dark btn-sm" data-manual-new>+ Añadir un cobro a mano</button></div>
   <p class="hint" style="margin-top:12px">Marca «No» en lo que no usas y lo sumaremos a tu ahorro. Pulsa una fila para ver el historial, alternativas y cómo darte de baja.</p>`;
 }
 
@@ -260,21 +261,23 @@ function subModal(key) {
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
       <div class="card" style="padding:12px"><div class="hint" style="font-size:12px;font-weight:700">Cuota</div><b class="num">${fmt(s.amount)}</b></div>
       <div class="card" style="padding:12px"><div class="hint" style="font-size:12px;font-weight:700">Al año</div><b class="num">${fmt(s.monthly * 12)}</b></div>
-      <div class="card" style="padding:12px"><div class="hint" style="font-size:12px;font-weight:700">Pagado</div><b class="num">${fmt(s.totalPaid)}</b></div>
+      ${s.manual ? `<div class="card" style="padding:12px"><div class="hint" style="font-size:12px;font-weight:700">Próximo cobro</div><b class="num">${s.status === 'activa' ? fmtDate(s.next) : '—'}</b></div>` : `<div class="card" style="padding:12px"><div class="hint" style="font-size:12px;font-weight:700">Pagado</div><b class="num">${fmt(s.totalPaid)}</b></div>`}
     </div>
     ${s.priceUp ? `<div class="leak" style="padding:0 0 14px">${''}<span class="dot amber">${I.up}</span><div class="txt"><b>Subida de precio</b><p>De ${fmt(s.priceUp.from)} a ${fmt(s.priceUp.to)} desde el ${fmtDate(s.priceUp.date)}.</p></div></div>` : ''}
-    <h4 style="margin-bottom:8px">Historial de cobros</h4>
+    ${s.manual ? `<p class="hint" style="margin:0 0 6px">Cobro añadido a mano. No viene de tus recibos, así que no tiene historial: si cambia el importe o la fecha, edítalo.</p>` : `<h4 style="margin-bottom:8px">Historial de cobros</h4>
     <div style="max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-bottom:18px">
       ${[...s.history].reverse().map(c => `<div style="display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line);font-size:14px"><span>${new Date(c.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</span><b class="num">${fmt(c.amount)}${c.currency !== 'EUR' ? ` <span class="hint">(${c.original} ${c.currency})</span>` : ''}</b></div>`).join('')}
-    </div>
+    </div>`}
     ${s.alts && s.alts.length ? `<h4 style="margin-bottom:4px">Alternativas</h4>${s.alts.map(altHTML).join('')}` : ''}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px">
       ${s.cancel ? `<a class="btn btn-dark btn-sm" href="${esc(s.cancel)}" target="_blank" rel="noopener">Cómo darse de baja ${I.arrow}</a>` : ''}
+      ${s.manual ? `<button class="btn btn-dark btn-sm" id="m-edit">Editar</button>` : ''}
       <button class="btn btn-ghost btn-sm" id="m-cancel">${P.cancelled[key] ? 'Marcar como activa' : 'Ya la he cancelado'}</button>
-      <button class="btn btn-ghost btn-sm" id="m-ignore">No es una suscripción</button>
+      ${s.manual ? '' : '<button class="btn btn-ghost btn-sm" id="m-ignore">No es una suscripción</button>'}
     </div>`, (bg, close) => {
     $('#m-cancel', bg).onclick = () => { if (P.cancelled[key]) delete P.cancelled[key]; else P.cancelled[key] = Date.now(); Data.save('prefs'); close(); toast(P.cancelled[key] ? `${s.merchant} marcada como cancelada` : `${s.merchant} vuelve a estar activa`); route(); };
-    $('#m-ignore', bg).onclick = () => { P.ignored[key] = true; Data.save('prefs'); close(); toast(`${s.merchant} ya no se tendrá en cuenta`); route(); };
+    if (s.manual) $('#m-edit', bg).onclick = () => { close(); manualModal(s.manual); };
+    else $('#m-ignore', bg).onclick = () => { P.ignored[key] = true; Data.save('prefs'); close(); toast(`${s.merchant} ya no se tendrá en cuenta`); route(); };
   });
 }
 function altHTML(x) {
@@ -497,6 +500,7 @@ function sourcesHTML() {
       ${addrs.length ? '<button class="btn btn-ghost btn-sm" id="addr-sync">Comprobar ahora</button>' : ''}</div>` : ''}
       ${guideFor_(addrs)}`;
   return topbar('Correos', cloud ? `${used} de ${plan.mailboxes} ${plan.mailboxes === 1 ? 'dirección de reenvío' : 'direcciones de reenvío'} en tu plan ${plan.name} · archivos y texto pegado sin límite` : 'Conecta tus recibos') + `
+  ${lockedPdfCard()}
   <div class="card fwd-card"><div class="fwd-head"><span class="dot green">${I.mail}</span><div><h3 style="margin:0">Conecta tu correo</h3>
     <p class="hint" style="font-size:15px;margin-top:4px">Tu correo reenvía a HorahFlow solo tus recibos y facturas. Sin contraseñas y sin acceso al resto de tus correos. Se hace una vez y tarda 2 minutos.</p></div></div>
     ${fwd}</div>
@@ -516,12 +520,79 @@ function sourcesHTML() {
   <div class="card" style="margin-top:16px;display:flex;gap:14px;align-items:flex-start"><span class="dot green">${I.shield}</span><div><b>Cómo tratamos tus correos</b><p class="hint" style="font-size:14px;margin-top:2px">Nunca te pedimos la contraseña de tu correo ni del banco. Los correos reenviados que no son un cobro se descartan al llegar; los recibos esperan en nuestro servidor de la UE solo hasta que la app los importa (como mucho 60 días). Los archivos que subes se leen en tu navegador. De cada recibo guardamos solo el fragmento con el comercio, el importe y la fecha.</p></div></div>`;
 }
 
+/** Pide la contraseña de un PDF. Se usa solo en tu navegador para abrirlo; no se guarda ni se envía. */
+function askPdfPassword(name, attempt) {
+  return new Promise(res => {
+    let done = false; const fin = v => { if (!done) { done = true; res(v); } };
+    const close = modal(`<h2>Este PDF tiene contraseña</h2>
+      <p class="hint" style="margin:6px 0 14px">«${esc(name)}». ${attempt ? '<b style="color:var(--red,#b42318)">La contraseña no es correcta.</b> ' : ''}Bancos y financieras suelen usar tu DNI o NIE. La contraseña se usa solo en tu navegador para abrir el archivo: no se guarda ni se envía.</p>
+      <input class="input" type="password" id="pdfpw" autocomplete="off" placeholder="Contraseña del PDF">
+      <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-dark" id="pdfpw-ok">Abrir PDF</button><button class="btn btn-ghost" id="pdfpw-skip">Saltar este archivo</button></div>`, (bg, c) => {
+      const go = () => { const v = $('#pdfpw', bg).value; if (!v) return; fin(v); c(); };
+      $('#pdfpw-ok', bg).onclick = go; $('#pdfpw', bg).onkeydown = e => { if (e.key === 'Enter') go(); };
+      $('#pdfpw-skip', bg).onclick = () => { fin(null); c(); };
+      new MutationObserver((_, o) => { if (!bg.isConnected) { o.disconnect(); fin(null); } }).observe(document.body, { childList: true });
+      setTimeout(() => $('#pdfpw', bg).focus(), 50);
+    });
+  });
+}
+
+/* ---------- Cobros añadidos a mano ---------- */
+const MANUAL_CYCLES = [['monthly', 'Cada mes'], ['quarterly', 'Cada 3 meses'], ['yearly', 'Cada año'], ['weekly', 'Cada semana'], ['bimonthly', 'Cada 2 meses']];
+function manualModal(id) {
+  if (Auth.user.demo) { toast('Crea tu cuenta para añadir tus propios cobros'); return; }
+  const P = Data.state.prefs; P.manual = P.manual || [];
+  const m = P.manual.find(x => x.id === id) || { cycle: 'monthly', cat: 'deudas' };
+  const today = new Date(), iso = d => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+  const cats = Object.entries(E.CATS).filter(([k]) => k !== 'otros').concat([['otros', E.CATS.otros]]);
+  modal(`<h2>${m.id ? 'Editar cobro' : 'Añadir un cobro a mano'}</h2>
+    <p class="hint" style="margin:6px 0 16px">Para lo que no te llega por correo con importe: un préstamo, el alquiler, el seguro, el gimnasio… Lo sumamos a tus gastos fijos y te avisamos antes de cada cobro.</p>
+    <label class="lbl" for="mn-name">Nombre</label><input class="input" id="mn-name" maxlength="40" placeholder="Ej.: Préstamo coche, Cofidis, Alquiler" value="${esc(m.name || '')}">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+      <div><label class="lbl" for="mn-amt">Importe (€)</label><input class="input" id="mn-amt" inputmode="decimal" placeholder="111,00" value="${m.amount ? String(m.amount.toFixed(2)).replace('.', ',') : ''}"></div>
+      <div><label class="lbl" for="mn-cyc">Cada cuánto</label><select class="input" id="mn-cyc">${MANUAL_CYCLES.map(([v, l]) => `<option value="${v}" ${m.cycle === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div><label class="lbl" for="mn-date">Próximo cobro</label><input class="input" type="date" id="mn-date" value="${m.date ? iso(E.analyze([], { manual: [m] }).subs[0]?.next || new Date(m.date)) : iso(today)}"></div>
+      <div><label class="lbl" for="mn-cat">Categoría</label><select class="input" id="mn-cat">${cats.map(([k, c]) => `<option value="${k}" ${m.cat === k ? 'selected' : ''}>${c.label}</option>`).join('')}</select></div>
+    </div>
+    <div class="err" id="mn-err" style="margin-top:10px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-dark" id="mn-save">${m.id ? 'Guardar cambios' : 'Añadir cobro'}</button>${m.id ? '<button class="btn btn-ghost" id="mn-del">Borrar</button>' : ''}</div>`, (bg, close) => {
+    $('#mn-save', bg).onclick = () => {
+      const name = $('#mn-name', bg).value.trim().replace(/\s+/g, ' ');
+      const amount = Math.round(parseFloat($('#mn-amt', bg).value.replace(/\s|€/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')) * 100) / 100;
+      const date = $('#mn-date', bg).value;
+      const err = t => { $('#mn-err', bg).textContent = t; };
+      if (!name) return err('Ponle un nombre.');
+      if (!(amount > 0) || amount > 100000) return err('Escribe un importe válido, por ejemplo 111,00.');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return err('Elige la fecha del próximo cobro.');
+      const rec = { id: m.id || rid(), name, amount, cycle: $('#mn-cyc', bg).value, cat: $('#mn-cat', bg).value, date: date + 'T12:00:00' };
+      P.manual = m.id ? P.manual.map(x => x.id === m.id ? rec : x) : [...P.manual, rec].slice(-100);
+      Data.save('prefs'); close(); toast(m.id ? 'Cobro actualizado' : `${name} añadido a tus gastos fijos`); route();
+    };
+    if (m.id) $('#mn-del', bg).onclick = e => {
+      if (e.target.dataset.sure !== '1') { e.target.dataset.sure = '1'; e.target.textContent = 'Sí, borrarlo'; return; }
+      P.manual = P.manual.filter(x => x.id !== m.id); Data.save('prefs'); close(); toast('Cobro borrado'); route();
+    };
+    setTimeout(() => $('#mn-name', bg).focus(), 50);
+  });
+}
+
+function lockedPdfCard() {
+  const L = Data.state.prefs.pdfLocked || [];
+  if (!L.length) return '';
+  return `<div class="card" style="margin-bottom:16px;border-color:#f2c48d;background:#fff8ef"><div style="display:flex;gap:14px;align-items:flex-start"><span class="dot amber">${I.lock || I.shield}</span><div style="flex:1">
+    <b>${L.length === 1 ? 'Hay un PDF con contraseña que no hemos podido abrir' : `Hay ${L.length} PDF con contraseña que no hemos podido abrir`}</b>
+    <p class="hint" style="font-size:14px;margin:4px 0 8px">Bancos y financieras protegen sus extractos con contraseña (normalmente tu DNI). Descárgalo de tu correo y súbelo aquí: te pediremos la contraseña y lo abriremos en tu navegador, sin guardarla. Si prefieres, añade el cobro a mano.</p>
+    <ul class="hint" style="font-size:14px;margin:0 0 10px 18px">${L.slice(0, 5).map(x => `<li><b>${esc(x.from || 'Remitente')}</b> · ${esc(x.subject)}${x.files && x.files.length ? ` <span class="hint">(${esc(x.files.join(', '))})</span>` : ''} · ${fmtDate(new Date(x.date))}</li>`).join('')}</ul>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="btn btn-dark btn-sm" for="c-file" style="cursor:pointer">Subir el PDF</label><button class="btn btn-ghost btn-sm" data-manual-new>Añadir el cobro a mano</button><button class="btn btn-ghost btn-sm" id="locked-clear">Quitar aviso</button></div>
+  </div></div></div>`;
+}
+
 function progressModal(title) {
   let setP;
   const close = modal(`<h2>${title}</h2><p class="hint" id="pm-t" style="margin:8px 0 14px">Preparando…</p><div class="progress" style="width:100%"><i id="pm-b"></i></div>`, bg => {
     setP = (done, total, txt) => { $('#pm-t', bg).textContent = txt + (total ? ` ${done}/${total}` : ''); $('#pm-b', bg).style.width = (total ? done / total * 100 : 15) + '%'; };
   });
-  return { set: (...x) => setP(...x), close };
+  return { set: (...x) => setP(...x), close, hide: h => { const m = [...document.querySelectorAll('.modal-bg')].find(b => b.querySelector('#pm-b')); if (m) m.style.display = h ? 'none' : ''; } };
 }
 
 async function handleFiles(files) {
@@ -531,12 +602,14 @@ async function handleFiles(files) {
   const pm = progressModal('Leyendo archivos');
   try {
     pm.set(0, 0, 'Analizando…');
-    const emails = await readFiles(files);
+    const emails = await readFiles(files, (name, attempt) => { pm.hide(true); return askPdfPassword(name, attempt).finally(() => pm.hide(false)); });
     const added = await Data.addEmails({ type: 'archivo', label: files.length === 1 ? files[0].name : `${files.length} archivos`, account }, emails, (d, t, txt) => pm.set(d, t, txt));
     pm.close();
     const n = emails.length, what = files.every(f => /\.pdf$/i.test(f.name)) ? (n === 1 ? 'factura' : 'facturas') : (n === 1 ? 'correo' : 'correos');
     const unread = (emails.unread || []).length ? ` · ${emails.unread.length === 1 ? `«${emails.unread[0]}» no tiene texto (parece escaneado)` : `${emails.unread.length} PDF sin texto (parecen escaneados)`}` : '';
-    toast((added ? `${added} ${added === 1 ? 'gasto encontrado' : 'gastos encontrados'} en ${n} ${what}` : n ? `No hemos encontrado gastos en ${n} ${what}` : 'No hemos podido leer estos archivos') + unread, unread ? 6000 : 3500);
+    const locked = (emails.locked || []).length ? ` · ${emails.locked.length === 1 ? `«${emails.locked[0]}» tiene contraseña y no se ha abierto` : `${emails.locked.length} PDF con contraseña sin abrir`}` : '';
+    toast((added ? `${added} ${added === 1 ? 'gasto encontrado' : 'gastos encontrados'} en ${n} ${what}` : n ? `No hemos encontrado gastos en ${n} ${what}` : 'No hemos podido leer estos archivos') + unread + locked, unread || locked ? 6500 : 3500);
+    if (added && Data.state.prefs.pdfLocked && Data.state.prefs.pdfLocked.length && files.some(isPdfFile)) { Data.state.prefs.pdfLocked = []; Data.save('prefs'); }
     if (added) location.hash = 'app'; else route();
   } catch (e) { pm.close(); toast('No se pudo leer el archivo: ' + e.message, 4000); }
 }
@@ -591,6 +664,8 @@ function confirmModal(title, text, label, fn) {
 function bindAppView(view) {
   $('#load-demo')?.addEventListener('click', async () => { await Data.addEmails({ type: 'demo', label: 'Bandeja de ejemplo', account: 'demo@horahflow.com' }, E.demoInbox()); toast('Datos de ejemplo cargados'); location.hash = 'app'; route(); });
   $$('[data-sub]').forEach(r => r.addEventListener('click', e => { if (e.target.closest('.seg')) return; subModal(r.dataset.sub); }));
+  $$('[data-manual-new]').forEach(b => b.addEventListener('click', () => manualModal()));
+  $('#locked-clear')?.addEventListener('click', () => { Data.state.prefs.pdfLocked = []; Data.save('prefs'); route(); });
   $$('[data-usage]').forEach(seg => seg.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
     const k = seg.dataset.usage, P = Data.state.prefs; P.usage[k] = P.usage[k] === b.dataset.v ? null : b.dataset.v; Data.save('prefs');

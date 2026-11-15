@@ -288,7 +288,7 @@ function plansHTML() {
     <a class="btn btn-ghost btn-block" href="#registro">Empezar gratis</a></div>
   <div class="plan pop"><span class="tag">Más elegido</span><h3>Pro</h3><p class="desc">Para que HorahFlow vigile por ti y te avise antes de pagar.</p>
     <div class="price num">${p.pro} €</div><div class="per">${per}</div>
-    <ul>${li(['Hasta 5 correos con reenvío automático', '<b>Aviso por email</b> antes de cada cobro', 'Alerta por email de duplicados, subidas y pruebas que pasan a pago', 'Resumen mensual por email', 'Exportar a CSV / Excel', 'Flow: 300 preguntas al día', '<b>24 meses</b> de historial: importa y analiza tus recibos de los últimos 2 años'])}</ul>
+    <ul>${li(['Hasta 5 correos con reenvío automático', '<b>Aviso por email</b> antes de cada cobro', 'Alerta por email de duplicados, subidas y pruebas que pasan a pago', 'Resumen mensual por email', '<b>Lee extractos y liquidaciones en PDF</b> de bancos y financieras', 'Exportar a CSV / Excel', 'Flow: 300 preguntas al día', '<b>24 meses</b> de historial: importa y analiza tus recibos de los últimos 2 años'])}</ul>
     <button class="btn btn-dark btn-block" data-buy="pro">Pasar a Pro</button></div>
   <div class="plan"><h3>Empresas</h3><p class="desc">Para autónomos y pymes con muchos correos y gastos de empresa.</p>
     <div class="price num">${p.biz} €</div><div class="per">${per}</div>

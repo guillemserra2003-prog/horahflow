@@ -25,11 +25,12 @@ async function secret(name: string): Promise<string | undefined> {
 const b64 = (b: Uint8Array) => { let s = ""; for (let i = 0; i < b.length; i += 32768) s += String.fromCharCode(...b.subarray(i, i + 32768)); return btoa(s); };
 // Un PDF merece la pena leerlo si el correo parece un recibo o el archivo se llama como una factura
 const invoiceName = (n: string) => /factura|invoice|recibo|receipt|ticket|justificante|comprobante|pedido|order|bill/i.test(n || "");
+// Plan Pro: se leen todos los PDF adjuntos (extractos, liquidaciones, cuotas…) cuando el correo no trae el importe
 
-/** Guarda el recibo. Si no trae importe pero sí una factura en PDF, el PDF queda en cola para «pdf-worker». */
-async function save(E: any, row: Record<string, unknown>, c: { from: string; subject: string; date: string; body: string }, pdfs: Pdf[]) {
+/** Guarda el recibo. Si no trae importe pero sí un PDF que leer, el PDF queda en cola para «pdf-worker». */
+async function save(E: any, row: Record<string, unknown>, c: { from: string; subject: string; date: string; body: string }, pdfs: Pdf[], pro = false) {
   const hasCharge = !!E.toCharge(c);
-  const wantPdf = !hasCharge && pdfs.length > 0 && (E.maybeReceipt(c) || pdfs.some((p) => invoiceName(p.name)));
+  const wantPdf = !hasCharge && pdfs.length > 0 && (pro || E.maybeReceipt(c) || pdfs.some((p) => invoiceName(p.name)));
   if (!hasCharge && !wantPdf && !E.maybeReceipt(c)) return "skip";
   const { data, error } = await db.from("inbound_emails").insert({ ...row, pdf_pending: wantPdf }).select("id").single();
   if (error) return error.code === "23505" ? "dup" : (console.error(error), "error");
@@ -91,6 +92,7 @@ Deno.serve(async (req) => {
     const lim = LIMIT[prof?.plan || "free"] ?? 1;
     const { data: allowed } = await db.from("inbound_addresses").select("id").eq("user_id", addr.user_id).order("created_at").limit(lim);
     if (!(allowed || []).some((a: { id: string }) => a.id === addr.id)) { results.push({ token, ignored: "fuera del plan" }); continue; }
+    const pro = (prof?.plan || "free") !== "free";
 
     // Correo de confirmación de reenvío de Gmail: se muestra el código en la app
     const v = gmailVerification(from, subject, text);
@@ -129,7 +131,7 @@ Deno.serve(async (req) => {
           const r = await save(E, {
             user_id: addr.user_id, address_id: addr.id, resend_id: `${emailId}:${token}:${att.id}`,
             from_addr: c.from.slice(0, 300), subject: c.subject.slice(0, 500), received_at: c.date, body: body.slice(0, 8000),
-          }, c, e.pdfs);
+          }, c, e.pdfs, pro && pdf < 25); // tope por llamada: el límite de CPU es de 2 s
           if (r === "stored") stored++;
           else if (r === "queued") { stored++; pdf++; }
           else if (r !== "dup") skipped++;
@@ -154,7 +156,7 @@ Deno.serve(async (req) => {
         try { const dl = await fetch(a.download_url); if (dl.ok) pdfs.push({ name: String(a.filename || "factura.pdf"), bytes: new Uint8Array(await dl.arrayBuffer()) }); } catch (err) { console.error("pdf dl", err); }
       }
     }
-    if (!E.toCharge(candidate) && !E.maybeReceipt(candidate) && !pdfs.some((p) => invoiceName(p.name))) { results.push({ token, ignored: "no parece un cobro" }); continue; }
+    if (!E.toCharge(candidate) && !E.maybeReceipt(candidate) && !pdfs.some((p) => invoiceName(p.name)) && !(pro && pdfs.length)) { results.push({ token, ignored: "no parece un cobro" }); continue; }
 
     const { count } = await db.from("inbound_emails").select("id", { count: "exact", head: true }).eq("user_id", addr.user_id);
     if ((count ?? 0) >= 3000) { results.push({ token, ignored: "cola llena" }); continue; }
@@ -162,7 +164,7 @@ Deno.serve(async (req) => {
     const r = await save(E, {
       user_id: addr.user_id, address_id: addr.id, resend_id: `${emailId}:${token}`,
       from_addr: m.from.slice(0, 300), subject: m.subject.slice(0, 500), received_at: m.date.toISOString(), body: m.body.slice(0, 8000),
-    }, candidate, pdfs);
+    }, candidate, pdfs, pro);
     if (r === "error") return json({ error: "db" }, 500);
     if (r === "queued") queued++;
     if (r === "stored" || r === "queued") await db.rpc("inbound_touch", { a: addr.id });

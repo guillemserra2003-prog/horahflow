@@ -73,7 +73,7 @@ async function processUser(E: any, apiKey: string, p: any, now: Date, opts: { dr
   const cutoff = new Date(now); cutoff.setMonth(cutoff.getMonth() - (HISTORY[p.plan] || 24));
   // deno-lint-ignore no-explicit-any
   const emails = [...stored, ...extra].filter((e: any) => new Date(e.date) >= cutoff);
-  if (!emails.length) return { skipped: "sin recibos" };
+  if (!emails.length && !(prefs.manual || []).length) return { skipped: "sin recibos" };
   const a = E.analyze(emails, prefs, now);
   const today = dayStart(now);
   const alertDays = Math.max(1, Math.min(14, Number(prefs.alertDays) || 3));

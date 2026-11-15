@@ -48,8 +48,14 @@ Deno.serve(async (req) => {
     for (const p of pdfs as any[]) {
       try {
         const t = await pdfText(fromB64(String(p.data)));
-        if (t) texts.push(pdfs.length > 1 ? `[${p.filename}]\n${t}` : t);
-      } catch (err) { console.error("pdf", p.filename, String(err).slice(0, 200)); }
+        // Con varios PDF (p. ej. extracto + liquidación), cada uno tiene su parte del espacio
+        const cut = t.slice(0, Math.floor(3900 / pdfs.length));
+        if (t) texts.push(pdfs.length > 1 ? `[${p.filename}]\n${cut}` : cut);
+      } catch (err: any) {
+        // PDF con contraseña: se avisa en la app para que el usuario lo suba y lo abra en su navegador
+        if (err?.name === "PasswordException" || /password/i.test(String(err?.message || ""))) texts.push(`[${p.filename}] PDF protegido con contraseña`);
+        else console.error("pdf", p.filename, String(err).slice(0, 200));
+      }
     }
     await release(emailId, texts.join("\n\n").slice(0, 4000));
     texts.length ? done++ : failed++;
