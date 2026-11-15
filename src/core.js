@@ -265,13 +265,15 @@ const Data = {
     const src = existing || Object.assign({ id: rid(), added: Date.now() }, source);
     if (!existing) this.state.sources.push(src);
     src.updated = Date.now();
-    const seen = new Set(this.state.emails.map(e => (e.id || '') + '|' + e.subject + '|' + e.date));
-    let added = 0, aiAdded = 0;
+    // Un correo ya guardado no se vuelve a añadir aunque llegue de nuevo (otro reenvío, otro archivo): mismo remitente, asunto y minuto
+    const same = e => [String(e.from || '').toLowerCase().match(/[^<\s]+@[^>\s]+/)?.[0] || String(e.from || '').toLowerCase().trim(), String(e.subject || '').trim().toLowerCase(), Math.floor(new Date(e.date).getTime() / 60000)].join('|');
+    const seen = new Set(this.state.emails.flatMap(e => [(e.id || '') + '|' + e.subject + '|' + e.date, same(e)]));
+    let added = 0, aiAdded = 0, dupes = 0;
     const doubtful = [];
     for (const e of emails) {
       const m = { id: e.id, from: e.from, subject: e.subject, date: e.date, body: receiptSnippet(e.body), source: src.type, sourceId: src.id, account: source.account || '' };
       const k = (m.id || '') + '|' + m.subject + '|' + m.date;
-      if (seen.has(k)) continue; seen.add(k);
+      if (seen.has(k) || seen.has(same(m))) { dupes++; continue; } seen.add(k); seen.add(same(m));
       // Solo se guardan correos que parecen gastos: nunca el buzón completo
       const c = E.toCharge(Object.assign({}, m, { body: e.body }));
       if (c) {

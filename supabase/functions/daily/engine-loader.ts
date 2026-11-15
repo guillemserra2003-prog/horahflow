@@ -2,7 +2,7 @@
 // Si el archivo de la web cambia, hay que actualizar ENGINE_SHA256 y volver a desplegar (ver README.md).
 export const ENGINE_URL = "https://horahflow.com/server/engine.js";
 // Se aceptan la versión nueva y la anterior, para que el cambio de la web no deje la función sin motor ni un minuto
-export const ENGINE_SHA256 = ["0f855bf87fcd3c5a2a32ed320decc89034effd949977d0acdb0a858aa4320159", "1eb3bde96a71840181686930b8a5a55525dd71fe3b8a32dc8bff0f33d9f67804"];
+export const ENGINE_SHA256 = ["05e5e6e9d48feea3cf8cb364f9e9059490e379702edefe7f4a371b28e156a454", "0f855bf87fcd3c5a2a32ed320decc89034effd949977d0acdb0a858aa4320159"];
 // deno-lint-ignore no-explicit-any
 let cached: any = null;
 // deno-lint-ignore no-explicit-any

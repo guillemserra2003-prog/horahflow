@@ -36,3 +36,12 @@ test('cobros añadidos a mano: próxima fecha, mensual y sin historial', () => {
   assert.equal(s['manual-b'].status, 'cancelada'); assert.equal(s['manual-b'].monthly, 20);
   assert.equal(a.totals.monthlyRec, 210.5);
 });
+
+test('el mismo correo reenviado otra vez no se cuenta dos veces ni sale como cobro duplicado', () => {
+  const mk = (id, d) => ({ id, from: 'Spotify <no-reply@spotify.com>', subject: 'Tu recibo de Spotify', date: d, body: 'Spotify Premium Individual. Total: 11,99 €.' });
+  const a = E.analyze([mk('a:1', '2026-09-05T10:00:00Z'), mk('a:2', '2026-10-05T10:00:00Z'), mk('b:1', '2026-09-05T10:00:00Z'), mk('b:2', '2026-10-05T10:00:30Z')], {}, new Date('2026-11-15'));
+  assert.equal(a.subs[0].count, 2); assert.equal(a.leaks.filter(l => l.type === 'duplicado').length, 0);
+  // Un cobro doble de verdad (otra hora) sí se avisa
+  const b = E.analyze([mk('a:1', '2026-09-05T10:00:00Z'), mk('a:2', '2026-10-05T10:00:00Z'), mk('a:3', '2026-10-05T18:40:00Z')], {}, new Date('2026-11-15'));
+  assert.ok(b.leaks.some(l => l.type === 'duplicado'));
+});

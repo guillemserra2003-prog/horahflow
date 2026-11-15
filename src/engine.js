@@ -377,6 +377,11 @@
       const sig = (e.id || '') + '|' + (e.subject || '') + '|' + e.date;
       if (seen.has(sig)) continue; seen.add(sig);
       const c = toCharge(e);
+      // El mismo correo reenviado otra vez (llega con otro id): mismo comercio, importe, asunto y minuto → se cuenta una vez
+      if (c) {
+        const same = [c.key, c.currency, c.original, Math.floor(new Date(e.date).getTime() / 60000), String(e.subject || '').trim().toLowerCase()].join('|');
+        if (seen.has(same)) continue; seen.add(same);
+      }
       if (c && c.trialOnly) trials[c.key] = c.date;
       else if (c) charges.push(c);
     }
