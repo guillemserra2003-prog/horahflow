@@ -313,7 +313,7 @@ function calendarHTML(a) {
   const lbl = calMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), label = lbl.charAt(0).toUpperCase() + lbl.slice(1);
   const up = a.upcoming;
   return topbar('Calendario de cobros', 'Cuándo te cobra cada suscripción y qué has comprado cada día', `<button class="btn btn-ghost btn-sm" id="cal-prev" aria-label="Mes anterior">←</button><b style="min-width:140px;text-align:center">${label}</b><button class="btn btn-ghost btn-sm" id="cal-next" aria-label="Mes siguiente">→</button>`) + `
-  <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+  <div class="kpis k3">
     <div class="card kpi"><div class="l">Recurrentes este mes</div><div class="v num">${fmt(monthTotal)}</div>${monthOne ? `<div class="s">+ ${fmt(monthOne)} en compras y pagos puntuales</div>` : ''}</div>
     <div class="card kpi"><div class="l">Próximos 7 días</div><div class="v num">${fmt(up.filter(s => (s.next - now) / 864e5 <= 7).reduce((x, s) => x + s.amount, 0))}</div></div>
     <div class="card kpi"><div class="l">Próximos 30 días</div><div class="v num">${fmt(up.reduce((x, s) => x + s.amount, 0))}</div></div>
@@ -376,7 +376,7 @@ function txHTML(a) {
     <select class="input" id="tf-cat"><option value="">Todas las categorías</option>${cats.map(c => `<option value="${c}" ${f.cat === c ? 'selected' : ''}>${E.CATS[c].label}</option>`).join('')}</select>
     <select class="input" id="tf-kind">${[['', 'Todos los tipos'], ['Suscripción', 'Suscripciones'], ['Compra', 'Compras'], ['Factura', 'Facturas'], ['Préstamo', 'Préstamos'], ['Puntual', 'Otros puntuales']].map(([v, l]) => `<option value="${v}" ${f.kind === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
   <div class="card" style="padding:12px 10px"><table class="table"><thead><tr><th>Fecha</th><th>Comercio</th><th class="hide-m">Categoría</th><th class="hide-m">Tipo</th><th class="right">Importe</th></tr></thead><tbody>
-  ${tx.slice(0, 300).map(c => `<tr><td class="num" style="white-space:nowrap">${new Date(c.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}</td><td><b>${esc(c.merchant)}</b><div class="hint" style="font-size:12px;max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.subject)}</div></td><td class="hide-m">${E.CATS[c.cat].label}</td><td class="hide-m"><span class="chip ${c.kind === 'Suscripción' ? '' : c.kind === 'Préstamo' ? 'amber' : 'green'}">${c.kind}</span></td><td class="right"><b class="num">${fmt(c.amount)}</b></td></tr>`).join('')}
+  ${tx.slice(0, 300).map(c => `<tr><td class="num" style="white-space:nowrap">${new Date(c.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}</td><td><b>${esc(c.merchant)}</b><div class="hint" style="font-size:12px;max-width:min(340px,34vw);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.subject)}</div></td><td class="hide-m">${E.CATS[c.cat].label}</td><td class="hide-m"><span class="chip ${c.kind === 'Suscripción' ? '' : c.kind === 'Préstamo' ? 'amber' : 'green'}">${c.kind}</span></td><td class="right"><b class="num">${fmt(c.amount)}</b></td></tr>`).join('')}
   </tbody></table>${tx.length > 300 ? `<p class="hint" style="padding:12px">Mostrando 300 de ${tx.length}. Exporta para verlos todos.</p>` : ''}</div>`;
 }
 function exportCSV() {

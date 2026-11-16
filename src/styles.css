@@ -623,3 +623,16 @@ textarea.input{height:auto;min-height:150px;padding:12px 14px;resize:vertical;fo
 .manual-cta{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:14px;padding:14px 18px;border:1px dashed var(--line-2,#d9d7e0);border-radius:14px;background:var(--bg-2,#fafafb)}
 .manual-cta b{display:block}.manual-cta .hint{font-size:14px}
 .lbl{display:block;font-size:13px;font-weight:700;color:var(--muted,#667);margin:0 0 5px}
+
+/* Móvil: nada puede ser más ancho que la pantalla */
+@media (max-width:900px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi{min-width:0}
+  .kpi .v{font-size:clamp(18px,5.6vw,30px);white-space:nowrap}
+  .table td,.table th{overflow-wrap:anywhere}
+  .table .num,.table td.right,.num{white-space:nowrap;overflow-wrap:normal}
+  .grid-2b>*,.grid-2>*{min-width:0}
+}
+.kpis.k3{grid-template-columns:repeat(3,1fr)}
+@media (max-width:900px){.kpis.k3{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis.k3>:last-child{grid-column:1/-1}}
+@media (max-width:600px){.cal{grid-template-columns:repeat(7,minmax(0,1fr))}.cal .h{padding:8px 2px;text-align:center;font-size:10px;letter-spacing:0}.cal .d{padding:4px 3px;min-height:76px}.cal .ev{font-size:10px;padding:2px 3px;justify-content:center}.cal .ev>span{display:none}.cal .tot{font-size:10px}}
