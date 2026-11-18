@@ -297,7 +297,12 @@ textarea.input{height:auto;min-height:150px;padding:12px 14px;resize:vertical;fo
 .cal .dn{font-weight:700;color:var(--muted);font-size:13px}
 .cal .ev{background:var(--soft-2);border-radius:6px;padding:3px 6px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;gap:4px;white-space:nowrap;overflow:hidden}
 .cal .ev.big{background:var(--red-soft);color:var(--red)}
-.cal .ev.one{background:#fff;border:1px dashed var(--line-2);color:var(--muted);font-weight:600}
+.cal .ev.one{background:#EEF3FF;border:1px dashed #B7C8F2;color:#3454A8;font-weight:600}
+.cal-legend{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:12px;font-size:13px;color:var(--muted);font-weight:600}
+.cal-legend span{display:inline-flex;align-items:center;gap:6px}
+.cal-legend i{width:14px;height:10px;border-radius:3px;display:inline-block}
+.cal-legend .lg-sub{background:var(--soft-2)}.cal-legend .lg-big{background:var(--red-soft)}.cal-legend .lg-one{background:#EEF3FF;border:1px dashed #B7C8F2}
+.cal-legend .hint{font-weight:500}
 .cal .ev span{overflow:hidden;text-overflow:ellipsis}
 .cal .tot{margin-top:auto;font-size:11px;color:var(--faint);font-weight:700}
 

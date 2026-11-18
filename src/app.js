@@ -60,7 +60,7 @@ const Tour = {
     { t: 'Bienvenido a HorahFlow', p: 'Te enseñamos en 1 minuto qué hace cada apartado. Puedes saltarlo cuando quieras y volver a verlo desde Ajustes.' },
     { h: 'app', t: 'Resumen', p: 'Tu foto general: cuánto pagas al mes y al año, tu nota de salud financiera y las fugas más importantes que hemos encontrado.' },
     { h: 'app-suscripciones', t: 'Suscripciones', p: 'Todo lo que se renueva solo. Toca cualquiera para ver su historial de precios, marcarla como cancelada o ver cómo darte de baja.' },
-    { h: 'app-calendario', t: 'Calendario', p: 'Qué día te cobra cada servicio. Así decides a tiempo si lo cancelas antes de la próxima renovación.' },
+    { h: 'app-calendario', t: 'Calendario', p: 'Todo lo que gastas, día a día: tus suscripciones y también las compras y pedidos sueltos. Así ves el total del mes y decides a tiempo qué cancelar antes de la próxima renovación.' },
     { h: 'app-ahorro', t: 'Ahorro', p: 'Cuánto puedes ahorrar y cómo: alternativas gratis o más baratas y un plan de ahorro hecho por IA a partir de tus gastos.' },
     { h: 'app-gastos', t: 'Gastos', p: 'Cada cobro detectado en tus recibos, con buscador y filtros. En los planes de pago puedes exportarlo a CSV.' },
     { h: 'app-correos', t: 'Correos', p: 'Aquí creas tu dirección privada de reenvío: configúrala una vez en tu correo y tus recibos llegan solos. También puedes subir archivos o pegar recibos.' },
@@ -304,22 +304,24 @@ function calendarHTML(a) {
   for (let i = 0; i < start; i++) cells.push(`<div class="d out"></div>`);
   let monthTotal = 0, monthOne = 0;
   for (let d = 1; d <= days; d++) {
-    const ev = events[d] || []; const tot = ev.reduce((x, e) => x + e.amount, 0);
+    // Las suscripciones primero (son lo principal); los pagos únicos detrás
+    const ev = (events[d] || []).sort((x, y) => (x.one ? 1 : 0) - (y.one ? 1 : 0) || y.amount - x.amount); const tot = ev.reduce((x, e) => x + e.amount, 0);
     monthTotal += ev.filter(e => !e.one).reduce((x, e) => x + e.amount, 0); monthOne += ev.filter(e => e.one).reduce((x, e) => x + e.amount, 0);
     const today = d === now.getDate() && m === now.getMonth() && y === now.getFullYear();
-    cells.push(`<div class="d ${today ? 'today' : ''}"><span class="dn">${d}</span>${ev.slice(0, 3).map(e => `<div class="ev ${e.one ? 'one' : e.amount >= 40 ? 'big' : ''}" style="${e.past && !e.one ? 'opacity:.55' : ''}" title="${esc(e.name)} · ${fmt(e.amount)}"><span>${esc(e.name)}</span><b class="num">${Math.round(e.amount)}€</b></div>`).join('')}${ev.length > 3 ? `<span class="hint" style="font-size:11px">+${ev.length - 3} más</span>` : ''}${tot ? `<span class="tot num">${fmt(tot)}</span>` : ''}</div>`);
+    cells.push(`<div class="d ${today ? 'today' : ''}"><span class="dn">${d}</span>${ev.slice(0, 3).map(e => `<div class="ev ${e.one ? 'one' : e.amount >= 40 ? 'big' : ''}" style="${e.past && !e.one ? 'opacity:.55' : ''}" title="${esc(e.name)} · ${fmt(e.amount)} · ${e.one ? 'pago único' : 'suscripción'}"><span>${esc(e.name)}</span><b class="num">${Math.round(e.amount)}€</b></div>`).join('')}${ev.length > 3 ? `<span class="hint" style="font-size:11px">+${ev.length - 3} más</span>` : ''}${tot ? `<span class="tot num">${fmt(tot)}</span>` : ''}</div>`);
   }
   while (cells.length % 7) cells.push(`<div class="d out"></div>`);
   const lbl = calMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), label = lbl.charAt(0).toUpperCase() + lbl.slice(1);
   const up = a.upcoming;
-  return topbar('Calendario de cobros', 'Cuándo te cobra cada suscripción y qué has comprado cada día', `<button class="btn btn-ghost btn-sm" id="cal-prev" aria-label="Mes anterior">←</button><b style="min-width:140px;text-align:center">${label}</b><button class="btn btn-ghost btn-sm" id="cal-next" aria-label="Mes siguiente">→</button>`) + `
+  const mName = calMonth.toLocaleDateString('es-ES', { month: 'long' });
+  return topbar('Calendario de gastos', 'Tus suscripciones y todo lo que compras, día a día', `<button class="btn btn-ghost btn-sm" id="cal-prev" aria-label="Mes anterior">←</button><b style="min-width:140px;text-align:center">${label}</b><button class="btn btn-ghost btn-sm" id="cal-next" aria-label="Mes siguiente">→</button>`) + `
   <div class="kpis k3">
-    <div class="card kpi"><div class="l">Recurrentes este mes</div><div class="v num">${fmt(monthTotal)}</div>${monthOne ? `<div class="s">+ ${fmt(monthOne)} en compras y pagos puntuales</div>` : ''}</div>
+    <div class="card kpi"><div class="l">Total de ${mName}</div><div class="v num">${fmt(monthTotal + monthOne)}</div><div class="s">${fmt(monthTotal)} en suscripciones · ${fmt(monthOne)} en pagos únicos</div></div>
     <div class="card kpi"><div class="l">Próximos 7 días</div><div class="v num">${fmt(up.filter(s => (s.next - now) / 864e5 <= 7).reduce((x, s) => x + s.amount, 0))}</div></div>
     <div class="card kpi"><div class="l">Próximos 30 días</div><div class="v num">${fmt(up.reduce((x, s) => x + s.amount, 0))}</div></div>
   </div>
   <div class="cal">${['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => `<div class="h">${d}</div>`).join('')}${cells.join('')}</div>
-  <p class="hint" style="margin-top:10px">Los cobros pasados aparecen atenuados. En rojo, los de 40 € o más.</p>`;
+  <div class="cal-legend"><span><i class="lg-sub"></i>Suscripción</span><span><i class="lg-big"></i>Suscripción de 40 € o más</span><span><i class="lg-one"></i>Pago único (compras, pedidos…)</span><span class="hint">Los cobros ya pasados se ven más claros.</span></div>`;
 }
 function addCyc(d, c) { const r = new Date(d); if (c === 'yearly') r.setFullYear(r.getFullYear() + 1); else if (c === 'quarterly') r.setMonth(r.getMonth() + 3); else if (c === 'bimonthly') r.setMonth(r.getMonth() + 2); else if (c === 'weekly') r.setDate(r.getDate() + 7); else r.setMonth(r.getMonth() + 1); return r; }
 
