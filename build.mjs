@@ -58,10 +58,13 @@ function imgTag(src, alt, eager) {
 
 /* ---------- markdown mínimo ---------- */
 function inline(s) {
+  // El código va primero y se aparta: un «GOOGLE *» dentro de `...` no debe abrir cursivas.
+  const codes = [];
   return esc(s)
+    .replace(/`(.+?)`/g, (m, c) => `\u0000${codes.push(c) - 1}\u0000`)
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, "<code>$1</code>")
+    .replace(/\*(?!\s)(.+?)(?<!\s)\*/g, "<em>$1</em>")
+    .replace(/\u0000(\d+)\u0000/g, (m, i) => `<code>${codes[i]}</code>`)
     .replace(/\[(.+?)\]\((.+?)\)/g, (m, t, u) => {
       const ext = /^https?:\/\//.test(u) && !u.startsWith(SITE);
       return `<a href="${u}"${ext ? ' target="_blank" rel="noopener"' : ""}>${t}</a>`;

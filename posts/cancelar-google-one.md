@@ -59,7 +59,7 @@ Los 15 GB gratis se comparten entre **Gmail, Google Fotos y Google Drive**. Si a
 
 ## Si no reconoces el cargo de Google
 
-Un cargo `GOOGLE *` puede ser Google One, YouTube Premium o cualquier app de Google Play. Tienes cómo saber cuál es en la guía sobre [el cargo GOOGLE * y las suscripciones de Google Play](/blog/cargo-google-play/).
+Un cargo `GOOGLE *` puede ser Google One, YouTube Premium o cualquier app de Google Play. Tienes cómo saber cuál es en nuestra [guía sobre los cargos de Google Play](/blog/cargo-google-play/).
 
 ## No pagues espacio dos veces
 
