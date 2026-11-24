@@ -1,7 +1,8 @@
 ---
 title: "Cargo «APPLE.COM/BILL» en la tarjeta: qué es y cómo cancelarlo"
-seoTitle: "APPLE.COM/BILL en el banco: qué es, cómo saber qué te cobran y cancelarlo"
-description: Qué significa el cargo APPLE.COM/BILL en tu extracto, cómo ver exactamente qué te ha cobrado Apple, cómo cancelar la suscripción desde el iPhone o el Mac y cómo pedir un reembolso.
+seoTitle: "APPLE.COM/BILL en tu banco: qué es y cómo cancelarlo (2026)"
+description: APPLE.COM/BILL es el nombre con el que Apple cobra tus suscripciones y compras (iCloud, Apple Music, apps). Mira qué es cada importe, cómo cancelarlo en el iPhone y cómo pedir el reembolso.
+updated: 2026-11-24
 date: 2026-11-15
 tag: Guías
 image: /blog/img/cargo-apple-com-bill.webp
@@ -12,6 +13,13 @@ short: Cargo APPLE.COM/BILL
 
 Miras el extracto del banco y ves un cargo de 2,99 €, 9,99 € o 14,99 € a nombre de `APPLE.COM/BILL`. No has comprado nada en la Apple Store, así que, ¿qué es? Casi siempre es una suscripción que pagas con tu cuenta de Apple: más espacio en iCloud, Apple Music o una app que se renueva sola. Te explicamos cómo averiguar qué es exactamente y cómo cortarlo.
 
+::: resumen
+`APPLE.COM/BILL` (o `apple.com bill`) **no es un fraude**: es el nombre con el que Apple cobra lo que pagas con tu cuenta de Apple.
+- **Para saber qué es:** entra en reportaproblem.apple.com y búscalo por fecha e importe.
+- **Para cancelarlo:** en el iPhone, Ajustes › tu nombre › Suscripciones.
+- **Para recuperar el dinero:** pide el reembolso en reportaproblem.apple.com.
+:::
+
 ## Qué es el cargo APPLE.COM/BILL
 
 Es el nombre con el que Apple aparece en tu banco cuando te cobra algo de tu **cuenta de Apple** (el antiguo ID de Apple). Según Apple, sale cuando:
@@ -21,6 +29,19 @@ Es el nombre con el que Apple aparece en tu banco cuando te cobra algo de tu **c
 - **Un miembro de tu familia compra algo,** si tienes activado **En familia** y tu tarjeta es la que paga.
 
 A veces Apple junta varias compras en un solo cargo, así que el importe puede no coincidir con ningún precio que conozcas. A veces también aparece como `ITUNES.COM/BILL` o con algo delante, como `APPLE.COM/BILL ITUNES`.
+
+## Qué puede ser según el importe
+
+Los precios de Apple en España se repiten mucho, así que el importe ya da una pista. Lo más habitual:
+
+- **0,99 €:** iCloud+ de 50 GB. Es el cargo de Apple más común.
+- **2,99 €:** iCloud+ de 200 GB.
+- **9,99 €:** iCloud+ de 2 TB o [Apple TV](/blog/cancelar-apple-tv/).
+- **11,99 €:** Apple Music individual.
+- **19,95 €:** Apple One individual (incluye iCloud+, Music, TV y Arcade).
+- **Otros importes:** suscripciones de apps que pagas a través de Apple, como [ChatGPT Plus](/blog/cancelar-chatgpt-plus/), [Tinder](/blog/cancelar-tinder/) o [Duolingo](/blog/cancelar-duolingo/), o compras sueltas de apps y juegos.
+
+Si el importe es raro, puede que Apple haya juntado varias compras en un solo cargo. Para salir de dudas, mira el historial, como te contamos ahora.
 
 ## Cómo saber exactamente qué te ha cobrado
 
@@ -44,7 +65,7 @@ Si al abrir una suscripción no hay botón de cancelar y ves un texto en rojo co
 
 **En el Mac:** abre la App Store, haz clic en tu nombre, luego en **Ajustes de la cuenta**, baja hasta **Suscripciones** y pulsa **Gestionar**.
 
-**El espacio de iCloud** se cambia desde otro sitio: Ajustes › tu nombre › iCloud › Gestionar almacenamiento › Cambiar plan, y eliges la opción gratuita.
+**El espacio de iCloud** se cambia desde otro sitio: Ajustes › tu nombre › iCloud › Gestionar almacenamiento › Cambiar plan, y eliges la opción gratuita. Tienes los pasos y qué pasa con tus fotos en la guía de [cancelar iCloud+](/blog/cancelar-icloud/).
 
 En la guía para [ver y cancelar las suscripciones del móvil](/blog/cancelar-suscripciones-movil/) también tienes los pasos para Android.
 
@@ -83,6 +104,14 @@ HorahFlow lee los recibos que Apple te manda por correo y te muestra qué hay de
 ### ¿APPLE.COM/BILL es un fraude?
 
 Normalmente no: es el nombre real con el que Apple cobra. Pero si no encuentras el cargo en el historial de ninguna de tus cuentas de Apple, trátalo como sospechoso y habla con tu banco.
+
+### ¿Qué es un cargo de 0,99 € de APPLE.COM/BILL?
+
+Casi siempre es iCloud+ de 50 GB, el espacio extra de iCloud. Compruébalo en Ajustes › tu nombre › iCloud.
+
+### ¿APPLE.COM/BILL e ITUNES.COM/BILL son lo mismo?
+
+Sí. ITUNES.COM/BILL es el nombre antiguo con el que Apple cobraba, y algunos bancos todavía lo muestran así.
 
 ### ¿Por qué me cobra Apple si no tengo iPhone?
 

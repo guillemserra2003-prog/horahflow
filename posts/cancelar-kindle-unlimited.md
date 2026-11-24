@@ -1,7 +1,8 @@
 ---
 title: "Cómo cancelar Kindle Unlimited (y qué pasa con los libros que tienes prestados)"
-seoTitle: "Cancelar Kindle Unlimited: pasos en Amazon, prueba gratis y qué pasa con tus libros"
-description: Cómo cancelar Kindle Unlimited en Amazon España desde el ordenador o el móvil, por qué no se puede desde la app de Kindle, qué pasa con los libros prestados y cómo no pagar tras la prueba gratis.
+seoTitle: "Cancelar Kindle Unlimited en 1 minuto (y qué pasa con tus libros)"
+description: Kindle Unlimited se cancela en amazon.es › Membresías y suscripciones, no desde el Kindle. Pasos en el ordenador y el móvil, qué pasa con tus libros prestados y cómo no pagar tras la prueba gratis.
+updated: 2026-11-24
 date: 2026-11-20
 tag: Guías
 image: /blog/img/cancelar-kindle-unlimited.webp
@@ -11,6 +12,12 @@ short: Cancelar Kindle Unlimited
 ---
 
 Kindle Unlimited cuesta **9,99 € al mes** en España: casi 120 € al año. Es muy fácil acabar pagándolo sin usarlo: llega con un Kindle nuevo, con una prueba gratis o con una oferta de meses gratis, y se renueva solo. Te explicamos cómo cancelarlo y qué pasa con tus libros.
+
+::: resumen
+- **Dónde:** amazon.es › Cuenta y listas › Membresías y suscripciones › Kindle Unlimited › Cancelar. **No se puede desde el Kindle** ni desde la app de Kindle.
+- **Cuándo deja de cobrar:** al final del mes pagado. Hasta entonces sigues leyendo.
+- **Tus libros:** los prestados de Kindle Unlimited se quitan al terminar; los que compraste son tuyos.
+:::
 
 ## Cómo cancelar Kindle Unlimited
 
@@ -24,6 +31,15 @@ Kindle Unlimited cuesta **9,99 € al mes** en España: casi 120 € al año. Es
 Amazon te puede ofrecer un precio rebajado para que te quedes. Si no te interesa, sigue hasta el final.
 
 **Truco:** desde la app de Amazon también se puede, en **Tú** › **Tu cuenta** › **Membresías y suscripciones**.
+
+## Cómo cancelarlo desde el móvil, paso a paso
+
+1. Abre la **app de Amazon** (la de compras, no la de Kindle).
+2. Toca el icono de tu perfil (**Tú**) y luego **Tu cuenta**.
+3. Baja hasta **Membresías y suscripciones**.
+4. Toca **Kindle Unlimited** › **Cancelar la suscripción** y confirma.
+
+Si en Membresías y suscripciones no aparece Kindle Unlimited, puede que lo tengas en otra cuenta de Amazon (por ejemplo, la de alguien de casa con tu tarjeta) o que lo pagues a través de Apple si te diste de alta desde un iPhone. En ese caso: Ajustes › tu nombre › **Suscripciones**.
 
 ## Qué pasa con tus libros al cancelar
 
@@ -45,7 +61,7 @@ Kindle Unlimited suele venir con una prueba gratis o con ofertas de varios meses
 
 Haz esta cuenta: ¿cuántos libros de Kindle Unlimited has leído en los últimos tres meses? Si son menos de uno al mes, probablemente te sale más barato comprar los que quieras leer. Y para leer gratis está **eBiblio**, el préstamo de libros electrónicos de las bibliotecas públicas. Tienes más ideas en nuestra guía de [alternativas gratis a las suscripciones](/blog/alternativas-gratis/).
 
-Si además pagas Audible, revisa la guía de [cancelar Audible](/blog/cancelar-audible/): es fácil pagar las dos y usar solo una.
+Si además pagas Audible, revisa la guía de [cancelar Audible](/blog/cancelar-audible/): es fácil pagar las dos y usar solo una. Y si tienes más cargos de Amazon que no reconoces, mira las guías de [cancelar Amazon Music](/blog/cancelar-amazon-music/) y de los [canales de Prime Video](/blog/cancelar-canales-prime-video/).
 
 ## Si no reconoces el cargo
 
@@ -66,6 +82,10 @@ No. Se cancela en la web o la app de Amazon, en Membresías y suscripciones.
 ### ¿Pierdo los libros si cancelo?
 
 Los prestados de Kindle Unlimited, sí, cuando acaba el mes pagado. Los que compraste, no.
+
+### ¿Cómo cancelo la prueba gratis de Kindle Unlimited?
+
+Igual que la suscripción: en Membresías y suscripciones › Kindle Unlimited › Cancelar. Si lo haces el mismo día que la activas, la sigues teniendo hasta que acabe y no te cobran nada.
 
 ### ¿Kindle Unlimited va incluido en Amazon Prime?
 

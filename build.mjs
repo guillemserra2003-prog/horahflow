@@ -71,16 +71,42 @@ function inline(s) {
     });
 }
 const CTA = `<div class="cta-inline"><p>¿Cuánto se te escapa a ti? Descúbrelo en un minuto.</p><a class="btn btn-dark btn-sm" href="/#registro">Probar HorahFlow gratis</a></div>`;
+// Calculadora mini de los artículos. Precios = los de src/calculadora.html (revísalos juntos).
+// Los enlaces llevan utm_* para medir en Vercel Analytics cuánta gente pasa del blog a la app.
+const MINI_CALC = [["netflix", "Netflix", 14.99], ["spotify", "Spotify", 11.99], ["amazon-prime", "Amazon Prime", 4.99], ["disney", "Disney+", 10.99],
+  ["hbo", "HBO Max", 10.99], ["youtube", "YouTube Premium", 15.99], ["icloud", "iCloud+", 2.99], ["chatgpt", "ChatGPT Plus", 22.99],
+  ["amazon-music", "Amazon Music", 12.99], ["gimnasio", "Gimnasio", 39.9]];
+const utm = (slug, medium) => `utm_source=blog&amp;utm_medium=${medium}&amp;utm_campaign=${encodeURIComponent(slug)}`;
+const eurTxt = n => n.toFixed(2).replace(".", ",") + " €";
+const calcWidget = slug => `<div class="mcalc" data-slug="${esc(slug)}">
+<div class="mcalc-h"><b>¿Cuánto pagas tú en suscripciones?</b><span>Toca las que tienes. Sin registro y sin guardar nada.</span></div>
+<div class="mcalc-chips">${MINI_CALC.map(([k, n, pr]) => `<button type="button" data-k="${k}" data-p="${pr}" aria-pressed="false">${esc(n)} <i>${eurTxt(pr)}</i></button>`).join("")}</div>
+<div class="mcalc-res"><div><b class="mcalc-m">0 €</b><span>al mes</span></div><div><b class="mcalc-y">0 €</b><span>al año</span></div></div>
+<p class="mcalc-tip">Y faltan las que no recuerdas: las que se esconden tras <code>APPLE.COM/BILL</code>, <code>GOOGLE *</code> o <code>PAYPAL *</code>.</p>
+<div class="mcalc-act"><a class="btn btn-green btn-sm" href="/?${utm(slug, "calc")}#registro">Encuentra todas las tuyas gratis</a><a class="mcalc-full" href="/calculadora-suscripciones/?${utm(slug, "calc-full")}">Calculadora completa →</a></div>
+</div>`;
+// La calculadora mini se pinta en cada artículo: sustituye a la primera [[cta]] (o va donde ponga [[calc]]).
+const CALC_MARK = "<!--CALC-->";
 function markdown(md) {
-  const out = []; let list = null, para = [], tpl = null;
+  const out = []; let list = null, para = [], tpl = null, tldr = null, calc = /^\[\[calc\]\]$/m.test(md);
   const flushP = () => { if (para.length) { out.push(`<p>${inline(para.join(" "))}</p>`); para = []; } };
   const flushL = () => { if (list) { out.push(`<${list.t}>${list.items.map(i => `<li>${inline(i)}</li>`).join("")}</${list.t}>`); list = null; } };
   for (const raw of md.split(/\r?\n/)) {
     const line = raw.trim(); let m;
     if (tpl) { if (line === ":::") { tpl.push(...(para.length ? [para.splice(0)] : [])); out.push(`<div class="template">${tpl.map(x => `<p>${inline(x.join(" "))}</p>`).join("")}</div>`); tpl = null; } else if (!line) { if (para.length) tpl.push(para.splice(0)); } else para.push(line); continue; }
+    if (tldr) {
+      const tp = () => { if (para.length) tldr.push(`<p>${inline(para.splice(0).join(" "))}</p>`); };
+      const tl = () => { if (tldr.li.length) tldr.push(`<ul>${tldr.li.splice(0).map(i => `<li>${inline(i)}</li>`).join("")}</ul>`); };
+      if (line === ":::") { tp(); tl(); out.push(`<div class="tldr"><b>En resumen</b>${tldr.join("")}</div>`); tldr = null; }
+      else if ((m = line.match(/^[-*]\s+(.*)/))) { tp(); tldr.li.push(m[1]); }
+      else if (!line) { tp(); tl(); } else { tl(); para.push(line); }
+      continue;
+    }
+    if (line === "::: resumen") { flushP(); flushL(); tldr = Object.assign([], { li: [] }); continue; }
+    if (line === "[[calc]]") { flushP(); flushL(); out.push(CALC_MARK); continue; }
     if (line === "::: plantilla") { flushP(); flushL(); tpl = []; continue; }
     if (!line) { flushP(); flushL(); continue; }
-    if (line === "[[cta]]") { flushP(); flushL(); out.push(CTA); continue; }
+    if (line === "[[cta]]") { flushP(); flushL(); out.push(calc ? CTA : CALC_MARK); calc = true; continue; }
     if ((m = line.match(/^!\[(.*?)\]\((\S+?)(?:\s+"(.*)")?\)$/))) { flushP(); flushL(); out.push(`<figure>${imgTag(m[2], m[1])}${m[3] ? `<figcaption>${inline(m[3])}</figcaption>` : ""}</figure>`); continue; }
     if ((m = line.match(/^(#{2,4})\s+(.*)/))) { flushP(); flushL(); const n = m[1].length; out.push(`<h${n} id="${slugify(m[2])}">${inline(m[2])}</h${n}>`); continue; }
     if ((m = line.match(/^[-*]\s+(.*)/))) { flushP(); if (!list || list.t !== "ul") { flushL(); list = { t: "ul", items: [] }; } list.items.push(m[1]); continue; }
@@ -102,6 +128,7 @@ function parsePost(file) {
   for (const l of m[1].split(/\r?\n/)) { const i = l.indexOf(":"); if (i < 0) continue; meta[l.slice(0, i).trim()] = l.slice(i + 1).trim().replace(/^["']|["']$/g, ""); }
   for (const k of ["title", "description", "date", "tag", "image", "imageAlt"]) if (!meta[k]) throw new Error(`Falta "${k}" en ${name}`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(meta.date)) throw new Error(`Fecha inválida en ${name} (usa AAAA-MM-DD)`);
+  if (meta.updated && !/^\d{4}-\d{2}-\d{2}$/.test(meta.updated)) throw new Error(`Fecha "updated" inválida en ${name} (usa AAAA-MM-DD)`);
   if (/PENDIENTE/.test(meta.imageAlt + (meta.imageCaption || ""))) throw new Error(`Completa imageAlt/imageCaption en ${name}`);
   if (!imgSize(meta.image)) throw new Error(`No encuentro la portada ${meta.image} de ${name}`);
   const words = m[2].split(/\s+/).filter(Boolean).length;
@@ -197,6 +224,7 @@ fs.copyFileSync(path.join(ROOT, "src", "engine.js"), path.join(DIST, "server", "
   }
 }
 write(path.join(DIST, "assets/site.css"), STYLES);
+fs.copyFileSync(path.join(ROOT, "src", "calc-mini.js"), path.join(DIST, "assets", "calc-mini.js"));
 
 // 1) Portada + app
 const faqCtx = vm.createContext({}); const FAQ = vm.runInContext(SRC("faq.js") + "\n;FAQ", faqCtx);
@@ -285,14 +313,15 @@ posts.forEach(p => {
   <nav class="crumbs" aria-label="Ruta"><a href="/">Inicio</a> / <a href="/blog/">Blog</a> / <span>${esc(p.tag)}</span></nav>
   <span class="kicker">${esc(p.tag)}</span>
   <h1>${esc(p.title)}</h1>
-  <div class="meta"><time datetime="${p.date}">${fmtDate(p.date)}</time> · ${p.min} min de lectura</div>
+  <div class="meta"><time datetime="${p.date}">${fmtDate(p.date)}</time>${p.updated && p.updated !== p.date ? ` · Actualizado el <time datetime="${p.updated}">${fmtDate(p.updated)}</time>` : ""} · ${p.min} min de lectura</div>
   <figure class="post-hero">${imgTag(p.image, p.imageAlt, true)}${p.imageCaption ? `<figcaption>${esc(p.imageCaption)}</figcaption>` : ""}</figure>
   <div class="content">
-${p.html}
+${(p.html.includes(CALC_MARK) ? p.html : p.html + "\n" + CALC_MARK).replace(CALC_MARK, calcWidget(p.slug)).replaceAll('href="/#registro"', `href="/?${utm(p.slug, "cta")}#registro"`)}
   </div>
   <a class="hero-calc" href="/calculadora-suscripciones/" style="margin-top:40px"><span class="nav-free">Gratis</span> Calcula cuánto pagas al año en suscripciones, sin registro ${"→"}</a>
-  <div class="cta-band" style="margin-top:48px;padding:36px"><div><h2 style="font-size:26px">¿Cuánto se te escapa a ti?</h2><p>Conecta tu correo y lo sabrás en un minuto. Gratis.</p></div><a class="btn btn-green" href="/#registro">Empezar gratis</a></div>
+  <div class="cta-band" style="margin-top:48px;padding:36px"><div><h2 style="font-size:26px">¿Cuánto se te escapa a ti?</h2><p>Conecta tu correo y lo sabrás en un minuto. Gratis.</p></div><a class="btn btn-green" href="/?${utm(p.slug, "banda")}#registro">Empezar gratis</a></div>
 </article>
+<script src="/assets/calc-mini.js" defer></script>
 ${related.length ? `<section class="wrap related" style="max-width:1160px;margin-top:64px"><h2 style="font-size:24px;letter-spacing:-.02em;margin-bottom:20px">Sigue leyendo</h2><div class="blog-grid">${related.map(card).join("")}</div></section>` : ""}`,
   }));
 });

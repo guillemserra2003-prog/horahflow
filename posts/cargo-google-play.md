@@ -1,7 +1,8 @@
 ---
 title: "Cargo «GOOGLE *» en la tarjeta: qué es y cómo cancelar suscripciones de Google Play"
-seoTitle: "GOOGLE * en el banco: qué es, cómo ver qué te cobra Google Play y cancelarlo"
-description: Qué significa un cargo GOOGLE * en tu extracto, cómo ver qué te ha cobrado Google Play, cómo cancelar una suscripción desde Android o el ordenador y cómo pedir un reembolso.
+seoTitle: "GOOGLE * o Google Play Apps en tu banco: qué es y cómo cancelarlo"
+description: GOOGLE * o «Google Play Apps» en tu banco es un cobro de tu cuenta de Google: una app, un juego o una suscripción. Mira cómo saber cuál es, cómo cancelarlo en Android y cómo pedir el reembolso.
+updated: 2026-11-24
 date: 2026-11-16
 tag: Guías
 image: /blog/img/cargo-google-play.webp
@@ -11,6 +12,13 @@ short: Cargo GOOGLE *
 ---
 
 Un cargo de 4,99 €, 9,99 € o 1,99 € a nombre de `GOOGLE *` seguido de algo como `YouTube`, `Google One`, `Duolingo` o el nombre raro de una app. Si tienes un Android, casi seguro es una suscripción o una compra en Google Play: una app que empezó con una prueba gratis, más espacio en Google One o una compra dentro de un juego. Te explicamos cómo saber qué es y cómo cortarlo.
+
+::: resumen
+Un cargo `GOOGLE *` o **Google Play Apps** es un cobro de tu cuenta de Google: una app, un juego, una compra dentro de una app o una suscripción.
+- **Para saber qué es:** Google Play › tu foto › Pagos y suscripciones › Presupuesto e historial, o pay.google.com.
+- **Para cancelarlo:** Google Play › tu foto › Pagos y suscripciones › Suscripciones.
+- **Para recuperar el dinero:** en las primeras 48 horas, desde tu historial de pedidos de Google Play.
+:::
 
 ## Qué es el cargo GOOGLE *
 
@@ -22,6 +30,16 @@ Es el nombre con el que Google aparece en tu banco cuando te cobra algo de tu cu
 - **Una compra de alguien de tu familia** que usa tu cuenta o tu tarjeta en su móvil.
 
 Muchos llegan después de una **prueba gratis** que no se canceló a tiempo.
+
+## Qué es el cobro «Google Play Apps»
+
+Algunos bancos no muestran el nombre de la app y ponen solo **Google Play Apps**, `GOOGLE *Google Play Ap` o algo parecido. Es lo mismo: un cobro de Google Play. Detrás suele haber:
+
+- **Una suscripción de una app** que empezó con prueba gratis: [Duolingo](/blog/cancelar-duolingo/), [Tinder](/blog/cancelar-tinder/), [Canva](/blog/cancelar-canva-pro/), apps de fotos, de fitness o de citas.
+- **Una compra dentro de un juego**, muchas veces hecha por un niño con el móvil de un adulto.
+- **Un servicio de Google**, como [Google One](/blog/cancelar-google-one/) o [YouTube Premium](/blog/cancelar-youtube-premium/), si lo contrataste desde el móvil.
+
+Para ver el nombre exacto, sigue los pasos de abajo.
 
 ## Cómo saber exactamente qué te ha cobrado
 
@@ -78,6 +96,10 @@ HorahFlow lee los recibos que Google te manda por correo y te muestra qué hay d
 ### ¿GOOGLE * es un fraude?
 
 Normalmente no: es el nombre real con el que cobra Google Play. Pero si no aparece en el historial de ninguna de tus cuentas de Google, trátalo como sospechoso y habla con tu banco.
+
+### ¿Qué es «Google Play Apps» en mi extracto?
+
+Es un cobro de Google Play: una app, un juego, una compra dentro de una app o una suscripción. Lo ves con su nombre en Google Play › Pagos y suscripciones › Presupuesto e historial.
 
 ### ¿Si borro la app se cancela la suscripción?
 

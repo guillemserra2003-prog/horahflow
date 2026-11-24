@@ -1,7 +1,8 @@
 ---
 title: "Cómo cancelar Netflix (y cuánto cuesta en 2026 tras la subida)"
-seoTitle: "Cancelar Netflix paso a paso y precios en España 2026"
-description: Cómo darte de baja de Netflix en la web, el móvil o tu operador, qué pasa con tu cuenta y los precios en España tras la subida de abril de 2026.
+seoTitle: "Dar de baja Netflix en España (2026): pasos y precios"
+description: Para dar de baja Netflix entra en Cuenta › Gestionar suscripción › Cancelar. Pasos en la web, el móvil y tu operador, qué pasa con tu cuenta y precios en España tras la subida de 2026.
+updated: 2026-11-24
 date: 2026-11-12
 tag: Guías
 image: /blog/img/cancelar-netflix.webp
@@ -11,6 +12,12 @@ short: Cancelar Netflix
 ---
 
 Netflix subió sus precios en España el 20 de abril de 2026, y el plan más barato pasó de 6,99 € a 8,99 € al mes. Es buen momento para preguntarse si lo usas lo suficiente. Si la respuesta es no, aquí tienes cómo darte de baja según dónde lo pagues, qué pasa con tu cuenta y algunas alternativas para pagar menos sin renunciar del todo.
+
+::: resumen
+- **Para dar de baja Netflix:** netflix.com › Cuenta › Gestionar suscripción › Cancelar › Completar cancelación.
+- **Si no ves el botón:** lo pagas con Apple, Google o tu operador, y se da de baja allí.
+- **Sigues viéndolo** hasta el final del mes pagado, sin permanencia ni penalización.
+:::
 
 ## Cuánto cuesta Netflix en España en 2026
 
@@ -69,7 +76,7 @@ Si nada de eso explica el cargo, contacta con el servicio de ayuda de Netflix co
 ## Cómo pagar menos sin dejar Netflix del todo
 
 - **Bajar de plan.** Pasar del Premium al plan con anuncios ahorra 13 € al mes (156 € al año). Del Estándar al plan con anuncios, 6 € al mes.
-- **Rotar plataformas.** En lugar de tener Netflix, HBO Max y Disney+ a la vez, ten una activa cada mes. Ves lo que te interesa, cancelas y pasas a la siguiente.
+- **Rotar plataformas.** En lugar de tener Netflix, HBO Max y Disney+ a la vez, ten una activa cada mes. Ves lo que te interesa, cancelas y pasas a la siguiente. Tienes cómo darte de baja de las otras en las guías de [HBO Max](/blog/cancelar-hbo-max/), [Disney+](/blog/cancelar-disney-plus/) y [Filmin](/blog/cancelar-filmin/).
 - **Revisar si ya lo tienes en tu tarifa.** Algunas ofertas de fibra y móvil lo incluyen. Si es tu caso y además lo pagas aparte, lo estás pagando dos veces.
 - **Pausar en lugar de cancelar** los meses en que no lo vas a usar.
 
@@ -82,6 +89,10 @@ Netflix avisa de las subidas por correo, pero ese correo se pierde fácilmente e
 ### ¿Netflix me devuelve el dinero si cancelo a mitad de mes?
 
 No. Puedes seguir usando Netflix hasta que termine el periodo que ya pagaste, pero no hay reembolso de los días que quedan.
+
+### ¿Cómo doy de baja Netflix si lo tengo con Movistar, Vodafone u Orange?
+
+Desde el área de clientes de tu operador, no desde Netflix. A veces Netflix va dentro del paquete y quitarlo no baja el precio, así que pregunta antes qué cambia en tu factura.
 
 ### ¿Puedo cancelar Netflix desde la tele?
 

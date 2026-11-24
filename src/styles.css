@@ -641,3 +641,30 @@ textarea.input{height:auto;min-height:150px;padding:12px 14px;resize:vertical;fo
 .kpis.k3{grid-template-columns:repeat(3,1fr)}
 @media (max-width:900px){.kpis.k3{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis.k3>:last-child{grid-column:1/-1}}
 @media (max-width:600px){.cal{grid-template-columns:repeat(7,minmax(0,1fr))}.cal .h{padding:8px 2px;text-align:center;font-size:10px;letter-spacing:0}.cal .d{padding:4px 3px;min-height:76px}.cal .ev{font-size:10px;padding:2px 3px;justify-content:center}.cal .ev>span{display:none}.cal .tot{font-size:10px}}
+
+/* Blog: bloque «En resumen» y calculadora mini */
+.article .content .tldr{background:var(--green-soft);border:1px solid #CDEBD7;border-radius:18px;padding:18px 22px;margin:26px 0}
+.article .content .tldr>b{display:block;font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--green);margin-bottom:8px}
+.article .content .tldr p{margin:0 0 8px}.article .content .tldr p:last-child{margin:0}
+.article .content .tldr ul{margin:4px 0 0}
+.mcalc{border:1px solid var(--line-2);border-radius:22px;padding:22px;margin:32px 0;background:#fff;box-shadow:var(--shadow)}
+.mcalc-h b{display:block;font-size:19px;letter-spacing:-.02em}
+.mcalc-h span{display:block;color:var(--muted);font-size:14.5px;margin-top:2px}
+.mcalc-chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+.mcalc-chips button{border:1.5px solid var(--line-2);background:#fff;border-radius:999px;padding:8px 13px;font:inherit;font-size:14.5px;font-weight:700;color:var(--ink-2);cursor:pointer;transition:.15s}
+.mcalc-chips button i{font-style:normal;font-weight:600;color:var(--muted);font-size:13px;margin-left:2px}
+.mcalc-chips button:hover{border-color:var(--green)}
+.mcalc-chips button[aria-pressed=true]{background:var(--green-soft);border-color:var(--green);color:var(--ink)}
+.mcalc-chips button[aria-pressed=true]::before{content:"✓ ";color:var(--green)}
+.mcalc-res{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mcalc-res div{background:var(--soft);border-radius:14px;padding:12px 16px}
+.mcalc-res b{display:block;font-size:26px;letter-spacing:-.03em;white-space:nowrap}
+.mcalc-res span{font-size:13px;color:var(--muted);font-weight:700}
+.mcalc.has .mcalc-y{color:var(--red)}
+.article .content .mcalc-tip{font-size:14px;color:var(--muted);margin:12px 0 14px}
+.mcalc-act{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.article .content .mcalc-act a.mcalc-full{font-weight:700;font-size:14.5px;color:var(--muted);text-decoration:none}
+.article .content .mcalc-act a.btn{color:#fff;text-decoration:none}
+@media (max-width:560px){.mcalc{padding:18px}.mcalc-res b{font-size:22px}.mcalc-act .btn{width:100%;justify-content:center}}
+.mcalc-tip code{white-space:nowrap}
+@media (max-width:560px){.mcalc-chips{gap:6px}.mcalc-chips button{padding:7px 10px;font-size:13.5px}.mcalc-chips button i{font-size:12px}}
