@@ -133,6 +133,10 @@
   const RX_TRIAL = /prueba gratuita|periodo de prueba|free trial|trial (?:ends|ended|period)|tu prueba|fin de la prueba/i;
   const RX_REFUND = /reembolso|refund|devoluci[oó]n|abono a tu cuenta/i;
   const RX_MARKETING = /hasta un \d+ ?%|ofertas? exclusiv|newsletter|black friday|date de baja|unsubscribe|no te lo pierdas/i;
+  // Señales de una compra o un cobro de verdad. Casi todas las tiendas ponen publicidad en el pie de sus
+  // confirmaciones de pedido: si hay alguna de estas, la publicidad del pie no convierte el correo en promoción.
+  const RX_TXN = /recibo|factura|receipt|invoice|\bcargo\b|charged|n[uú]mero de pedido|n\.?[º°] de pedido|id de pedido|pedido n|order (?:number|#|confirm|id)|gracias por tu (?:compra|pedido)|thanks? (?:you )?for your (?:order|purchase)|total (?:del pedido|pagado|a pagar|iva|\(iva)|total:|iva incluido|subtotal|modo de pago|m[eé]todo de pago|forma de pago|payment method|pagado con|paid with|importe (?:total|cobrado)/i;
+  const isPromo = text => RX_MARKETING.test(text) && !RX_TXN.test(text);
   // Tipo de cargo: compra puntual, suscripción, préstamo… y correos que no son un cobro
   const RX_FAILED = /unsuccessful|payment (?:has )?failed|failed payment|was declined|unable to charge|could not (?:be )?charged?|pago (?:fallido|rechazado)|no (?:hemos podido|se ha podido) (?:cobrar|procesar|realizar el cobro)|cargo rechazado|tarjeta rechazada/i;
   const RX_SHIPPING = /en reparto|se ha entregado|ha sido entregado|entregado\b|est[aá] en camino|ha salido|enviado\b|out for delivery|has been delivered|\bdelivered\b|has shipped|\bshipped\b|on its way|seguimiento de tu (?:pedido|env[ií]o)/i;
@@ -285,7 +289,7 @@
     const text = `${subject} . ${body}`;
     if (RX_REFUND.test(subject)) return null;
     if (!RX_RECEIPT.test(text)) return null;
-    if (RX_MARKETING.test(text) && !/recibo|factura|receipt|invoice|cargo|charged/i.test(text)) return null;
+    if (isPromo(text)) return null;
     // Pagos fallidos, avisos de envío y cancelaciones no son un gasto
     if (RX_FAILED.test(subject) || RX_FAILED.test(body.slice(0, 400))) return null;
     if (RX_CANCELLED.test(subject)) return null;
@@ -337,7 +341,7 @@
     if (RX_REFUND.test(email.subject || '')) return false;
     if (RX_FAILED.test(email.subject || '') || RX_FAILED.test(text.slice(0, 500)) || RX_CANCELLED.test(email.subject || '')) return false;
     if (!RX_RECEIPT.test(text)) return false;
-    if (RX_MARKETING.test(text) && !/recibo|factura|receipt|invoice|cargo|charged/i.test(text)) return false;
+    if (isPromo(text)) return false;
     return !toCharge(email);
   }
 
